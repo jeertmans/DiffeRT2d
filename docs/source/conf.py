@@ -17,9 +17,9 @@ author = "Jérome Eertmans"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxext.opengraph",
-    "sphinx_click",
     "myst_parser",
     "sphinx_copybutton",
 ]
@@ -58,6 +58,9 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/source/",
 }
+
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
 
 # -- Intersphinx mapping
 
