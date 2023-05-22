@@ -31,4 +31,4 @@ repos:
   rev: v1.2.0
   hooks:
   - id: mypy
-    additional_dependencies: [types-requests, types-setuptools]
+    additional_dependencies: [types-requests, types-setuptools, data-science-types]

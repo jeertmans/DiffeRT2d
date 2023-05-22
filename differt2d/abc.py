@@ -2,9 +2,44 @@
 Abtract classes to be implemented by the user.
 """
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any
 
 import chex
 from chex import Array
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+else:
+    Axes = Any
+
+
+class Plottable(ABC):
+    """
+    Abstract class for any object that can be plotted using matplotlib.
+    """
+
+    @abstractmethod
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> Any:
+        """
+        Plot this object on the given axes and returns the results.
+
+        Parameters
+        ----------
+
+        ax: :class:`matplotlib.axes.Axes`
+            The axes to plot on.
+        args: Any
+            Parameters to be passed to the plot function.
+        kwargs: Any
+            Keyword parameters to be passed to the plot function.
+
+        Returns
+        -------
+
+        artist(s): Union[:class:`matplotlib.artist.Artist`, List[matplotlib.artist.Artist]]
+            The artist(s).
+        """
+        pass
 
 
 class Interactable(ABC):
@@ -109,24 +144,4 @@ class Interactable(ABC):
         score: [], Array
             Interaction score.
         """
-        pass
-
-
-@chex.dataclass
-class Wall(Interactable):
-    points: Array
-
-    def parameters_count(self) -> int:
-        return 1
-
-    def parametric_to_cartesian(self, param_coords: Array) -> Array:
-        pass
-
-    def cartesian_to_parametric(self, carte_coords: Array) -> Array:
-        pass
-
-    def intersects_cartesian(self, ray: Array) -> Array:
-        pass
-
-    def evaluate_cartesian(self, ray_path: Array) -> Array:
         pass

@@ -15,13 +15,17 @@ author = "Jérome Eertmans"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.autodoc",
+    "autodoc2",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxext.opengraph",
     "myst_parser",
     "sphinx_copybutton",
+]
+
+autodoc2_packages = [
+    "../../differt2d",
 ]
 
 myst_enable_extensions = [
@@ -37,7 +41,7 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 html_theme_options = {
     "light_logo": "logo_light_transparent.png",
@@ -66,6 +70,8 @@ napoleon_numpy_docstring = True
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "chex": ("https://chex.readthedocs.io/en/latest", None),
 }
 
 # -- OpenGraph settings

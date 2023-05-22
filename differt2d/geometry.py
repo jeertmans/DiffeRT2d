@@ -1,116 +1,167 @@
-from abc import ABC, abstractmethod
-from functools import partial
+from typing import List
 
 import chex
 import jax.numpy as jnp
 from chex import Array
-from jax.tree_util import register_pytree_node_class
 
+from .abc import Interactable, Plottable
 from .logic import jit, jit_approx, ne_
-
-
-class Reflector(ABC):
-    @abstractmethod
-    def t_to_xy(self, t: Array) -> Array:
-        """Returns the cartesian coordinates from local parametric coordinate t."""
-        pass
-
-    @abstractmethod
-    def xy_to_t(self, xy: Array) -> Array:
-        pass
-
-    @abstractmethod
-    def normal_at_t(self, t: Array) -> Array:
-        """Returns the local normal vector."""
-        pass
-
-
-class Interaction(ABC):
-    @abstractmethod
-    def evaluate_cartesian(self, a: Array, b: Array, c: Array) -> float:
-        """
-        Evaluates the given interaction triplet, such that:
-        - incident vector is defined as v_in = b - a;
-        - bouncing vector is defined as v_out = c - b;
-        where b lies on the current object.
-
-        a, b, and c are 2d-points in the cartesian coordinate space.
-
-        A return value of 0 indicates that the interaction is successful.
-
-        The returned value cannot be negative.
-        """
-        pass
 
 
 @chex.dataclass
 class Ray:
-    path: Array
+    points: Array
 
     def __post_init__(self):
-        chex.assert_shape(self.path, (2, 2))
+        chex.assert_shape(self.points, (2, 2))
 
     @jit
     def origin(self) -> Array:
-        return self.path[0]
+        return self.points[0]
 
     @jit
     def dest(self) -> Array:
-        return self.path[1]
+        return self.points[1]
 
     @jit
     def t(self):
         return self.dest() - self.origin()
 
-    def __getitem__(self, item):
-        return self.path[item]
+
+@chex.dataclass
+class Point:
+    point: Array
+
+    def __post_init__(self):
+        chex.assert_shape(self.point, (2,))
+
+    def plot(self, ax, *args, marker="o", color="red", **kwargs):
+        return ax.plot(
+            [self.point[0]],
+            [self.point[1]],
+            *args,
+            marker=marker,
+            color=color,
+            **kwargs,
+        )
 
 
 @chex.dataclass
-class Wall(Ray, Reflector):
-    @chex.chexify
-    @jit
-    def t_to_xy(self, t: Array) -> Array:
-        chex.assert_shape(t, ())
-        return self.origin() + t * self.t()
+class Wall(Ray, Interactable, Plottable):
+    points: Array
 
     @jit
-    def xy_to_t(self, xy):
-        pass
-
-    @chex.chexify
-    @jit
-    def normal_at_t(self, t: Array) -> Array:
-        chex.assert_shape(t, ())
+    def normal(self) -> Array:
         t = self.t()
         n = t.at[0].set(t[1])
         n = n.at[1].set(-t[0])
         return n / jnp.linalg.norm(n)
 
     @jit
-    def interaction(self, v1, v2, n, **kwargs):
+    def parameters_count(self) -> int:
+        return 1
+
+    @chex.chexify
+    @jit
+    def parametric_to_cartesian(self, param_coords: Array) -> Array:
+        chex.assert_shape(param_coords, (1,))
+        pass
+
+    @chex.chexify
+    @jit
+    def cartesian_to_parametric(self, carte_coords: Array) -> Array:
+        chex.assert_shape(carte_coords, (2,))
+        pass
+
+    @chex.chexify
+    @jit
+    def intersects_cartesian(self, ray: Array) -> Array:
+        chex.assert_shape(ray, (2, 2))
+        pass
+
+    @chex.chexify
+    @jit
+    def evaluate_cartesian(self, ray_path: Array) -> Array:
+        chex.assert_shape(ray_path, (3, 2))
+        v1 = ray_path[1, :] - ray_path[0, :]
+        v2 = ray_path[2, :] - ray_path[1, :]
+        n = self.normal()
         i = jnp.linalg.norm(v1) * v2 - (
             v1 - 2 * (jnp.dot(v1, n) * n)
         ) * jnp.linalg.norm(v2)
 
         return jnp.dot(i, i)
 
-    def plot(self, ax, *args, **kwargs):
-        x, y = self.path.T
-        return ax.plot(x, y, *args, **kwargs)
+    def plot(self, ax, *args, color="blue", **kwargs):
+        x, y = self.points.T
+        return ax.plot(x, y, *args, color=color, **kwargs)
 
 
 @chex.dataclass
 class RIS(Wall):
+    phi: Array = jnp.pi / 4
+
+    @chex.chexify
     @jit
-    def interaction(self, v1, v2, n, phi=jnp.pi / 4, **kwargs):
+    def evaluate_cartesian(self, ray_path: Array) -> Array:
+        chex.assert_shape(ray_path, (3, 2))
+        v2 = ray_path[2, :] - ray_path[1, :]
+        n = self.normal()
         sinx = jnp.cross(n, v2)  # |v2| * sin(x)
-        sina = jnp.linalg.norm(v2) * jnp.sin(phi)
-        # cosx = jnp.dot(n, v2)  # |v2| * cos(x)
-        # cosa = jnp.linalg.norm(v2) * jnp.cos(alpha_ris)
+        sina = jnp.linalg.norm(v2) * jnp.sin(self.phi)
         return (sinx - sina) ** 2  # + (cosx - cosa) ** 2
 
     def plot(self, ax, *args, **kwargs):
         if "color" in kwargs:
             del kwargs["color"]
         super().plot(ax, *args, color="green", **kwargs)
+
+
+@chex.dataclass
+class Path:
+    points: Array
+
+    def __post_init__(self):
+        chex.assert_shape(self.points, (None, 2))
+
+    @jit
+    def length(self) -> Array:
+        vectors = jnp.diff(self.points, axis=0)
+        lengths = jnp.linalg.norm(vectors, axis=1)
+
+        return jnp.sum(lengths)
+
+    def plot(self, ax, *args, color="orange", **kwargs):
+        x, y = self.points.T
+        return ax.plot(x, y, *args, color=color, **kwargs)
+
+@chex.dataclass
+class MinPath(Path):
+
+    @classmethod
+    def from_tx_objects_rx(cls, tx: Point, objects: List[Interactable], rx: Point) -> "MinPath":
+        n = len(objects)
+        n_unknowns = sum([obj.parameters_count() for obj in objects])
+
+        @jit
+        def loss(theta):
+            cartesian_coords = jnp.empty((n + 2, 2))
+            cartesian_coords = cartesian_coords.at[0].set(tx.point)
+            cartesian_coords = cartesian_coords.at[-1].set(rx.point)
+            i = 0
+            for i, obj in enumerate(objects):
+                param_coords = theta[i, i + obj.parameters_count()]
+                cartesian_coords = cartesian_coords.at[i + 1].set(obj.parametric_to_cartesian(param_coords))
+                i += obj.parameters_count()
+
+            _loss = 0.0
+            for i, obj in enumerate(objects):
+                param_coords = theta[i, i + obj.parameters_count()]
+                cartesian_coords = cartesian_coords.at[-1].set(obj.parametric_to_cartesian(param_coords))
+                i += obj.parameters_count()
+
+
+        theta = jnp.zeros(n_unknowns)
+
+        points = jnp.row_stack([tx.point, rx.point])
+        return MinPath(points=points)
