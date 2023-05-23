@@ -6,3 +6,5 @@ poetry.lock
 tests/__pycache__/
 
 docs/build/
+
+docs/source/apidocs/

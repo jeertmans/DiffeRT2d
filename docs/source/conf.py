@@ -17,7 +17,6 @@ author = "Jérome Eertmans"
 extensions = [
     "autodoc2",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxext.opengraph",
     "myst_parser",
@@ -27,6 +26,7 @@ extensions = [
 autodoc2_packages = [
     "../../differt2d",
 ]
+
 
 myst_enable_extensions = [
     "colon_fence",
@@ -63,15 +63,12 @@ html_theme_options = {
     "source_directory": "docs/source/",
 }
 
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-
 # -- Intersphinx mapping
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "matplotlib": ("https://matplotlib.org/", None),
-    "chex": ("https://chex.readthedocs.io/en/latest", None),
+    "jax": ("https://jax.readthedocs.io/en/latest", None),
 }
 
 # -- OpenGraph settings
