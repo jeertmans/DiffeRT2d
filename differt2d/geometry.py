@@ -1,3 +1,7 @@
+"""
+Geometrical objects.
+"""
+
 from functools import partial
 from typing import TYPE_CHECKING, Any, List
 
@@ -5,9 +9,10 @@ import chex
 import jax
 import jax.numpy as jnp
 import optax
+from jax import jit
 
 from .abc import Interactable, Plottable
-from .logic import jit
+from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
 
 if TYPE_CHECKING:
     from jax import Array
@@ -25,14 +30,18 @@ def segments_intersect(P1, P2, P3, P4):
     d = A[1] * B[0] - A[0] * B[1]
     a = a / d
     b = b / d
-    a = jnp.logical_and(jnp.greater(a, 0.0), jnp.less(a, 1.0))
-    b = jnp.logical_and(jnp.greater(b, 0.0), jnp.less(b, 1.0))
-    return jnp.logical_and(a, b)
+    a = logical_and(greater(a, 0.0), less(a, 1.0))
+    b = logical_and(greater(b, 0.0), less(b, 1.0))
+    return logical_and(a, b)
 
 
 @chex.dataclass
 class Ray:
-    points: Array
+    """
+    A ray object with origin and destination points.
+    """
+
+    points: Array  # a b
 
     def __post_init__(self):
         chex.assert_shape(self.points, (2, 2))
@@ -52,18 +61,23 @@ class Ray:
 
 @chex.dataclass
 class Point(Plottable):
+    """
+    A point object defined by its coordinates.
+    """
+
     point: Array
+    """Cartesian coordinates."""
 
     def __post_init__(self):
         chex.assert_shape(self.point, (2,))
 
-    def plot(self, ax, *args, marker="o", color="red", **kwargs):
+    def plot(self, ax, *args, **kwargs):
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("color", "red")
         return ax.plot(
             [self.point[0]],
             [self.point[1]],
             *args,
-            marker=marker,
-            color=color,
             **kwargs,
         )
 
@@ -73,6 +87,10 @@ class Point(Plottable):
 
 @chex.dataclass
 class Wall(Ray, Interactable, Plottable):
+    """
+    A wall object defined by its corners.
+    """
+
     @jit
     def normal(self) -> Array:
         t = self.t()
@@ -96,9 +114,9 @@ class Wall(Ray, Interactable, Plottable):
 
     @jit
     def contains_parametric(self, param_coords: Array) -> Array:
-        ge = jnp.greater_equal(param_coords, 0.0)
-        le = jnp.less_equal(param_coords, 1.0)
-        return jnp.logical_and(ge, le)
+        ge = greater_equal(param_coords, 0.0)
+        le = less_equal(param_coords, 1.0)
+        return logical_and(ge, le)
 
     @jit
     def intersects_cartesian(self, ray: Array) -> Array:
@@ -115,17 +133,30 @@ class Wall(Ray, Interactable, Plottable):
 
         return jnp.dot(i, i)
 
-    def plot(self, ax, *args, color="blue", **kwargs):
+    def plot(self, ax, *args, **kwargs):
+        kwargs.setdefault("color", "blue")
         x, y = self.points.T
-        return ax.plot(x, y, *args, color=color, **kwargs)
+        return ax.plot(x, y, *args, **kwargs)
 
     def bounding_box(self) -> Array:
-        return jnp.row_stack([jnp.min(self.points), jnp.max(self.points)])
+        return jnp.row_stack(
+            [jnp.min(self.points, axis=1), jnp.max(self.points, axis=1)]
+        )
 
 
 @chex.dataclass
 class RIS(Wall):
+    """
+    A very basic Reflective Intelligent Surface (RIS) object.
+
+    Here, we model a RIS such that the angle of reflection is constant
+    with respect to its normal, regardless of the incident vector.
+    """
+
     phi: Array = jnp.pi / 4
+    """
+    The constant angle of reflection.
+    """
 
     @jit
     def evaluate_cartesian(self, ray_path: Array) -> Array:
@@ -136,17 +167,24 @@ class RIS(Wall):
         return (sinx - sina) ** 2  # + (cosx - cosa) ** 2
 
     def plot(self, ax, *args, **kwargs):
-        if "color" in kwargs:
-            del kwargs["color"]
-        super().plot(ax, *args, color="green", **kwargs)
+        kwargs.setdefault("color", "green")
+        super().plot(ax, *args, **kwargs)
 
 
 @chex.dataclass
 class Path(Plottable):
+    """
+    A path object with at least two points.
+    """
+
     points: Array
+    """
+    Array of cartesian coordinates.
+    """
 
     def __post_init__(self):
         chex.assert_shape(self.points, (None, 2))
+        chex.assert_axis_dimension_gt(self.points, 0, 1)
 
     @jit
     def length(self) -> Array:
@@ -160,7 +198,7 @@ class Path(Plottable):
         contains = jnp.array(True)
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
-            contains = jnp.logical_and(contains, obj.contains_parametric(param_coords))
+            contains = logical_and(contains, obj.contains_parametric(param_coords))
 
         return contains
 
@@ -170,18 +208,19 @@ class Path(Plottable):
         for obj in objects:
             for i in range(self.points.shape[0] - 1):
                 ray_path = self.points[i : i + 2, :]
-                intersects = jnp.logical_or(
-                    intersects, obj.intersects_cartesian(ray_path)
-                )
+                intersects = logical_or(intersects, obj.intersects_cartesian(ray_path))
 
         return intersects
 
-    def plot(self, ax, *args, color="orange", **kwargs):
+    def plot(self, ax, *args, **kwargs):
+        kwargs.setdefault("color", "orange")
         x, y = self.points.T
-        return ax.plot(x, y, *args, color=color, **kwargs)
+        return ax.plot(x, y, *args, **kwargs)
 
     def bounding_box(self) -> Array:
-        return jnp.row_stack([jnp.min(self.points), jnp.max(self.points)])
+        return jnp.row_stack(
+            [jnp.min(self.points, axis=1), jnp.max(self.points, axis=1)]
+        )
 
 
 @partial(jax.jit, static_argnums=(3,))
@@ -192,7 +231,14 @@ def parametric_to_cartesian_from_slice(obj, parametric_coords, start, size):
 
 @chex.dataclass
 class MinPath(Path):
+    """
+    A Path object that was obtain with the Min. Path Tracing method.
+    """
+
     loss: float
+    """
+    The loss value for the given path.
+    """
 
     @classmethod
     @partial(jit, static_argnums=(0,))
@@ -206,6 +252,20 @@ class MinPath(Path):
     ) -> "MinPath":
         """
         Returns a path that minimizes the sum of interactions.
+
+        :param tx: The emitting node.
+        :type tx: Point
+        :param objects:
+            The list of objects to interact with (order is important).
+        :type objects: typing.List[Interactable]
+        :param rx: The receiving node.
+        :type rx: Point
+        :param seed: The random seed used to generate the start iteration.
+        :type seed: int
+        :param steps: The number of iterations performed by the minimizer.
+        :type steps: int
+        :return: The resulting path of the MPT method.
+        :rtype: MinPath
         """
         n = len(objects)
         n_unknowns = sum([obj.parameters_count() for obj in objects])

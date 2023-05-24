@@ -16,7 +16,9 @@ author = "Jérome Eertmans"
 
 extensions = [
     "autodoc2",
+    "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinxext.opengraph",
     "myst_parser",
@@ -27,6 +29,11 @@ autodoc2_packages = [
     "../../differt2d",
 ]
 
+autodoc2_hidden_objects = ["dunder", "inherited"]
+autodoc2_docstrings = "all"
+autodoc2_sort_names = True
+
+autodoc2_module_all_regexes = ["differt2d.logic"]
 
 myst_enable_extensions = [
     "colon_fence",
@@ -36,6 +43,10 @@ myst_enable_extensions = [
 templates_path = ["_templates"]
 exclude_patterns = []
 
+# Removes the 'package.module' part from package.module.Class
+add_module_names = True
+
+extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
