@@ -1,6 +1,8 @@
+from functools import partial
 from typing import TYPE_CHECKING, Any, List, Tuple
 
 import chex
+import jax
 import jax.numpy as jnp
 import numpy as np
 import rustworkx as rx
@@ -21,6 +23,46 @@ class Object(Interactable, Plottable):
     """
 
     pass
+
+
+@partial(jax.jit, inline=True)
+def power(path, path_candidate, objects):
+    l1 = path.length()
+    l2 = l1 * l1
+    return 1 / (1.0 + l2)
+
+
+#@partial(jax.jit, static_argnames=("objects", "function"))
+def accumulate_at_location(
+    tx: Point, objects, rx: Point, path_candidates, function
+) -> Array:
+
+    acc = jnp.array(0.0)
+    tol = 1e-3
+
+    for path_candidate in path_candidates:
+        interacting_objects = [objects[i - 1] for i in path_candidate[1:-1]]
+
+        path = MinPath.from_tx_objects_rx(tx, interacting_objects, rx)
+
+        valid = path.on_objects(interacting_objects)
+        valid = logical_and(
+            valid, logical_not(path.intersects_with_objects(objects))
+        )
+        valid = logical_and(valid, less(path.loss, tol))
+
+        acc += valid * function(path, path_candidate, interacting_objects)
+
+    return acc
+
+
+#@partial(jax.jit, static_argnames=("function"))
+def _accumulate_at_location(
+    tx: Point, objects, rx: Array, path_candidates, function
+) -> Array:
+    return accumulate_at_location(
+        tx, objects, Point(point=rx), path_candidates, function
+    )
 
 
 @chex.dataclass
@@ -72,7 +114,7 @@ class Scene(Plottable):
         """
         bounding_box = self.bounding_box()
         x = jnp.linspace(bounding_box[0, 0], bounding_box[1, 0], n)
-        y = jnp.linspace(bounding_box[1, 0], bounding_box[1, 1], n)
+        y = jnp.linspace(bounding_box[0, 1], bounding_box[1, 1], n)
 
         return jnp.meshgrid(x, y)
 
@@ -113,11 +155,11 @@ class Scene(Plottable):
         paths = []
 
         for path_candidate in self.all_path_candidates(order=order):
-            objects = [self.objects[i - 1] for i in path_candidate[1:-1]]
+            interacting_objects = [self.objects[i - 1] for i in path_candidate[1:-1]]
 
-            path = MinPath.from_tx_objects_rx(self.tx, objects, self.rx)
+            path = MinPath.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
 
-            valid = path.on_objects(objects)
+            valid = path.on_objects(interacting_objects)
             valid = logical_and(
                 valid, logical_not(path.intersects_with_objects(self.objects))
             )
@@ -127,3 +169,50 @@ class Scene(Plottable):
                 paths.append(path)
 
         return paths
+
+    def accumulate_over_paths(
+        self, function=power, order: int = 1, tol: float = 1e-4
+    ) -> Array:
+        """
+        Returns all valid paths from :attr:`tx` to :attr:`rx`,
+        using the MPT method,
+        see :class:`differt2d.geometry.MinPath`.
+
+        :param order:
+            The maximum order of the path, see :meth:`all_path_candidates`.
+        :type order: int
+        :param tol: The threshold tolerance for a path loss to be accepted.
+        :type tol: float
+        :return: The list of paths.
+        :rtype: List[MinPath]
+        """
+        path_candidates = self.all_path_candidates(order=order)
+
+        return accumulate_at_location(self.tx, self.objects, self.rx, path_candidates, function)
+
+    def accumulate_on_grid(
+        self, function=power, order: int = 1, tol: float = 1e-4
+    ) -> Array:
+        """
+        Returns all valid paths from :attr:`tx` to :attr:`rx`,
+        using the MPT method,
+        see :class:`differt2d.geometry.MinPath`.
+
+        :param order:
+            The maximum order of the path, see :meth:`all_path_candidates`.
+        :type order: int
+        :param tol: The threshold tolerance for a path loss to be accepted.
+        :type tol: float
+        :return: The list of paths.
+        :rtype: List[MinPath]
+        """
+        path_candidates = self.all_path_candidates(order=order)
+
+        grid = jnp.dstack(self.grid())
+
+        vacc = jax.vmap(
+            jax.vmap(_accumulate_at_location, in_axes=(None, None, 0, None, None)),
+            in_axes=(None, None, 0, None, None),
+        )
+
+        return vacc(self.tx, self.objects, grid, path_candidates, function)

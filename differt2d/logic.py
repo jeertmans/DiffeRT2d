@@ -36,7 +36,7 @@ else:
 
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
 
-APPROX = False
+APPROX = True
 """
 Sets the default :code:`approx` keyword argument for all functions.
 """

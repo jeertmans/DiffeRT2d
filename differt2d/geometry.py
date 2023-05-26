@@ -43,9 +43,6 @@ class Ray:
 
     points: Array  # a b
 
-    def __post_init__(self):
-        chex.assert_shape(self.points, (2, 2))
-
     @partial(jit, inline=True)
     def origin(self) -> Array:
         return self.points[0]
@@ -67,9 +64,6 @@ class Point(Plottable):
 
     point: Array
     """Cartesian coordinates."""
-
-    def __post_init__(self):
-        chex.assert_shape(self.point, (2,))
 
     def plot(self, ax, *args, **kwargs):
         kwargs.setdefault("marker", "o")
@@ -181,10 +175,6 @@ class Path(Plottable):
     """
     Array of cartesian coordinates.
     """
-
-    def __post_init__(self):
-        chex.assert_shape(self.points, (None, 2))
-        chex.assert_axis_dimension_gt(self.points, 0, 1)
 
     @jit
     def length(self) -> Array:

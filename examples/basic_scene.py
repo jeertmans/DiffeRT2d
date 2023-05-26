@@ -28,8 +28,13 @@ scene.plot(ax)
 for path in scene.all_paths():
     path.plot(ax)
 
-print(scene.bounding_box())
+Z = scene.accumulate_on_grid()
+X, Y = scene.grid()
 
-plt.axis("equal")
+print(Z)
+
+plt.pcolormesh(X, Y, Z)
+
+#plt.axis("equal")
 
 plt.show()
