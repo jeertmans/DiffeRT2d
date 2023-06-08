@@ -3,6 +3,8 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import pytest
 
+from jax import disable_jit
+
 from differt2d.geometry import Point, Ray, Wall
 from differt2d.logic import enable_approx, is_false, is_true
 
@@ -151,7 +153,7 @@ class TestWall:
     @approx
     def test_contains_parametric(self, approx: bool):
         wall = Wall(points=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
-        with enable_approx(approx):
+        with enable_approx(approx), disable_jit():
             got = wall.contains_parametric(0.5)
             assert is_true(got)
             chex.assert_shape(got, ())
@@ -162,7 +164,7 @@ class TestWall:
     @approx
     def test_intersects_cartesian(self, approx: bool):
         wall = Wall(points=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
-        with enable_approx(approx):
+        with enable_approx(approx), disable_jit():
             got = wall.intersects_cartesian(jnp.array([[0.0, 2.0], [4.0, 0.0]]))
             assert is_true(got)
             chex.assert_shape(got, ())
