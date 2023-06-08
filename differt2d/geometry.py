@@ -36,7 +36,7 @@ def segments_intersect(P1, P2, P3, P4):
 
 
 @chex.dataclass
-class Ray:
+class Ray(Plottable):
     """
     A ray object with origin and destination points.
     """
@@ -54,6 +54,16 @@ class Ray:
     @partial(jit, inline=True)
     def t(self):
         return self.dest() - self.origin()
+
+    def plot(self, ax, *args, **kwargs):
+        kwargs.setdefault("color", "blue")
+        x, y = self.points.T
+        return ax.plot(x, y, *args, **kwargs)
+
+    def bounding_box(self) -> Array:
+        return jnp.row_stack(
+            [jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)]
+        )
 
 
 @chex.dataclass
@@ -80,7 +90,7 @@ class Point(Plottable):
 
 
 @chex.dataclass
-class Wall(Ray, Interactable, Plottable):
+class Wall(Ray, Interactable):
     """
     A wall object defined by its corners.
     """
@@ -126,16 +136,6 @@ class Wall(Ray, Interactable, Plottable):
         ) * jnp.linalg.norm(v2)
 
         return jnp.dot(i, i)
-
-    def plot(self, ax, *args, **kwargs):
-        kwargs.setdefault("color", "blue")
-        x, y = self.points.T
-        return ax.plot(x, y, *args, **kwargs)
-
-    def bounding_box(self) -> Array:
-        return jnp.row_stack(
-            [jnp.min(self.points, axis=1), jnp.max(self.points, axis=1)]
-        )
 
 
 @chex.dataclass

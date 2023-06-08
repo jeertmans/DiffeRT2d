@@ -35,6 +35,6 @@ print(Z)
 
 plt.pcolormesh(X, Y, Z)
 
-#plt.axis("equal")
+# plt.axis("equal")
 
 plt.show()

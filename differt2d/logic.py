@@ -10,7 +10,7 @@ when :code:`approx` is set to :code:`False`.
 """
 
 __all__ = [
-    "APPROX",
+    "enable_approx",
     "greater",
     "greater_equal",
     "is_false",
@@ -23,11 +23,78 @@ __all__ = [
     "sigmoid",
 ]
 
+from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import jax
 import jax.numpy as jnp
+
+_enable_approx = jax.config.define_bool_state(
+    name="jax_enable_approx",
+    default=True,
+    help=("Disable approximation and just TODO."),
+)
+
+
+@contextmanager
+def enable_approx(enable: bool = True):
+    """
+    Context manager for enabling or disabling approximation of true/false values
+    with continuous numbers from 0 (false) to 1 (true).
+
+    By default, approximation is enabled.
+
+    To disable approximation, you have multiple options:
+
+    1. use this context manager to disable it (see example below);
+    2. set the environ variable ``JAX_ENABLE_APPROX`` to ``0``
+       (or any falsy value);
+    3. update the config with ``jax.config.update("jax_enable_approx", False)``;
+    4. or set, for specific logic functions only, the keyword argument
+       ``approx`` to ``False``.
+
+
+    >>> from differt2d.logic import enable_approx, greater
+    >>> 
+    >>> with enable_approx(False):
+    ...     print(greater(20.0, 5.0))
+    True
+
+    .. warning::
+
+        Calling already-jitted functions after mutating ``jax_enable_approx``
+        will not produce any visible change. This is because
+        ``jax.config.jax_enable_approx`` is evaluated once, at compilation.
+
+        For example:
+
+        >>> import jax
+        >>> from differt2d.logic import enable_approx
+        >>>
+        >>> @jax.jit
+        ... def f():
+        ...     if jax.config.jax_enable_approx:
+        ...         return 1.0
+        ...     else:
+        ...         return 0.0
+        >>>
+        >>> with enable_approx(True):
+        ...     print(f())
+        1.0
+        >>>
+        >>> with enable_approx(False):
+        ...     print(f())
+        1.0
+
+        To avoid this issue, you can either disable jit with
+        :py:func:`jax.disable_jit` or use the ``approx`` parameter manually.
+
+            
+    """
+    with _enable_approx(enable):
+        yield
+
 
 if TYPE_CHECKING:
     from jax import Array
@@ -36,10 +103,13 @@ else:
 
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
 
-APPROX = True
-"""
-Sets the default :code:`approx` keyword argument for all functions.
-"""
+
+@partial(jax.jit, inline=True)
+def get_approx(approx: Optional[bool]) -> bool:
+    if approx is None:
+        return jax.config.jax_enable_approx
+
+    return approx
 
 
 @partial(jax.jit, inline=True)
@@ -78,45 +148,52 @@ def sigmoid(x: Array, lambda_: float = 100.0, **kwargs) -> Array:
 
 
 @jit_approx
-def logical_or(x: Array, y: Array, approx: bool = APPROX) -> Array:
+def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical OR operation betwen :code:`x` and :code:`y`.
     """
+    approx = get_approx(approx)
     return jnp.maximum(x, y) if approx else jnp.logical_or(x, y)
 
 
 @jit_approx
-def logical_and(x: Array, y: Array, approx: bool = APPROX) -> Array:
+def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+    approx = get_approx(approx)
     return jnp.multiply(x, y) if approx else jnp.logical_and(x, y)
 
 
 @jit_approx
-def logical_not(x: Array, approx: bool = APPROX) -> Array:
+def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
+    approx = get_approx(approx)
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
 
 @jit_approx
-def greater(x: Array, y: Array, approx: bool = APPROX) -> Array:
+def greater(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+    approx = get_approx(approx)
     return sigmoid(jnp.subtract(x, y)) if approx else jnp.greater(x, y)
 
 
 @jit_approx
-def greater_equal(x: Array, y: Array, approx: bool = APPROX) -> Array:
+def greater_equal(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+    approx = get_approx(approx)
     return sigmoid(jnp.subtract(x, y)) if approx else jnp.greater_equal(x, y)
 
 
 @jit_approx
-def less(x: Array, y: Array, approx: bool = APPROX) -> Array:
+def less(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+    approx = get_approx(approx)
     return sigmoid(jnp.subtract(y, x)) if approx else jnp.less(x, y)
 
 
 @jit_approx
-def less_equal(x: Array, y: Array, approx: bool = APPROX) -> Array:
+def less_equal(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+    approx = get_approx(approx)
     return sigmoid(jnp.subtract(y, x)) if approx else jnp.less_equal(x, y)
 
 
 @jit_approx
-def is_true(x: Array, tol: float = 0.5, approx: bool = APPROX) -> Array:
+def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be true.
 
@@ -129,15 +206,16 @@ def is_true(x: Array, tol: float = 0.5, approx: bool = APPROX) -> Array:
         Only used if :code:`approx` is set to :code:`True`.
     :type tol: float
     :param approx: Whether approximation is used or not.
-    :type approx: bool
+    :type approx: typing.Optional[bool]
     :return: True if the value is considered to be true.
     :rtype: jax.Array
     """
-    return jnp.greater(x, 1.0 - tol) if approx else x
+    approx = get_approx(approx)
+    return jnp.greater(x, 1.0 - tol) if approx else jnp.asarray(x)
 
 
 @jit_approx
-def is_false(x: Array, tol: float = 0.5, approx: bool = APPROX) -> Array:
+def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be false.
 
@@ -150,8 +228,9 @@ def is_false(x: Array, tol: float = 0.5, approx: bool = APPROX) -> Array:
         Only used if :code:`approx` is set to :code:`True`.
     :type tol: float
     :param approx: Whether approximation is used or not.
-    :type approx: bool
+    :type approx: typing.Optional[bool]
     :return: True if the value is considered to be false.
     :rtype: jax.Array
     """
+    approx = get_approx(approx)
     return jnp.less(x, tol) if approx else jnp.logical_not(x)

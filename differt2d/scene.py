@@ -32,11 +32,10 @@ def power(path, path_candidate, objects):
     return 1 / (1.0 + l2)
 
 
-#@partial(jax.jit, static_argnames=("objects", "function"))
+# @partial(jax.jit, static_argnames=("objects", "function"))
 def accumulate_at_location(
     tx: Point, objects, rx: Point, path_candidates, function
 ) -> Array:
-
     acc = jnp.array(0.0)
     tol = 1e-3
 
@@ -46,9 +45,7 @@ def accumulate_at_location(
         path = MinPath.from_tx_objects_rx(tx, interacting_objects, rx)
 
         valid = path.on_objects(interacting_objects)
-        valid = logical_and(
-            valid, logical_not(path.intersects_with_objects(objects))
-        )
+        valid = logical_and(valid, logical_not(path.intersects_with_objects(objects)))
         valid = logical_and(valid, less(path.loss, tol))
 
         acc += valid * function(path, path_candidate, interacting_objects)
@@ -56,7 +53,7 @@ def accumulate_at_location(
     return acc
 
 
-#@partial(jax.jit, static_argnames=("function"))
+# @partial(jax.jit, static_argnames=("function"))
 def _accumulate_at_location(
     tx: Point, objects, rx: Array, path_candidates, function
 ) -> Array:
@@ -188,7 +185,9 @@ class Scene(Plottable):
         """
         path_candidates = self.all_path_candidates(order=order)
 
-        return accumulate_at_location(self.tx, self.objects, self.rx, path_candidates, function)
+        return accumulate_at_location(
+            self.tx, self.objects, self.rx, path_candidates, function
+        )
 
     def accumulate_on_grid(
         self, function=power, order: int = 1, tol: float = 1e-4
