@@ -1,10 +1,5 @@
 on:
   pull_request:
-    paths:
-    - pyproject.toml
-    - poetry.lock
-    - '**.py'
-    - .github/workflows/test.yml
   workflow_dispatch:
 
 name: Test Python code
@@ -58,7 +53,7 @@ jobs:
 
     - name: Run ByExample
       run: |
-        poetry run byexample -l python
+        find -iname '*.py' | xargs poetry run byexample -l python
 
   docs:
     runs-on: ubuntu-latest
