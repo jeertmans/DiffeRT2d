@@ -66,8 +66,8 @@ sphinx-copybutton = "^0.5.1"
 sphinxext-opengraph = "^0.7.5"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.1"
 byexample = "^10.5.6"
+pytest = "^7.3.1"
 
 [tool.ruff]
 ignore = [
