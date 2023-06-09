@@ -36,4 +36,5 @@ repos:
   rev: 10.5.6
   hooks:
   - id: byexample
-    args: [-l, python]
+    entry: env JAX_PLATFORM_NAME=cpu byexample -l python
+    additional_dependencies: [jax>=0.4.9, jaxlib]
