@@ -1,7 +1,6 @@
 from functools import partial
 from typing import TYPE_CHECKING, Any, List, Tuple
 
-import chex
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -12,9 +11,12 @@ from .geometry import MinPath, Point
 from .logic import is_true, less, logical_and, logical_not
 
 if TYPE_CHECKING:
+    from dataclasses import dataclass
+
     from jax import Array
 else:
     Array = Any
+    from chex import dataclass
 
 
 class Object(Interactable, Plottable):
@@ -62,7 +64,7 @@ def _accumulate_at_location(
     )
 
 
-@chex.dataclass
+@dataclass
 class Scene(Plottable):
     """
     2D Scene made of objects, one emitting node, and one receiving node.
@@ -88,10 +90,10 @@ class Scene(Plottable):
         ] + [obj.plot(ax, *args, **kwargs) for obj in self.objects]
 
     def bounding_box(self) -> Array:
-        bounding_boxes = [self.tx.bounding_box(), self.rx.bounding_box()] + [
+        bounding_boxes_list = [self.tx.bounding_box(), self.rx.bounding_box()] + [
             obj.bounding_box() for obj in self.objects
         ]
-        bounding_boxes = jnp.dstack(bounding_boxes)
+        bounding_boxes = jnp.dstack(bounding_boxes_list)
 
         return jnp.row_stack(
             [

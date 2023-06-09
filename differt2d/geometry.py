@@ -14,7 +14,8 @@ from .abc import Interactable, Plottable
 from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
 
 if TYPE_CHECKING:
-    from dataclass import dataclass
+    from dataclasses import dataclass
+
     from jax import Array
 else:
     Array = Any
