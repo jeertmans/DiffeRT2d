@@ -5,3 +5,5 @@ tests/__pycache__/
 docs/build/
 
 docs/source/apidocs/
+
+*.pyc

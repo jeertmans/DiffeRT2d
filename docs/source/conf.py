@@ -7,12 +7,17 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
+
 project = "DiffeRT2d"
 copyright = "2023, Jérome Eertmans"
 author = "Jérome Eertmans"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+sys.path.append(os.path.abspath("./_ext"))
 
 extensions = [
     "autodoc2",
@@ -23,6 +28,7 @@ extensions = [
     "sphinxext.opengraph",
     "myst_parser",
     "sphinx_copybutton",
+    "plot_directive",
 ]
 
 autodoc2_packages = [
@@ -47,6 +53,8 @@ exclude_patterns = []
 add_module_names = True
 
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
+
+plot_rst_directory = "source/apidocs/differt2d/"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

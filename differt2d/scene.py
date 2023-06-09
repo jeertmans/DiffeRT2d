@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any, List, Sequence, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -7,7 +7,7 @@ import numpy as np
 import rustworkx as rx
 
 from .abc import Interactable, Plottable
-from .geometry import MinPath, Point
+from .geometry import MinPath, Point, Wall
 from .logic import is_true, less, logical_and, logical_not
 
 if TYPE_CHECKING:
@@ -17,14 +17,6 @@ if TYPE_CHECKING:
 else:
     Array = Any
     from chex import dataclass
-
-
-class Object(Interactable, Plottable):
-    """
-    Abstract class for plottable and interactable objects.
-    """
-
-    pass
 
 
 @partial(jax.jit, inline=True)
@@ -78,20 +70,72 @@ class Scene(Plottable):
     """
     The receiving node.
     """
-    objects: List[Object]
+    objects: Sequence[Union[Interactable, Plottable]]
     """
     The list of objects in the scene.
     """
+
+    @classmethod
+    def basic_scene(cls) -> "Scene":
+        """
+        Instantiates a basic scene with a main room,
+        and a second inner room in the lower left corner,
+        with a small entrance.
+
+        :return: The scene.
+        :rtype: Scene
+
+        :EXAMPLES:
+
+        >>> from differt2d.scene import Scene
+        >>>
+        >>> scene = Scene.basic_scene()
+        >>> scene.bounding_box()
+        Array([[0., 0.],
+               [1., 1.]], dtype=float32)
+        >>> len(scene.objects)
+        7
+        >>> scene.tx
+        Point(point=Array([0.1, 0.1], dtype=float32))
+
+        .. plot::
+
+            import matplotlib.pyplot as plt
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.basic_scene()
+            scene.plot(ax)
+            plt.show()
+        """
+        tx = Point(point=jnp.array([0.1, 0.1]))
+        rx = Point(point=jnp.array([0.2, 0.2]))
+
+        walls = [
+            # Outer walls
+            Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
+            Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
+            Wall(points=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
+            Wall(points=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
+            # Small room
+            Wall(points=jnp.array([[0.4, 0.0], [0.4, 0.4]])),
+            Wall(points=jnp.array([[0.4, 0.4], [0.3, 0.4]])),
+            Wall(points=jnp.array([[0.1, 0.4], [0.0, 0.4]])),
+        ]
+
+        return Scene(tx=tx, rx=rx, objects=walls)
 
     def plot(self, ax, *args, **kwargs) -> List[Any]:
         return [
             self.tx.plot(ax, *args, **kwargs),
             self.rx.plot(ax, *args, **kwargs),
-        ] + [obj.plot(ax, *args, **kwargs) for obj in self.objects]
+        ] + [
+            obj.plot(ax, *args, **kwargs) for obj in self.objects  # type: ignore[union-attr]
+        ]
 
     def bounding_box(self) -> Array:
         bounding_boxes_list = [self.tx.bounding_box(), self.rx.bounding_box()] + [
-            obj.bounding_box() for obj in self.objects
+            obj.bounding_box() for obj in self.objects  # type: ignore[union-attr]
         ]
         bounding_boxes = jnp.dstack(bounding_boxes_list)
 
@@ -109,7 +153,7 @@ class Scene(Plottable):
         :param n: The number of sample along one axis.
         :type n: int
         :return: A tuple of (X, Y) coordinates.
-        :rtype: ((n, n), (n, n)), Tuple[Array, Array]
+        :rtype: ((n, n), (n, n)), typing.Tuple[jax.Array, jax.Array]
         """
         bounding_box = self.bounding_box()
         x = jnp.linspace(bounding_box[0, 0], bounding_box[1, 0], n)
@@ -128,7 +172,7 @@ class Scene(Plottable):
             The maximum order of the path, i.e., the number of interactions.
         :type order: int
         :return: The list of list of indices.
-        :rtype: List[list[int]]
+        :rtype: typing.List[typing.List[int]]
         """
         n = len(self.objects)
         matrix = np.ones((n + 2, n + 2))
@@ -149,7 +193,7 @@ class Scene(Plottable):
         :param tol: The threshold tolerance for a path loss to be accepted.
         :type tol: float
         :return: The list of paths.
-        :rtype: List[MinPath]
+        :rtype: typing.List[MinPath]
         """
         paths = []
 
@@ -183,7 +227,7 @@ class Scene(Plottable):
         :param tol: The threshold tolerance for a path loss to be accepted.
         :type tol: float
         :return: The list of paths.
-        :rtype: List[MinPath]
+        :rtype: typing.List[MinPath]
         """
         path_candidates = self.all_path_candidates(order=order)
 
@@ -192,7 +236,7 @@ class Scene(Plottable):
         )
 
     def accumulate_on_grid(
-        self, function=power, order: int = 1, tol: float = 1e-4
+        self, X, Y, function=power, order: int = 1, tol: float = 1e-4
     ) -> Array:
         """
         Returns all valid paths from :attr:`tx` to :attr:`rx`,
@@ -205,11 +249,11 @@ class Scene(Plottable):
         :param tol: The threshold tolerance for a path loss to be accepted.
         :type tol: float
         :return: The list of paths.
-        :rtype: List[MinPath]
+        :rtype: typing.List[MinPath]
         """
         path_candidates = self.all_path_candidates(order=order)
 
-        grid = jnp.dstack(self.grid())
+        grid = jnp.dstack((X, Y))
 
         vacc = jax.vmap(
             jax.vmap(_accumulate_at_location, in_axes=(None, None, 0, None, None)),
