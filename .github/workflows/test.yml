@@ -18,8 +18,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
     - name: Install Poetry
       run: pipx install poetry
+
     - name: Install Python
       uses: actions/setup-python@v4
       with:
@@ -39,8 +41,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
     - name: Install Poetry
       run: pipx install poetry
+
     - name: Install Python
       uses: actions/setup-python@v4
       with:
@@ -54,24 +58,3 @@ jobs:
     - name: Run ByExample
       run: |
         find -iname '*.py' | xargs poetry run byexample -l python
-
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Install Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        cache: poetry
-
-    - name: Install Differt2D
-      run: |
-        poetry install --with docs,test
-
-    - name: Build docs
-      run: |
-        cd docs && poetry run make html
