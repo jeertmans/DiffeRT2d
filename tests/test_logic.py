@@ -1,14 +1,12 @@
 import chex
 import jax
 import jax.numpy as jnp
-
 from jax import disable_jit
 
 from differt2d.logic import *
 
 
 def test_enable_approx():
-
     @jax.jit
     def approx_enabled():
         return jax.config.jax_enable_approx
@@ -56,4 +54,3 @@ def test_enable_approx():
         got = is_true(False)
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-

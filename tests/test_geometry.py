@@ -2,7 +2,6 @@ import chex
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import pytest
-
 from jax import disable_jit
 
 from differt2d.geometry import Point, Ray, Wall

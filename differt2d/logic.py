@@ -10,6 +10,7 @@ when :code:`approx` is set to :code:`False`.
 """
 
 __all__ = [
+    "disable_approx",
     "enable_approx",
     "greater",
     "greater_equal",
@@ -30,11 +31,26 @@ from typing import TYPE_CHECKING, Any, Optional
 import jax
 import jax.numpy as jnp
 
+if TYPE_CHECKING:
+    from jax import Array
+else:
+    Array = Any
+
 _enable_approx = jax.config.define_bool_state(
     name="jax_enable_approx",
     default=True,
     help=("Disable approximation and just TODO."),
 )
+
+jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
+
+
+@partial(jax.jit, inline=True)
+def get_approx(approx: Optional[bool]) -> bool:
+    if approx is None:
+        return jax.config.jax_enable_approx  # type: ignore[attr-defined]
+
+    return approx
 
 
 @contextmanager
@@ -54,12 +70,30 @@ def enable_approx(enable: bool = True):
     4. or set, for specific logic functions only, the keyword argument
        ``approx`` to ``False``.
 
+    :Examples:
 
     >>> from differt2d.logic import enable_approx, greater
-    >>> 
+    >>>
     >>> with enable_approx(False):
     ...     print(greater(20.0, 5.0))
     True
+    >>>
+
+    You can also enable approximation with this:
+
+    >>> from differt2d.logic import enable_approx, greater
+    >>>
+    >>> with enable_approx(True):
+    ...     print(greater(20.0, 5.0))
+    1.0
+
+    Calling without args defaults to True:
+
+    >>> from differt2d.logic import enable_approx, greater
+    >>>
+    >>> with enable_approx():
+    ...     print(greater(20.0, 5.0))
+    1.0
 
     .. warning::
 
@@ -89,27 +123,27 @@ def enable_approx(enable: bool = True):
 
         To avoid this issue, you can either disable jit with
         :py:func:`jax.disable_jit` or use the ``approx`` parameter manually.
-
-            
     """
     with _enable_approx(enable):
         yield
 
 
-if TYPE_CHECKING:
-    from jax import Array
-else:
-    Array = Any
+@contextmanager
+def disable_approx(disable: bool = True):
+    """
+    Context manager for disable or enabling approximation of true/false values
+    with continuous numbers from 0 (false) to 1 (true).
 
-jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
+    This function is an alias to ``enable_approx(not disable)``.
+    For more details, refer to :py:func:`enable_approx`.
 
+    .. note::
 
-@partial(jax.jit, inline=True)
-def get_approx(approx: Optional[bool]) -> bool:
-    if approx is None:
-        return jax.config.jax_enable_approx
-
-    return approx
+        Contrary to ``enable_approx``, there is no ``JAX_DISABLE_APPROX``
+        environ variable, nor ``jax.config.jax_disable_approx`` config variable.
+    """
+    with _enable_approx(not disable):
+        yield
 
 
 @partial(jax.jit, inline=True)
