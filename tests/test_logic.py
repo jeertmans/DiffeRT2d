@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 from jax import disable_jit
 
-from differt2d.logic import *
+from differt2d.logic import enable_approx, is_true
 
 
 def test_enable_approx():

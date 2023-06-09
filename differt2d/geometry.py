@@ -5,7 +5,6 @@ Geometrical objects.
 from functools import partial
 from typing import TYPE_CHECKING, Any, List
 
-import chex
 import jax
 import jax.numpy as jnp
 import optax
@@ -15,9 +14,12 @@ from .abc import Interactable, Plottable
 from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
 
 if TYPE_CHECKING:
+    from dataclasses import dataclass
+
     from jax import Array
 else:
     Array = Any
+    from chex import dataclass
 
 
 @jit
@@ -35,7 +37,7 @@ def segments_intersect(P1, P2, P3, P4):
     return logical_and(a, b)
 
 
-@chex.dataclass
+@dataclass
 class Ray(Plottable):
     """
     A ray object with origin and destination points.
@@ -66,7 +68,7 @@ class Ray(Plottable):
         )
 
 
-@chex.dataclass
+@dataclass
 class Point(Plottable):
     """
     A point object defined by its coordinates.
@@ -89,7 +91,7 @@ class Point(Plottable):
         return jnp.row_stack([self.point, self.point])
 
 
-@chex.dataclass
+@dataclass
 class Wall(Ray, Interactable):
     """
     A wall object defined by its corners.
@@ -138,7 +140,7 @@ class Wall(Ray, Interactable):
         return jnp.dot(i, i)
 
 
-@chex.dataclass
+@dataclass
 class RIS(Wall):
     """
     A very basic Reflective Intelligent Surface (RIS) object.
@@ -165,7 +167,7 @@ class RIS(Wall):
         super().plot(ax, *args, **kwargs)
 
 
-@chex.dataclass
+@dataclass
 class Path(Plottable):
     """
     A path object with at least two points.
@@ -219,7 +221,7 @@ def parametric_to_cartesian_from_slice(obj, parametric_coords, start, size):
     return obj.parametric_to_cartesian(parametric_coords)
 
 
-@chex.dataclass
+@dataclass
 class MinPath(Path):
     """
     A Path object that was obtain with the Min. Path Tracing method.
