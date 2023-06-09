@@ -32,3 +32,8 @@ repos:
   hooks:
   - id: mypy
     additional_dependencies: [types-requests, types-setuptools, data-science-types]
+- repo: https://github.com/byexamples/byexample
+  rev: 10.5.6
+  hooks:
+  - id: byexample
+    args: [-l, python]
