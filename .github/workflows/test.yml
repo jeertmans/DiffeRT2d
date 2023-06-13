@@ -4,9 +4,6 @@ on:
 
 name: Test Python code
 
-env:
-  JAX_PLATFORM_NAME: cpu
-
 jobs:
   pytest:
     strategy:
