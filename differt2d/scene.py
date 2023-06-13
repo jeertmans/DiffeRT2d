@@ -26,6 +26,13 @@ def power(path, path_candidate, objects):
     return 1 / (1.0 + l2)
 
 
+@partial(jax.jit, inline=True)
+def los_exists(path, path_candidate, objects):
+    l1 = path.length()
+    l2 = l1 * l1
+    return 1 / (1.0 + l2)
+
+
 # @partial(jax.jit, static_argnames=("objects", "function"))
 def accumulate_at_location(
     tx: Point, objects, rx: Point, path_candidates, function
@@ -39,7 +46,7 @@ def accumulate_at_location(
         path = MinPath.from_tx_objects_rx(tx, interacting_objects, rx)
 
         valid = path.on_objects(interacting_objects)
-        valid = logical_and(valid, logical_not(path.intersects_with_objects(objects)))
+        valid = logical_and(valid, logical_not(path.intersects_with_objects(objects, path_candidate)))
         valid = logical_and(valid, less(path.loss, tol))
 
         acc += valid * function(path, path_candidate, interacting_objects)
@@ -109,7 +116,7 @@ class Scene(Plottable):
             plt.show()
         """
         tx = Point(point=jnp.array([0.1, 0.1]))
-        rx = Point(point=jnp.array([0.2, 0.2]))
+        rx = Point(point=jnp.array([0.415, 0.2]))
 
         walls = [
             # Outer walls
@@ -127,8 +134,8 @@ class Scene(Plottable):
 
     def plot(self, ax, *args, **kwargs) -> List[Any]:
         return [
-            self.tx.plot(ax, *args, **kwargs),
-            self.rx.plot(ax, *args, **kwargs),
+            self.tx.plot(ax, *args, color="red", **kwargs),
+            self.rx.plot(ax, *args, color="green", **kwargs),
         ] + [
             obj.plot(ax, *args, **kwargs) for obj in self.objects  # type: ignore[union-attr]
         ]
@@ -204,9 +211,12 @@ class Scene(Plottable):
 
             valid = path.on_objects(interacting_objects)
             valid = logical_and(
-                valid, logical_not(path.intersects_with_objects(self.objects))
+                valid,
+                logical_not(path.intersects_with_objects(self.objects, path_candidate)),
             )
             valid = logical_and(valid, less(path.loss, tol))
+
+            jax.debug.print("Path is valid: {v}, path={p}", v=valid, p=path)
 
             if is_true(valid):
                 paths.append(path)

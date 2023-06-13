@@ -173,6 +173,12 @@ class TestWall:
             got = wall.intersects_cartesian(jnp.array([[0.0, 1.0], [2.0, 7.0]]))
             assert is_false(got)
             chex.assert_shape(got, ())
+            got = wall.intersects_cartesian(jnp.array([[0.0, 1.0], [0.0, 0.0]]))
+            if approx:
+                assert got > 0, "Should intersect even on the extremity"
+            else:
+                assert is_true(got), "Should intersect even on the extremity"
+            chex.assert_shape(got, ())
 
     def test_evaluate_cartesian(self):
         wall = Wall(points=jnp.array([[0.0, 0.0], [4.0, 0.0]]))

@@ -1,6 +1,12 @@
 """
 Abtract classes to be implemented by the user.
 """
+
+__all__ = [
+    "Interactable",
+    "Plottable",
+]
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, List, Union
 

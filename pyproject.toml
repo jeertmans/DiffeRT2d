@@ -71,7 +71,10 @@ pytest = "^7.3.1"
 pytest-env = "^0.8.1"
 
 [tool.pytest.ini_options]
-env = ["JAX_PLATFORM_NAME=cpu"]
+env = [
+  "JAX_DEBUG_NANS=True",
+  "JAX_PLATFORM_NAME=cpu"
+]
 
 [tool.ruff]
 ignore = [

@@ -39,7 +39,7 @@ else:
 _enable_approx = jax.config.define_bool_state(
     name="jax_enable_approx",
     default=True,
-    help=("Disable approximation and just TODO."),
+    help=("Enable approximation using sigmoids."),
 )
 
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
@@ -163,7 +163,7 @@ def disable_approx(disable: bool = True):
 
 
 @partial(jax.jit, inline=True)
-def sigmoid(x: Array, lambda_: float = 100.0, **kwargs) -> Array:
+def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
     """
     Element-wise function for approximating a discrete transition between 0 and 1,
     with a smoothed transition.
@@ -198,7 +198,7 @@ def sigmoid(x: Array, lambda_: float = 100.0, **kwargs) -> Array:
 
 
 @jit_approx
-def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+def logical_or(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical OR operation betwen :code:`x` and :code:`y`.
     """
@@ -207,43 +207,51 @@ def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
 
 
 @jit_approx
-def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+def logical_and(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
     approx = get_approx(approx)
     return jnp.multiply(x, y) if approx else jnp.logical_and(x, y)
 
 
 @jit_approx
-def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
+def logical_not(x: Array, *, approx: Optional[bool] = None) -> Array:
     approx = get_approx(approx)
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
 
 @jit_approx
-def greater(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+def greater(
+    x: Array,
+    y: Array,
+    *,
+    approx: Optional[bool] = None,
+    **kwargs,
+) -> Array:
     approx = get_approx(approx)
-    return sigmoid(jnp.subtract(x, y)) if approx else jnp.greater(x, y)
+    return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
 
 @jit_approx
-def greater_equal(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+def greater_equal(
+    x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs
+) -> Array:
     approx = get_approx(approx)
-    return sigmoid(jnp.subtract(x, y)) if approx else jnp.greater_equal(x, y)
+    return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
 
 
 @jit_approx
-def less(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
     approx = get_approx(approx)
-    return sigmoid(jnp.subtract(y, x)) if approx else jnp.less(x, y)
+    return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
 
 @jit_approx
-def less_equal(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
     approx = get_approx(approx)
-    return sigmoid(jnp.subtract(y, x)) if approx else jnp.less_equal(x, y)
+    return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
 
 @jit_approx
-def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
+def is_true(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be true.
 
@@ -265,7 +273,7 @@ def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
 
 
 @jit_approx
-def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
+def is_false(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be false.
 

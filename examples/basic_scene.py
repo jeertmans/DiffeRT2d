@@ -1,29 +1,24 @@
-# type: ignore
-import jax
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 
-from differt2d.geometry import Point, Wall
 from differt2d.scene import Scene
 
-jax.config.update("jax_enable_approx", False)
 
-ax = plt.gca()
+def main():
+    ax = plt.gca()
+    scene = Scene.basic_scene()
+    scene.plot(ax)
 
-scene = Scene.basic_scene()
+    for path in scene.all_paths():
+        path.plot(ax)
 
-scene.plot(ax)
+    X, Y = scene.grid(n=100)
 
-for path in scene.all_paths():
-    path.plot(ax)
+    Z = scene.accumulate_on_grid(X, Y)
 
-X, Y = scene.grid(n=10)
-Z = scene.accumulate_on_grid(X, Y)
+    plt.pcolormesh(X, Y, Z)
 
-print(Z)
+    plt.show()
 
-plt.pcolormesh(X, Y, Z)
 
-# plt.axis("equal")
-
-plt.show()
+if __name__ == "__main__":
+    main()

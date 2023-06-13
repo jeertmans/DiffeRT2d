@@ -23,7 +23,22 @@ else:
 
 
 @jit
-def segments_intersect(P1, P2, P3, P4):
+def segments_intersect_including_extremities(P1, P2, P3, P4):
+    A = P2 - P1
+    B = P3 - P4
+    C = P1 - P3
+    a = B[1] * C[0] - B[0] * C[1]
+    b = A[0] * C[1] - A[1] * C[0]
+    d = A[1] * B[0] - A[0] * B[1]
+    a = a / d
+    b = b / d
+    a = logical_and(greater_equal(a, 0.0), less_equal(a, 1.0))
+    b = logical_and(greater_equal(b, 0.0), less_equal(b, 1.0))
+    return logical_and(a, b)
+
+
+@jit
+def segments_intersect_excluding_extremities(P1, P2, P3, P4):
     A = P2 - P1
     B = P3 - P4
     C = P1 - P3
@@ -125,17 +140,32 @@ class Wall(Ray, Interactable):
         return logical_and(ge, le)
 
     @jit
-    def intersects_cartesian(self, ray: Array) -> Array:
-        return segments_intersect(self.origin(), self.dest(), ray[0, :], ray[1, :])
+    def intersects_cartesian(
+        self, ray: Array, patch: float = 0.05, include_extremities: bool = True
+    ) -> Array:
+        if include_extremities:
+            return segments_intersect_including_extremities(
+                self.origin() - patch * self.t(),
+                self.dest() + patch * self.t(),
+                ray[0, :],
+                ray[1, :],
+            )
+        else:
+            return segments_intersect_excluding_extremities(
+                self.origin() - patch * self.t(),
+                self.dest() + patch * self.t(),
+                ray[0, :],
+                ray[1, :],
+            )
 
     @jit
     def evaluate_cartesian(self, ray_path: Array) -> Array:
         v1 = ray_path[1, :] - ray_path[0, :]
         v2 = ray_path[2, :] - ray_path[1, :]
         n = self.normal()
-        i = jnp.linalg.norm(v1) * v2 - (
+        i = v2 / jnp.linalg.norm(v2) - (
             v1 - 2 * (jnp.dot(v1, n) * n)
-        ) * jnp.linalg.norm(v2)
+        ) / jnp.linalg.norm(v1)
 
         return jnp.dot(i, i)
 
@@ -195,12 +225,24 @@ class Path(Plottable):
         return contains
 
     @jit
-    def intersects_with_objects(self, objects: List[Interactable]) -> Array:
+    def intersects_with_objects(
+        self, objects: List[Interactable], path_candidate: List[int]
+    ) -> Array:
+        interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
         intersects = jnp.array(False)
-        for obj in objects:
-            for i in range(self.points.shape[0] - 1):
-                ray_path = self.points[i : i + 2, :]
-                intersects = logical_or(intersects, obj.intersects_cartesian(ray_path))
+
+        for i in range(self.points.shape[0] - 1):
+            ray_path = self.points[i : i + 2, :]
+            for obj_index, obj in enumerate(objects):
+                ignore = jnp.logical_or(
+                    obj_index == interacting_object_indices[i + 0],
+                    obj_index == interacting_object_indices[i + 1],
+                )
+                intersects = jnp.where(
+                    ignore,
+                    intersects,
+                    logical_or(intersects, obj.intersects_cartesian(ray_path)),
+                )
 
         return intersects
 
