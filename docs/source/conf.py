@@ -9,11 +9,9 @@
 
 import os
 import sys
-
 from dataclasses import asdict
 
 from sphinxawesome_theme import ThemeOptions
-
 
 project = "DiffeRT2d"
 copyright = "2023, Jérome Eertmans"
