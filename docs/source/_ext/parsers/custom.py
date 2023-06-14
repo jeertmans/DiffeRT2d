@@ -1,8 +1,7 @@
 import re
-
-from docutils.parsers.rst import Parser as RstParser
 from typing import Iterable
 
+from docutils.parsers.rst import Parser as RstParser
 
 REGEX = re.compile(r".*#.*doc\s*:\s*hide")
 
@@ -12,10 +11,9 @@ def remove_lines_with_hide(inputstring):
 
 
 class Parser(RstParser):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
- 
+
     def parse(self, inputstring, document):
         inputstring = remove_lines_with_hide(inputstring)
         print(inputstring)
