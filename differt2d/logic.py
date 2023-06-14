@@ -73,24 +73,23 @@ def enable_approx(enable: bool = True):
     :Examples:
 
     >>> from differt2d.logic import enable_approx, greater
-    >>> from jax import disable_jit  # See warning to know why
-    >>> # Disabling JIT here because examples are tested with the same
-    >>> # Python interpreter.
     >>>
-    >>> with enable_approx(False), disable_jit():
+    >>> import jax; jax.clear_caches()  # doc: hide
+    >>> with enable_approx(False):
     ...     print(greater(20.0, 5.0))
     True
 
     You can also enable approximation with this:
 
-    >>> import jax; jax.clear_caches()
-    >>> with enable_approx(True), disable_jit():
+    >>> import jax; jax.clear_caches()  # doc: hide
+    >>> with enable_approx(True):
     ...     print(greater(20.0, 5.0))
     1.0
 
     Calling without args defaults to True:
 
-    >>> with enable_approx(), disable_jit():
+    >>> import jax; jax.clear_caches()  # doc: hide
+    >>> with enable_approx():
     ...     print(greater(20.0, 5.0))
     1.0
 

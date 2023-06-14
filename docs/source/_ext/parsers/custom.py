@@ -15,5 +15,4 @@ class Parser(RstParser):
 
     def parse(self, inputstring, document):
         inputstring = remove_lines_with_hide(inputstring)
-        print(inputstring)
         return super().parse(inputstring, document)
