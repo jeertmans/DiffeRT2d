@@ -83,6 +83,7 @@ def enable_approx(enable: bool = True):
 
     You can also enable approximation with this:
 
+    >>> import jax; jax.clear_caches()
     >>> with enable_approx(True), disable_jit():
     ...     print(greater(20.0, 5.0))
     1.0
