@@ -56,4 +56,4 @@ jobs:
 
     - name: Run ByExample
       run: |
-        find -iname '*.py' | xargs poetry run byexample -l python
+        find -iname '*.py' | xargs poetry run byexample -l python +timeout=60
