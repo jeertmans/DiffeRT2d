@@ -54,6 +54,12 @@ jobs:
       run: |
         poetry install --with test
 
+    - name: Get files to check
+      uses: jeertmans/filesfinder@v0.4.5
+      id: ff
+      with:
+        args: "differt2d/**.py" "README.md"
+
     - name: Run ByExample
       run: |
-        find -iname '*.py' | xargs poetry run byexample -l python +timeout=60
+        echo "${{ steps.ff.outputs.files }}" | xargs poetry run byexample -l python +timeout=60
