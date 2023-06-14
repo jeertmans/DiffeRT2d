@@ -66,21 +66,21 @@ def enable_approx(enable: bool = True):
 
     >>> from differt2d.logic import enable_approx, greater
     >>>
-    >>> greater.clear_caches()  # doc: hide
+    >>> greater.clear_cache()  # doc: hide
     >>> with enable_approx(False):
     ...     print(greater(20.0, 5.0))
     True
 
     You can also enable approximation with this:
 
-    >>> greater.clear_caches()  # doc: hide
+    >>> greater.clear_cache()  # doc: hide
     >>> with enable_approx(True):
     ...     print(greater(20.0, 5.0))
     1.0
 
     Calling without args defaults to True:
 
-    >>> greater.clear_caches()  # doc: hide
+    >>> greater.clear_cache()  # doc: hide
     >>> with enable_approx():
     ...     print(greater(20.0, 5.0))
     1.0
