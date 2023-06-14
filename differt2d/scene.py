@@ -46,7 +46,9 @@ def accumulate_at_location(
         path = MinPath.from_tx_objects_rx(tx, interacting_objects, rx)
 
         valid = path.on_objects(interacting_objects)
-        valid = logical_and(valid, logical_not(path.intersects_with_objects(objects, path_candidate)))
+        valid = logical_and(
+            valid, logical_not(path.intersects_with_objects(objects, path_candidate))
+        )
         valid = logical_and(valid, less(path.loss, tol))
 
         acc += valid * function(path, path_candidate, interacting_objects)
@@ -112,7 +114,7 @@ class Scene(Plottable):
 
             ax = plt.gca()
             scene = Scene.basic_scene()
-            scene.plot(ax)
+            _ = scene.plot(ax)
             plt.show()
         """
         tx = Point(point=jnp.array([0.1, 0.1]))
