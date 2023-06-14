@@ -35,6 +35,8 @@ jobs:
 
   byexample:
     runs-on: ubuntu-latest
+    env:
+      JAX_PLATFORM_NAME: cpu
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
