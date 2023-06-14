@@ -114,8 +114,8 @@ class Scene(Plottable):
 
             ax = plt.gca()
             scene = Scene.basic_scene()
-            scene.plot(ax);
-            plt.show();
+            _ = scene.plot(ax)
+            plt.show()
         """
         tx = Point(point=jnp.array([0.1, 0.1]))
         rx = Point(point=jnp.array([0.415, 0.2]))
