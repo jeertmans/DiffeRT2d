@@ -31,10 +31,10 @@ extensions = [
     "plot_directive",
 ]
 
-rst_prolog = """
+rst_epilog = """
 .. role:: python(code)
     :language: python
-    :class: highlight
+
 """
 
 autodoc2_packages = [
