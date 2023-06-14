@@ -1,5 +1,4 @@
 import re
-from typing import Iterable
 
 from docutils.parsers.rst import Parser as RstParser
 
