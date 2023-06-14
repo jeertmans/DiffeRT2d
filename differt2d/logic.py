@@ -1,12 +1,22 @@
 """
 A toolbox for logical operations.
 
-When approximation is enabled, a value close to 1 maps to `True`,
-while a value close to 0 maps `False`.
+When approximation is enabled, a value close to 1 maps to :python:`True`,
+while a value close to 0 maps :python:`False`.
 
 Otherwise, functions will call their JAX counterpart. E.g.,
 :func:`logical_or` calls :func:`jax.numpy.logical_or`
-when :code:`approx` is set to :code:`False`.
+when :code:`approx` is set to :python:`False`.
+
+.. note::
+
+    Whenever a function takes an argument named ``approx``, it can take
+    three different values:
+
+    1. :python:`None`: defaults to :py:attr:`jax.config.jax_enable_approx`,
+       see :py:func:`enable_approx` for comments on that;
+    2. :python:`True`: forces to enable approximation;
+    3. or :python:`False`: forces to disable approximation.
 """
 
 __all__ = [
@@ -58,9 +68,10 @@ def enable_approx(enable: bool = True):
     1. use this context manager to disable it (see example below);
     2. set the environ variable ``JAX_ENABLE_APPROX`` to ``0``
        (or any falsy value);
-    3. update the config with ``jax.config.update("jax_enable_approx", False)``;
+    3. update the config with
+       :python:`jax.config.update("jax_enable_approx", False)`;
     4. or set, for specific logic functions only, the keyword argument
-       ``approx`` to ``False``.
+       ``approx`` to :python:`False`.
 
     :Examples:
 
@@ -142,12 +153,12 @@ def disable_approx(disable: bool = True):
     Context manager for disable or enabling approximation of true/false values
     with continuous numbers from 0 (false) to 1 (true).
 
-    This function is an alias to ``enable_approx(not disable)``.
+    This function is an alias to :python:`enable_approx(not disable)`.
     For more details, refer to :py:func:`enable_approx`.
 
     .. note::
 
-        Contrary to ``enable_approx``, there is no ``JAX_DISABLE_APPROX``
+        Contrary to :py:func:`enable_approx`, there is no ``JAX_DISABLE_APPROX``
         environ variable, nor ``jax.config.jax_disable_approx`` config variable.
     """
     with _enable_approx(not disable):
@@ -260,7 +271,7 @@ def is_true(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Arr
     :param x: A truth array.
     :type x: jax.Array
     :param tol: The tolerance on how close it should be to 1.
-        Only used if :code:`approx` is set to :code:`True`.
+        Only used if :code:`approx` is set to :python:`True`.
     :type tol: float
     :param approx: Whether approximation is used or not.
     :type approx: typing.Optional[bool]
@@ -283,7 +294,7 @@ def is_false(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Ar
     :param x: A truth array.
     :type x: jax.Array
     :param tol: The tolerance on how close it should be to 0.
-        Only used if :code:`approx` is set to :code:`True`.
+        Only used if :code:`approx` is set to :python:`True`.
     :type tol: float
     :param approx: Whether approximation is used or not.
     :type approx: typing.Optional[bool]

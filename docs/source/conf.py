@@ -31,6 +31,12 @@ extensions = [
     "plot_directive",
 ]
 
+rst_prolog = """
+.. role:: python(code)
+    :language: python
+    :class: highlight
+"""
+
 autodoc2_packages = [
     "../../differt2d",
 ]
