@@ -58,7 +58,7 @@ jobs:
       uses: jeertmans/filesfinder@v0.4.5
       id: ff
       with:
-        args: 'differt2d/**.py README.md'
+        args: differt2d/**.py README.md
 
     - name: Run ByExample
       run: |
