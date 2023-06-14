@@ -45,14 +45,6 @@ _enable_approx = jax.config.define_bool_state(
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
 
 
-@partial(jax.jit, inline=True)
-def get_approx(approx: Optional[bool]) -> bool:
-    if approx is None:
-        return jax.config.jax_enable_approx  # type: ignore[attr-defined]
-
-    return approx
-
-
 @contextmanager
 def enable_approx(enable: bool = True):
     """
@@ -74,21 +66,21 @@ def enable_approx(enable: bool = True):
 
     >>> from differt2d.logic import enable_approx, greater
     >>>
-    >>> import jax; jax.clear_caches()  # doc: hide
+    >>> greater.clear_caches()  # doc: hide
     >>> with enable_approx(False):
     ...     print(greater(20.0, 5.0))
     True
 
     You can also enable approximation with this:
 
-    >>> import jax; jax.clear_caches()  # doc: hide
+    >>> greater.clear_caches()  # doc: hide
     >>> with enable_approx(True):
     ...     print(greater(20.0, 5.0))
     1.0
 
     Calling without args defaults to True:
 
-    >>> import jax; jax.clear_caches()  # doc: hide
+    >>> greater.clear_caches()  # doc: hide
     >>> with enable_approx():
     ...     print(greater(20.0, 5.0))
     1.0
@@ -202,19 +194,22 @@ def logical_or(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical OR operation betwen :code:`x` and :code:`y`.
     """
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.maximum(x, y) if approx else jnp.logical_or(x, y)
 
 
 @jit_approx
 def logical_and(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.multiply(x, y) if approx else jnp.logical_and(x, y)
 
 
 @jit_approx
 def logical_not(x: Array, *, approx: Optional[bool] = None) -> Array:
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
 
@@ -226,7 +221,8 @@ def greater(
     approx: Optional[bool] = None,
     **kwargs,
 ) -> Array:
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
 
@@ -234,19 +230,22 @@ def greater(
 def greater_equal(
     x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs
 ) -> Array:
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
 
 
 @jit_approx
 def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
 
 @jit_approx
 def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
 
@@ -268,7 +267,8 @@ def is_true(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Arr
     :return: True if the value is considered to be true.
     :rtype: jax.Array
     """
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.greater(x, 1.0 - tol) if approx else jnp.asarray(x)
 
 
@@ -290,5 +290,6 @@ def is_false(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Ar
     :return: True if the value is considered to be false.
     :rtype: jax.Array
     """
-    approx = get_approx(approx)
+    if approx is None:
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.less(x, tol) if approx else jnp.logical_not(x)

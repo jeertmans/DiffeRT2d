@@ -54,3 +54,43 @@ def test_enable_approx():
         got = is_true(False)
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+
+def test_enable_approx_clear_cache():
+    is_true.clear_cache()
+    with enable_approx(True):
+        expected = jnp.array(True)
+        got = is_true(1.0)
+        chex.assert_trees_all_equal(expected, got)
+        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+    is_true.clear_cache()
+    with enable_approx(False):
+        expected = jnp.array(1.0)
+        got = is_true(1.0)
+        chex.assert_trees_all_equal(expected, got)
+        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+    is_true.clear_cache()
+    with enable_approx(False):
+        expected = jnp.array(True)
+        got = is_true(True)
+        chex.assert_trees_all_equal(expected, got)
+        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+
+def test_enable_approx_with_keyword():
+    expected = jnp.array(True)
+    got = is_true(1.0, approx=True)
+    chex.assert_trees_all_equal(expected, got)
+    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+    expected = jnp.array(1.0)
+    got = is_true(1.0, approx=False)
+    chex.assert_trees_all_equal(expected, got)
+    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+    expected = jnp.array(True)
+    got = is_true(True, approx=False)
+    chex.assert_trees_all_equal(expected, got)
+    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)

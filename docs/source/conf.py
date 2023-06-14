@@ -41,8 +41,6 @@ autodoc2_sort_names = True
 
 autodoc2_module_all_regexes = ["differt2d.logic"]
 
-# autodoc2_render_plugin = 'renderer.MyRenderer'
-
 autodoc2_docstring_parser_regexes = [(".*", "parsers.custom")]
 
 myst_enable_extensions = [
