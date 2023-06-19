@@ -5,7 +5,7 @@ When approximation is enabled, a value close to 1 maps to :python:`True`,
 while a value close to 0 maps :python:`False`.
 
 Otherwise, functions will call their JAX counterpart. E.g.,
-:func:`logical_or` calls :func:`jax.numpy.logical_or`
+:py:func:`logical_or` calls :py:func:`jax.numpy.logical_or`
 when :code:`approx` is set to :python:`False`.
 
 .. note::
@@ -18,6 +18,8 @@ when :code:`approx` is set to :python:`False`.
     2. :python:`True`: forces to enable approximation;
     3. or :python:`False`: forces to disable approximation.
 """
+
+from __future__ import annotations
 
 __all__ = [
     "disable_approx",
@@ -36,15 +38,13 @@ __all__ = [
 
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import jax
 import jax.numpy as jnp
 
 if TYPE_CHECKING:
     from jax import Array
-else:
-    Array = Any
 
 _enable_approx = jax.config.define_bool_state(
     name="jax_enable_approx",
@@ -73,25 +73,33 @@ def enable_approx(enable: bool = True):
     4. or set, for specific logic functions only, the keyword argument
        ``approx`` to :python:`False`.
 
+    :param enable: Whether to enable or not approximation.
+
     :Examples:
 
     >>> from differt2d.logic import enable_approx, greater
     >>>
-    >>> greater.clear_cache()  # doc: hide
+    >>> # doc: hide
+    >>> greater.clear_cache()
+    >>> # doc: hide
     >>> with enable_approx(False):
     ...     print(greater(20.0, 5.0))
     True
 
     You can also enable approximation with this:
 
-    >>> greater.clear_cache()  # doc: hide
+    >>> # doc: hide
+    >>> greater.clear_cache()
+    >>> # doc: hide
     >>> with enable_approx(True):
     ...     print(greater(20.0, 5.0))
     1.0
 
     Calling without args defaults to True:
 
-    >>> greater.clear_cache()  # doc: hide
+    >>> # doc: hide
+    >>> greater.clear_cache()
+    >>> # doc: hide
     >>> with enable_approx():
     ...     print(greater(20.0, 5.0))
     1.0
@@ -156,6 +164,8 @@ def disable_approx(disable: bool = True):
     This function is an alias to :python:`enable_approx(not disable)`.
     For more details, refer to :py:func:`enable_approx`.
 
+    :param disable: Whether to disable or not approximation.
+
     .. note::
 
         Contrary to :py:func:`enable_approx`, there is no ``JAX_DISABLE_APPROX``
@@ -189,11 +199,8 @@ def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
         :sothread:`questions/68290850/jax-autograd-of-a-sigmoid-always-returns-nan`.
 
     :param x: The input array.
-    :type x: jax.Array
     :param `lambda_`: The slope parameter.
-    :type `lambda_`: float
     :return: The corresponding sigmoid values.
-    :rtype: jax.Array
     """
     # https://stackoverflow.com/questions/68290850/jax-autograd-of-a-sigmoid-always-returns-nan
     # return 0.5 * (jnp.tanh(x * lambda_ / 2) + 1)
@@ -269,14 +276,10 @@ def is_true(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Arr
     this function checks whether the value is close to 1.
 
     :param x: A truth array.
-    :type x: jax.Array
     :param tol: The tolerance on how close it should be to 1.
         Only used if :code:`approx` is set to :python:`True`.
-    :type tol: float
     :param approx: Whether approximation is used or not.
-    :type approx: typing.Optional[bool]
     :return: True if the value is considered to be true.
-    :rtype: jax.Array
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
@@ -292,14 +295,10 @@ def is_false(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Ar
     this function checks whether the value is close to 0.
 
     :param x: A truth array.
-    :type x: jax.Array
     :param tol: The tolerance on how close it should be to 0.
         Only used if :code:`approx` is set to :python:`True`.
-    :type tol: float
     :param approx: Whether approximation is used or not.
-    :type approx: typing.Optional[bool]
     :return: True if the value is considered to be false.
-    :rtype: jax.Array
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]

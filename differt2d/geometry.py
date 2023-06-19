@@ -2,8 +2,10 @@
 Geometrical objects.
 """
 
+from __future__ import annotations
+
 from functools import partial
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, List
 
 import jax
 import jax.numpy as jnp
@@ -18,7 +20,6 @@ if TYPE_CHECKING:
 
     from jax import Array
 else:
-    Array = Any
     from chex import dataclass
 
 

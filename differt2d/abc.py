@@ -2,6 +2,8 @@
 Abtract classes to be implemented by the user.
 """
 
+from __future__ import annotations
+
 __all__ = [
     "Interactable",
     "Plottable",
@@ -14,10 +16,6 @@ if TYPE_CHECKING:
     from jax import Array
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
-else:
-    Array = Any
-    Artist = Any
-    Axes = Any
 
 
 class Plottable(ABC):
@@ -31,13 +29,9 @@ class Plottable(ABC):
         Plot this object on the given axes and returns the results.
 
         :param ax: The axes to plot on.
-        :type ax: matplotlib.axes.Axes
         :param args: Parameters to be passed to the plot function.
-        :type args: typing.Any
         :param kwargs: Keyword parameters to be passed to the plot function.
-        :type kwargs: typing.Any
         :return: The artist(s).
-        :rtype: typing.Union[matplotlib.artist.Artist, typing.List[matplotlib.artist.Artist]]
         """
         pass
 
@@ -46,10 +40,9 @@ class Plottable(ABC):
         """
         Returns the bounding box of this object.
 
-        This is: [[min_x, min_y], [max_x, max_y]]
+        This is: :python:`[[min_x, min_y], [max_x, max_y]]`.
 
-        :return: The min. and max. coordinates of this object.
-        :rtype: (2, 2), jax.Array
+        :return: The min. and max. coordinates of this object, (2, 2).
         """
         pass
 
@@ -69,7 +62,6 @@ class Interactable(ABC):
         Typically, this equals to one for 2D surfaces.
 
         :return: The number of parameters.
-        :rtype: int
         """
         pass
 
@@ -78,10 +70,8 @@ class Interactable(ABC):
         """
         Converts parametric coordinates to cartesian coordinates.
 
-        :param param_coords: Parametric coordinates.
-        :type param_coords: (:meth:`parameters_count()`), jax.Array
-        :return: Cartesian coordinates.
-        :rtype: (2,), jax.Array
+        :param param_coords: Parametric coordinates, (:meth:`parameters_count()`,).
+        :return: Cartesian coordinates, (2,).
         """
         pass
 
@@ -90,10 +80,8 @@ class Interactable(ABC):
         """
         Converts cartesian coordinates to parametric coordinates.
 
-        :param carte_coords: Cartesian coordinates.
-        :type carte_coords: (2,), jax.Array
-        :return: Parametric coordinates.
-        :rtype: (:meth:`parameters_count()`,), jax.Array
+        :param carte_coords: Cartesian coordinates, (2,).
+        :return: Parametric coordinates, (:meth:`parameters_count()`,).
         """
         pass
 
@@ -102,10 +90,8 @@ class Interactable(ABC):
         """
         Checks if the given coordinates are within the object.
 
-        :param param_coords: Parametric coordinates.
-        :type param_coords: (:meth:`parameters_count()`,), jax.Array
-        :return: True if object contains these coordinates.
-        :rtype: (), jax.Array
+        :param param_coords: Parametric coordinates, (:meth:`parameters_count()`,).
+        :return: True if object contains these coordinates, (),
         """
         pass
 
@@ -114,10 +100,8 @@ class Interactable(ABC):
         """
         Ray intersection test on the current object.
 
-        :param ray: Ray coordinates.
-        :type ray: (2, 2), jax.Array
-        :return: True if it intersects.
-        :rtype: (), jax.Array
+        :param ray: Ray coordinates, (2, 2).
+        :return: True if it intersects, ().
         """
         pass
 
@@ -135,9 +119,7 @@ class Interactable(ABC):
 
         The returned value cannot be negative.
 
-        :param ray_path: Ray path coordinates.
-        :type ray_path: (3, 2), jax.Array
-        :return: Interaction score.
-        :rtype: (), jax.Array
+        :param ray_path: Ray path coordinates, (3, 2).
+        :return: Interaction score, ().
         """
         pass

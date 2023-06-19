@@ -39,11 +39,11 @@ version = "0.1.0"
 chex = "^0.1.7"
 jax = "^0.4.9"
 matplotlib = "^3.7.1"
-numpy = "^1.24.3"
 optax = "^0.1.5"
 pyside6 = {version = "^6.5.0", optional = true}
 python = "<3.12,>=3.8"
 rustworkx = "^0.12.1"
+numpy = "^1.24"
 
 [tool.poetry.extras]
 gui = ["pyside6"]
@@ -57,13 +57,13 @@ pre-commit = "^3.0.2"
 ruff = "^0.0.219"
 
 [tool.poetry.group.docs.dependencies]
-furo = "^2022.9.29"
-myst-parser = "^0.18.1"
-sphinx = "^5.3.0"
-sphinx-autodoc2 = "^0.4.2"
 sphinx-click = "^4.4.0"
 sphinx-copybutton = "^0.5.1"
 sphinxext-opengraph = "^0.7.5"
+sphinx = ">7"
+sphinx-autodoc-typehints = "^1.23.2"
+myst-parser = ">=2"
+furo = "^2023.5.20"
 
 [tool.poetry.group.test.dependencies]
 byexample = "^10.5.6"

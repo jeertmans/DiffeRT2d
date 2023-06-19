@@ -8,7 +8,7 @@ og:description: Manim Slides makes creating slides with Manim super easy!
 ```{toctree}
 :titlesonly:
 
-apidocs/index
+reference/index
 ```
 
 ```{toctree}

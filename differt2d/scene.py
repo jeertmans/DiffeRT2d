@@ -1,3 +1,4 @@
+from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, List, Sequence, Tuple, Union
 
@@ -15,7 +16,6 @@ if TYPE_CHECKING:
 
     from jax import Array
 else:
-    Array = Any
     from chex import dataclass
 
 
