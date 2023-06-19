@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -135,12 +135,40 @@ class Scene(Plottable):
 
         return Scene(tx=tx, rx=rx, objects=walls)
 
-    def plot(self, ax, *args, **kwargs) -> List[Any]:
+    def plot(
+        self,
+        ax,
+        *args: Any,
+        tx_args: Sequence = (),
+        tx_kwargs: Dict[str, Any] = {},
+        objects_args: Sequence = (),
+        objects_kwargs: Dict[str, Any] = {},
+        rx_args: Sequence = (),
+        rx_kwargs: Dict[str, Any] = {},
+        **kwargs: Any,
+    ) -> List[Any]:
+        """
+        :param tx_args:
+            Parameters to be passed to TX's plot function.
+        :param tx_kwargs:
+            Keyword parameters to be passed to TX's plot function.
+        :param objects_args:
+            Parameters to be passed to the objects' plot function.
+        :param objects_kwargs:
+            Keyword parameters to be passed to the objects' plot function.
+        :param rx_args:
+            Parameters to be passed to RX's plot function.
+        :param rx_kwargs:
+            Keyword parameters to be passed to RX's plot function.
+        """
+        tx_kwargs.setdefault("color", "blue")
+        rx_kwargs.setdefault("color", "green")
+
         return [
-            self.tx.plot(ax, *args, color="red", **kwargs),
-            self.rx.plot(ax, *args, color="green", **kwargs),
+            self.tx.plot(ax, *tx_args, *args, **tx_kwargs, **kwargs),
+            self.rx.plot(ax, *rx_args, *args, **rx_kwargs, **kwargs),
         ] + [
-            obj.plot(ax, *args, **kwargs) for obj in self.objects  # type: ignore[union-attr]
+            obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs) for obj in self.objects  # type: ignore[union-attr]
         ]
 
     def bounding_box(self) -> Array:

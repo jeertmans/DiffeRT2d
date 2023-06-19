@@ -115,13 +115,20 @@ class Wall(Ray, Interactable):
 
     @jit
     def normal(self) -> Array:
+        """
+        Returns the normal to the current wall,
+        expressed in cartesian coordinates and
+        normalized.
+
+        :return: The normal, (2,)
+        """
         t = self.t()
         n = t.at[0].set(t[1])
         n = n.at[1].set(-t[0])
         return n / jnp.linalg.norm(n)
 
     @staticmethod
-    @partial(jit, inline=True)
+    # @partial(jit, inline=True)
     def parameters_count() -> int:
         return 1
 
@@ -211,6 +218,11 @@ class Path(Plottable):
 
     @jit
     def length(self) -> Array:
+        """
+        Returns the length of this path.
+
+        :return: The path length, ().
+        """
         vectors = jnp.diff(self.points, axis=0)
         lengths = jnp.linalg.norm(vectors, axis=1)
 
@@ -289,18 +301,12 @@ class MinPath(Path):
         Returns a path that minimizes the sum of interactions.
 
         :param tx: The emitting node.
-        :type tx: Point
         :param objects:
             The list of objects to interact with (order is important).
-        :type objects: typing.List[Interactable]
         :param rx: The receiving node.
-        :type rx: Point
         :param seed: The random seed used to generate the start iteration.
-        :type seed: int
         :param steps: The number of iterations performed by the minimizer.
-        :type steps: int
         :return: The resulting path of the MPT method.
-        :rtype: MinPath
         """
         n = len(objects)
         n_unknowns = sum([obj.parameters_count() for obj in objects])
