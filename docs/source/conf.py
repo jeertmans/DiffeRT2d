@@ -101,4 +101,7 @@ ogp_use_first_image = True
 
 
 def setup(app):
-    app.connect("autodoc-process-docstring", between(r".*#.*doc\s*:\s*hide", keepempty=True, exclude=True))
+    app.connect(
+        "autodoc-process-docstring",
+        between(r".*#.*doc\s*:\s*hide", keepempty=True, exclude=True),
+    )
