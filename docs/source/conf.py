@@ -7,8 +7,6 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import typing
-
 from sphinx.ext.autodoc import between
 
 project = "DiffeRT2d"
