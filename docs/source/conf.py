@@ -7,8 +7,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import os
-import sys
+from sphinx.ext.autodoc import between
 
 project = "DiffeRT2d"
 copyright = "2023, Jérome Eertmans"
@@ -17,37 +16,31 @@ author = "Jérome Eertmans"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-sys.path.append(os.path.abspath("./_ext"))
-
 extensions = [
-    "autodoc2",
+    # Built-in
+    "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
-    "sphinxext.opengraph",
+    # Additional
     "myst_parser",
+    "matplotlib.sphinxext.plot_directive",
+    "sphinxext.opengraph",
     "sphinx_copybutton",
-    "plot_directive",
+    "sphinx_autodoc_typehints",
 ]
 
-rst_epilog = """
+autodoc_typehints_format = "short"
+
+rst_prolog = """
 .. role:: python(code)
     :language: python
-
 """
 
-autodoc2_packages = [
-    "../../differt2d",
-]
-
-autodoc2_hidden_objects = ["dunder", "inherited"]
-autodoc2_docstrings = "all"
-autodoc2_sort_names = True
-
-autodoc2_module_all_regexes = ["differt2d.logic"]
-
-autodoc2_docstring_parser_regexes = [(".*", "parsers.custom")]
+typehints_defaults = "comma"
+typehints_use_signature = True
+typehints_use_signature_return = True
 
 myst_enable_extensions = [
     "colon_fence",
@@ -58,11 +51,10 @@ templates_path = ["_templates"]
 exclude_patterns = []
 
 # Removes the 'package.module' part from package.module.Class
-add_module_names = True
+add_module_names = False
 
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
-plot_rst_directory = "source/apidocs/differt2d/"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -102,3 +94,12 @@ intersphinx_mapping = {
 
 ogp_site_url = "https://eertmans.be/DiffeRT2d/"
 ogp_use_first_image = True
+
+# -- Sphinx App
+
+
+def setup(app):
+    app.connect(
+        "autodoc-process-docstring",
+        between(r".*#.*doc\s*:\s*hide", keepempty=True, exclude=True),
+    )
