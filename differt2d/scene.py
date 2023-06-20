@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from dataclasses import dataclass
 
     from jax import Array
+    from matplotlib.artist import Artist
 else:
     from chex import dataclass
 
@@ -146,7 +147,7 @@ class Scene(Plottable):
         rx_args: Sequence = (),
         rx_kwargs: Dict[str, Any] = {},
         **kwargs: Any,
-    ) -> List[Any]:
+    ) -> Union[Artist, List[Artist]]:
         """
         :param tx_args:
             Parameters to be passed to TX's plot function.
@@ -199,14 +200,18 @@ class Scene(Plottable):
 
         return jnp.meshgrid(x, y)
 
-    def all_path_candidates(self, order: int = 1) -> List[List[int]]:
+    def all_path_candidates(
+        self, min_order: int = 0, max_order: int = 1
+    ) -> List[List[int]]:
         """
         Returns all path candidates, from :attr:`tx` to :attr:`rx`,
         as a list of list of indices.
 
         Note that index 0 is for :attr:`tx`, and last index is for :attr:`rx`.
 
-        :param order:
+        :param min_order:
+            The minimum order of the path, i.e., the number of interactions.
+        :param max_order:
             The maximum order of the path, i.e., the number of interactions.
         :type order: int
         :return: The list of list of indices.
@@ -217,25 +222,24 @@ class Scene(Plottable):
 
         graph = rx.PyGraph.from_adjacency_matrix(matrix)
 
-        return rx.all_simple_paths(graph, 0, n + 1, cutoff=order + 2)
+        return rx.all_simple_paths(
+            graph, 0, n + 1, min_depth=min_order + 2, cutoff=max_order + 2
+        )
 
-    def all_paths(self, order: int = 1, tol: float = 1e-4) -> List[MinPath]:
+    def all_paths(self, tol: float = 1e-4, **kwargs: Any) -> List[MinPath]:
         """
         Returns all valid paths from :attr:`tx` to :attr:`rx`,
         using the MPT method,
         see :class:`differt2d.geometry.MinPath`.
 
-        :param order:
-            The maximum order of the path, see :meth:`all_path_candidates`.
-        :type order: int
         :param tol: The threshold tolerance for a path loss to be accepted.
-        :type tol: float
+        :param kwargs:
+            Keyword arguments to be passed to :meth:`all_path_candidates`.
         :return: The list of paths.
-        :rtype: typing.List[MinPath]
         """
         paths = []
 
-        for path_candidate in self.all_path_candidates(order=order):
+        for path_candidate in self.all_path_candidates(**kwargs):
             interacting_objects = [self.objects[i - 1] for i in path_candidate[1:-1]]
 
             path = MinPath.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
@@ -255,44 +259,18 @@ class Scene(Plottable):
         return paths
 
     def accumulate_over_paths(
-        self, function=power, order: int = 1, tol: float = 1e-4
+        self, function=power, tol: float = 1e-4, **kwargs: Any
     ) -> Array:
-        """
-        Returns all valid paths from :attr:`tx` to :attr:`rx`,
-        using the MPT method,
-        see :class:`differt2d.geometry.MinPath`.
-
-        :param order:
-            The maximum order of the path, see :meth:`all_path_candidates`.
-        :type order: int
-        :param tol: The threshold tolerance for a path loss to be accepted.
-        :type tol: float
-        :return: The list of paths.
-        :rtype: typing.List[MinPath]
-        """
-        path_candidates = self.all_path_candidates(order=order)
+        path_candidates = self.all_path_candidates(**kwargs)
 
         return accumulate_at_location(
             self.tx, self.objects, self.rx, path_candidates, function
         )
 
     def accumulate_on_grid(
-        self, X, Y, function=power, order: int = 1, tol: float = 1e-4
+        self, X, Y, function=power, tol: float = 1e-4, **kwargs
     ) -> Array:
-        """
-        Returns all valid paths from :attr:`tx` to :attr:`rx`,
-        using the MPT method,
-        see :class:`differt2d.geometry.MinPath`.
-
-        :param order:
-            The maximum order of the path, see :meth:`all_path_candidates`.
-        :type order: int
-        :param tol: The threshold tolerance for a path loss to be accepted.
-        :type tol: float
-        :return: The list of paths.
-        :rtype: typing.List[MinPath]
-        """
-        path_candidates = self.all_path_candidates(order=order)
+        path_candidates = self.all_path_candidates(**kwargs)
 
         grid = jnp.dstack((X, Y))
 

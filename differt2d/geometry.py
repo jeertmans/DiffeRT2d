@@ -63,14 +63,29 @@ class Ray(Plottable):
 
     @partial(jit, inline=True)
     def origin(self) -> Array:
+        """
+        Returns the origin of this object.
+
+        :return: The origin.
+        """
         return self.points[0]
 
     @partial(jit, inline=True)
     def dest(self) -> Array:
+        """
+        Returns the destination of this object.
+
+        :return: The destination.
+        """
         return self.points[1]
 
     @partial(jit, inline=True)
-    def t(self):
+    def t(self) -> Array:
+        """
+        Returns the direction vector of this object.
+
+        :return: The direction vector.
+        """
         return self.dest() - self.origin()
 
     def plot(self, ax, *args, **kwargs):
@@ -128,7 +143,7 @@ class Wall(Ray, Interactable):
         return n / jnp.linalg.norm(n)
 
     @staticmethod
-    # @partial(jit, inline=True)
+    @partial(jit, inline=True)
     def parameters_count() -> int:
         return 1
 

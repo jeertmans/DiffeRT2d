@@ -7,6 +7,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import functools
+import inspect
+from textwrap import dedent
+
 from sphinx.ext.autodoc import between
 
 project = "DiffeRT2d"
@@ -30,8 +34,6 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
 ]
-
-autodoc_typehints_format = "short"
 
 rst_prolog = """
 .. role:: python(code)
@@ -98,7 +100,75 @@ ogp_use_first_image = True
 # -- Sphinx App
 
 
+def get_class_that_defined_method(meth):
+    if isinstance(meth, functools.partial):
+        return get_class_that_defined_method(meth.func)
+    if inspect.ismethod(meth) or (
+        inspect.isbuiltin(meth)
+        and getattr(meth, "__self__", None) is not None
+        and getattr(meth.__self__, "__class__", None)
+    ):
+        for cls in inspect.getmro(meth.__self__.__class__):
+            if meth.__name__ in cls.__dict__:
+                return cls
+        meth = getattr(meth, "__func__", meth)  # fallback to __qualname__ parsing
+    if inspect.isfunction(meth):
+        cls = getattr(
+            inspect.getmodule(meth),
+            meth.__qualname__.split(".<locals>", 1)[0].rsplit(".", 1)[0],
+            None,
+        )
+        if isinstance(cls, type):
+            return cls
+    return getattr(meth, "__objclass__", None)  # handle special descriptor objects
+
+
+def get_parent_method(obj):
+    cls = get_class_that_defined_method(obj)
+
+    if cls is None:
+        return None
+
+    for base in cls.__bases__:
+        if hasattr(base, obj.__name__):
+            return getattr(base, obj.__name__)
+
+    return None
+
+
+def get_doc(obj):
+    doc = obj.__doc__ or ""
+
+    if "differt2d" not in obj.__module__:
+        return doc
+
+    if parent := get_parent_method(obj):
+        doc = get_doc(parent) + doc
+
+    return doc
+
+
+def merge_documentation_from_parent(app, what, name, obj, options, lines):
+    if what in ["method", "function"]:
+        lines[:] = dedent(get_doc(obj)).splitlines()
+
+
+def unskip_jitted(app, what, name, obj, skip, options):
+    if skip and "Pjit" in repr(obj):
+        obj.__doc__ = get_doc(obj._fun)
+        return obj.__doc__ == ""
+
+
 def setup(app):
+    app.connect(
+        "autodoc-skip-member",
+        unskip_jitted,
+    )
+    app.connect(
+        "autodoc-process-docstring",
+        merge_documentation_from_parent,
+        priority=499,
+    )
     app.connect(
         "autodoc-process-docstring",
         between(r".*#.*doc\s*:\s*hide", keepempty=True, exclude=True),
