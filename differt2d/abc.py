@@ -6,11 +6,12 @@ from __future__ import annotations
 
 __all__ = [
     "Interactable",
+    "Parametric",
     "Plottable",
 ]
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, List, Union
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, List, Protocol, Union
 
 if TYPE_CHECKING:
     from jax import Array
@@ -18,9 +19,9 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
 
-class Plottable(ABC):
+class Plottable(Protocol):
     """
-    Abstract class for any object that can be plotted using matplotlib.
+    Protocol for any object that can be plotted using matplotlib.
     """
 
     @abstractmethod
@@ -47,9 +48,9 @@ class Plottable(ABC):
         pass
 
 
-class Interactable(ABC):
+class Parametric(Protocol):
     """
-    Abstract class for any object that a ray path can interact with.
+    Protocol for any object that can be expressed using parametric coordinates.
     """
 
     @staticmethod
@@ -104,6 +105,12 @@ class Interactable(ABC):
         :return: True if it intersects, ().
         """
         pass
+
+
+class Interactable(Protocol):
+    """
+    Protocol for any object that a ray path can interact with.
+    """
 
     @abstractmethod
     def evaluate_cartesian(self, ray_path: Array) -> Array:

@@ -5,14 +5,14 @@ Geometrical objects.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 
 import jax
 import jax.numpy as jnp
 import optax
 from jax import jit
 
-from .abc import Interactable, Plottable
+from .abc import Interactable, Parametric, Plottable
 from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
 
 if TYPE_CHECKING:
@@ -51,6 +51,20 @@ def segments_intersect_excluding_extremities(P1, P2, P3, P4):
     a = logical_and(greater(a, 0.0), less(a, 1.0))
     b = logical_and(greater(b, 0.0), less(b, 1.0))
     return logical_and(a, b)
+
+
+@partial(jax.jit, inline=True)
+def path_length(points: Array) -> Array:
+    """
+    Returns the length of the given path.
+
+    :param points: An array of points.
+    :return: The path length, ().
+    """
+    vectors = jnp.diff(points, axis=0)
+    lengths = jnp.linalg.norm(vectors, axis=1)
+
+    return jnp.sum(lengths)
 
 
 @dataclass
@@ -123,7 +137,7 @@ class Point(Plottable):
 
 
 @dataclass
-class Wall(Ray, Interactable):
+class Wall(Ray, Parametric, Interactable):
     """
     A wall object defined by its corners.
     """
@@ -238,13 +252,10 @@ class Path(Plottable):
 
         :return: The path length, ().
         """
-        vectors = jnp.diff(self.points, axis=0)
-        lengths = jnp.linalg.norm(vectors, axis=1)
-
-        return jnp.sum(lengths)
+        return path_length(self.points)
 
     @jit
-    def on_objects(self, objects: List[Interactable]) -> Array:
+    def on_objects(self, objects: List[Parametric]) -> Array:
         contains = jnp.array(True)
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
@@ -254,7 +265,7 @@ class Path(Plottable):
 
     @jit
     def intersects_with_objects(
-        self, objects: List[Interactable], path_candidate: List[int]
+        self, objects: List[Parametric], path_candidate: List[int]
     ) -> Array:
         interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
         intersects = jnp.array(False)
@@ -292,9 +303,82 @@ def parametric_to_cartesian_from_slice(obj, parametric_coords, start, size):
 
 
 @dataclass
+class FermatPath(Path):
+    """
+    A Path object that was obtain with the Fermat's Principle Tracing method.
+    """
+
+    @classmethod
+    @partial(jit, static_argnums=(0,))
+    def from_tx_objects_rx(
+        cls,
+        tx: Point,
+        objects: List[Parametric],
+        rx: Point,
+        seed: int = 1234,
+        steps: int = 200,
+    ) -> "FermatPath":
+        """
+        Returns a path with minimal length.
+
+        :param tx: The emitting node.
+        :param objects:
+            The list of objects to interact with (order is important).
+        :param rx: The receiving node.
+        :param seed: The random seed used to generate the start iteration.
+        :param steps: The number of iterations performed by the minimizer.
+        :return: The resulting path of the FPT method.
+        """
+        n = len(objects)
+        n_unknowns = sum([obj.parameters_count() for obj in objects])
+
+        @jit
+        def parametric_to_cartesian(parametric_coords):
+            cartesian_coords = jnp.empty((n + 2, 2))
+            cartesian_coords = cartesian_coords.at[0].set(tx.point)
+            cartesian_coords = cartesian_coords.at[-1].set(rx.point)
+            j = 0
+            for i, obj in enumerate(objects):
+                size = obj.parameters_count()
+                cartesian_coords = cartesian_coords.at[i + 1].set(
+                    parametric_to_cartesian_from_slice(obj, parametric_coords, j, size)
+                )
+                j += size
+
+            return cartesian_coords
+
+        @jit
+        def loss(theta):
+            cartesian_coords = parametric_to_cartesian(theta)
+
+            return path_length(cartesian_coords)
+
+        key = jax.random.PRNGKey(seed)
+        optimizer = optax.adam(learning_rate=1)
+        theta = jax.random.uniform(key, shape=(n_unknowns,))
+
+        f_and_df = jax.value_and_grad(loss)
+        opt_state = optimizer.init(theta)
+
+        def f(carry, x):
+            theta, opt_state = carry
+            loss, grads = f_and_df(theta)
+            updates, opt_state = optimizer.update(grads, opt_state)
+            theta = theta + updates
+            carry = (theta, opt_state)
+            return carry, loss
+
+        (theta, _), _ = jax.lax.scan(f, init=(theta, opt_state), xs=None, length=steps)
+
+        points = parametric_to_cartesian(theta)
+
+        return FermatPath(points=points)
+
+
+@dataclass
 class MinPath(Path):
     """
-    A Path object that was obtain with the Min. Path Tracing method.
+    A Path object that was obtain with the Min-Path-Tracing method.
     """
 
     loss: float
@@ -307,7 +391,7 @@ class MinPath(Path):
     def from_tx_objects_rx(
         cls,
         tx: Point,
-        objects: List[Interactable],
+        objects: List[Union[Interactable, Parametric]],
         rx: Point,
         seed: int = 1234,
         steps: int = 200,
@@ -324,7 +408,7 @@ class MinPath(Path):
         :return: The resulting path of the MPT method.
         """
         n = len(objects)
-        n_unknowns = sum([obj.parameters_count() for obj in objects])
+        n_unknowns = sum(obj.parameters_count() for obj in objects)
 
         @jit
         def parametric_to_cartesian(parametric_coords):
