@@ -11,7 +11,7 @@ def main():
     for path in scene.all_paths():
         path.plot(ax)
 
-    X, Y = scene.grid(n=100)
+    X, Y = scene.grid(n=150)
 
     Z = scene.accumulate_on_grid(X, Y)
 

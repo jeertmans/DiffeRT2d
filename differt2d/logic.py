@@ -202,8 +202,6 @@ def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
     :param `lambda_`: The slope parameter.
     :return: The corresponding sigmoid values.
     """
-    # https://stackoverflow.com/questions/68290850/jax-autograd-of-a-sigmoid-always-returns-nan
-    # return 0.5 * (jnp.tanh(x * lambda_ / 2) + 1)
     return jax.nn.sigmoid(lambda_ * x)
 
 

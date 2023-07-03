@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Sequence, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -9,7 +9,7 @@ import numpy as np
 import rustworkx as rx
 
 from .abc import Interactable, Plottable
-from .geometry import MinPath, Point, Wall
+from .geometry import FermatPath, MinPath, Point, Wall
 from .logic import is_true, less, logical_and, logical_not
 
 if TYPE_CHECKING:
@@ -198,7 +198,8 @@ class Scene(Plottable):
         x = jnp.linspace(bounding_box[0, 0], bounding_box[1, 0], n)
         y = jnp.linspace(bounding_box[0, 1], bounding_box[1, 1], n)
 
-        return jnp.meshgrid(x, y)
+        X, Y = jnp.meshgrid(x, y)
+        return X, Y
 
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
@@ -226,11 +227,14 @@ class Scene(Plottable):
             graph, 0, n + 1, min_depth=min_order + 2, cutoff=max_order + 2
         )
 
-    def all_paths(self, tol: float = 1e-4, **kwargs: Any) -> List[MinPath]:
+    def all_paths(
+        self, tol: float = 1e-4, method: Literal["FPT", "MPT"] = "MPT", **kwargs: Any
+    ) -> List[MinPath]:
         """
         Returns all valid paths from :attr:`tx` to :attr:`rx`,
-        using the MPT method,
-        see :class:`differt2d.geometry.MinPath`.
+        using the given method,
+        see :class:`differt2d.geometry.FermatPath`
+        and :class:`differt2d.geometry.MinPath`.
 
         :param tol: The threshold tolerance for a path loss to be accepted.
         :param kwargs:
@@ -239,17 +243,28 @@ class Scene(Plottable):
         """
         paths = []
 
+        method = method.upper()
+
+        if method == "FPT":
+            path_class = FermatPath
+        elif method == "MPT":
+            path_class = MinPath
+        else:
+            raise ValueError(f"Unknown method name '{method}'")
+
         for path_candidate in self.all_path_candidates(**kwargs):
             interacting_objects = [self.objects[i - 1] for i in path_candidate[1:-1]]
 
-            path = MinPath.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
+            path = path_class.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
 
             valid = path.on_objects(interacting_objects)
             valid = logical_and(
                 valid,
                 logical_not(path.intersects_with_objects(self.objects, path_candidate)),
             )
-            valid = logical_and(valid, less(path.loss, tol))
+
+            if method == "MPT":
+                valid = logical_and(valid, less(path.loss, tol))
 
             jax.debug.print("Path is valid: {v}, path={p}", v=valid, p=path)
 

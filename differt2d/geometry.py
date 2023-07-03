@@ -197,14 +197,17 @@ class Wall(Ray, Parametric, Interactable):
 
     @jit
     def evaluate_cartesian(self, ray_path: Array) -> Array:
-        v1 = ray_path[1, :] - ray_path[0, :]
-        v2 = ray_path[2, :] - ray_path[1, :]
-        n = self.normal()
-        i = v2 / jnp.linalg.norm(v2) - (
-            v1 - 2 * (jnp.dot(v1, n) * n)
-        ) / jnp.linalg.norm(v1)
+        i = ray_path[1, :] - ray_path[0, :]  # Incident
+        r = ray_path[2, :] - ray_path[1, :]  # Reflected
+        n = self.normal()  # Normal
+        li = jnp.linalg.norm(i)  # Incident's length
+        lr = jnp.linalg.norm(r)  # Reflected's length
+        i = i / li
+        r = r / lr
 
-        return jnp.dot(i, i)
+        e = r - (i - 2 * jnp.dot(i, n) * n)
+
+        return jnp.dot(e, e)
 
 
 @dataclass
@@ -316,7 +319,7 @@ class FermatPath(Path):
         objects: List[Parametric],
         rx: Point,
         seed: int = 1234,
-        steps: int = 200,
+        steps: int = 100,
     ) -> "FermatPath":
         """
         Returns a path with minimal length.
@@ -331,6 +334,8 @@ class FermatPath(Path):
         """
         n = len(objects)
         n_unknowns = sum([obj.parameters_count() for obj in objects])
+
+        jax.debug.print("Hello, minimizing Fermat's path")
 
         @jit
         def parametric_to_cartesian(parametric_coords):
@@ -394,7 +399,7 @@ class MinPath(Path):
         objects: List[Union[Interactable, Parametric]],
         rx: Point,
         seed: int = 1234,
-        steps: int = 200,
+        steps: int = 250,
     ) -> "MinPath":
         """
         Returns a path that minimizes the sum of interactions.
