@@ -9,7 +9,7 @@ import numpy as np
 import rustworkx as rx
 
 from .abc import Interactable, Plottable
-from .geometry import FermatPath, MinPath, Point, Wall
+from .geometry import FermatPath, MinPath, Path, Point, Wall
 from .logic import is_true, less, logical_and, logical_not
 
 if TYPE_CHECKING:
@@ -229,7 +229,7 @@ class Scene(Plottable):
 
     def all_paths(
         self, tol: float = 1e-4, method: Literal["FPT", "MPT"] = "MPT", **kwargs: Any
-    ) -> List[MinPath]:
+    ) -> List[Path]:
         """
         Returns all valid paths from :attr:`tx` to :attr:`rx`,
         using the given method,
@@ -243,8 +243,7 @@ class Scene(Plottable):
         """
         paths = []
 
-        method = method.upper()
-
+        path_class: type[Path]
         if method == "FPT":
             path_class = FermatPath
         elif method == "MPT":
@@ -263,7 +262,7 @@ class Scene(Plottable):
                 logical_not(path.intersects_with_objects(self.objects, path_candidate)),
             )
 
-            if method == "MPT":
+            if isinstance(path, MinPath):
                 valid = logical_and(valid, less(path.loss, tol))
 
             jax.debug.print("Path is valid: {v}, path={p}", v=valid, p=path)

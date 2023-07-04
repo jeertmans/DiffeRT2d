@@ -4,8 +4,9 @@ Geometrical objects.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, Any, List, Union
 
 import jax
 import jax.numpy as jnp
@@ -56,9 +57,9 @@ def segments_intersect_excluding_extremities(P1, P2, P3, P4):
 @partial(jax.jit, inline=True)
 def path_length(points: Array) -> Array:
     """
-    Returns the length of the given path.
+    Returns the length of the given path, with N points.
 
-    :param points: An array of points.
+    :param points: An array of points, (N, 2).
     :return: The path length, ().
     """
     vectors = jnp.diff(points, axis=0)
@@ -238,7 +239,7 @@ class RIS(Wall):
 
 
 @dataclass
-class Path(Plottable):
+class Path(Plottable, ABC):
     """
     A path object with at least two points.
     """
@@ -247,6 +248,26 @@ class Path(Plottable):
     """
     Array of cartesian coordinates.
     """
+
+    @classmethod
+    @abstractmethod
+    def from_tx_objects_rx(
+        cls,
+        tx: Any,
+        objects: List[Any],
+        rx: Any,
+    ) -> "Path":
+        """
+        Returns a path from TX to RX, traversing each object in the list
+        in the provided order.
+
+        :param tx: The emitting node.
+        :param objects:
+            The list of objects to interact with (order is important).
+        :param rx: The receiving node.
+        :return: The resulting path.
+        """
+        pass
 
     @jit
     def length(self) -> Array:
@@ -335,8 +356,6 @@ class FermatPath(Path):
         n = len(objects)
         n_unknowns = sum([obj.parameters_count() for obj in objects])
 
-        jax.debug.print("Hello, minimizing Fermat's path")
-
         @jit
         def parametric_to_cartesian(parametric_coords):
             cartesian_coords = jnp.empty((n + 2, 2))
@@ -413,7 +432,9 @@ class MinPath(Path):
         :return: The resulting path of the MPT method.
         """
         n = len(objects)
-        n_unknowns = sum(obj.parameters_count() for obj in objects)
+        n_unknowns = sum(
+            obj.parameters_count() for obj in objects  # type: ignore[misc,union-attr]
+        )
 
         @jit
         def parametric_to_cartesian(parametric_coords):
