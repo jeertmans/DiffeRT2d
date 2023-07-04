@@ -312,7 +312,7 @@ class FermatPath(Path):
     """
 
     @classmethod
-    @partial(jit, static_argnums=(0,))
+    @partial(jit, static_argnames=("cls", "steps"))
     def from_tx_objects_rx(
         cls,
         tx: Point,
@@ -392,7 +392,7 @@ class MinPath(Path):
     """
 
     @classmethod
-    @partial(jit, static_argnums=(0,))
+    @partial(jit, static_argnames=("cls", "steps"))
     def from_tx_objects_rx(
         cls,
         tx: Point,

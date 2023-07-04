@@ -205,31 +205,25 @@ class TestWall:
 
 
 class TestFermatPath:
-    @approx
-    def test_simple_reflection(self, approx: bool, seed: int, steps: int):
+    def test_simple_reflection(self, seed: int, steps: int):
         wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
         expected_points = jnp.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0]])
-
-        with enable_approx(approx), disable_jit():
-            got = FermatPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
-            chex.assert_tree_all_close(expected_points, got.points, rtol=1e-2)
-            chex.assert_shape(got.points, (3, 2))
+        got = FermatPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
+        chex.assert_tree_all_close(expected_points, got.points, rtol=1e-2)
+        chex.assert_shape(got.points, (3, 2))
 
 
 class TestMinPath:
-    @approx
-    def test_simple_reflection(self, approx: bool, seed: int, steps: int):
+    def test_simple_reflection(self, seed: int, steps: int):
         wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
         expected_loss = jnp.array(0.0)
         expected_points = jnp.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0]])
-
-        with enable_approx(approx), disable_jit():
-            got = MinPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
-            chex.assert_tree_all_close(expected_points, got.points, rtol=1e-2)
-            chex.assert_shape(got.points, (3, 2))
-            chex.assert_tree_all_close(expected_loss, got.loss, atol=1e-4)
-            chex.assert_shape(got.loss, ())
+        got = MinPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
+        chex.assert_tree_all_close(expected_points, got.points, rtol=1e-2)
+        chex.assert_shape(got.points, (3, 2))
+        chex.assert_tree_all_close(expected_loss, got.loss, atol=1e-4)
+        chex.assert_shape(got.loss, ())
