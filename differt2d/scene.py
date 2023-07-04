@@ -228,7 +228,7 @@ class Scene(Plottable):
         )
 
     def all_paths(
-        self, tol: float = 1e-4, method: Literal["FPT", "MPT"] = "MPT", **kwargs: Any
+        self, tol: float = 1e-4, method: Literal["FPT", "MPT"] = "FPT", **kwargs: Any
     ) -> List[Path]:
         """
         Returns all valid paths from :attr:`tx` to :attr:`rx`,
@@ -237,6 +237,7 @@ class Scene(Plottable):
         and :class:`differt2d.geometry.MinPath`.
 
         :param tol: The threshold tolerance for a path loss to be accepted.
+        :param method: Method to be used to find the path coordinates.
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_path_candidates`.
         :return: The list of paths.

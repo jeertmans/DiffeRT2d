@@ -418,7 +418,7 @@ class MinPath(Path):
         objects: List[Union[Interactable, Parametric]],
         rx: Point,
         seed: int = 1234,
-        steps: int = 250,
+        steps: int = 100,
     ) -> "MinPath":
         """
         Returns a path that minimizes the sum of interactions.

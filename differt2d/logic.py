@@ -177,14 +177,14 @@ def disable_approx(disable: bool = True):
 
 @partial(jax.jit, inline=True)
 def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
-    """
+    r"""
     Element-wise function for approximating a discrete transition between 0 and 1,
     with a smoothed transition.
 
     .. math::
-        \\text{sigmoid}(x;\\lambda) = \\frac{1}{1 + e^{-\\lambda x}},
+        \text{sigmoid}(x;\lambda) = \frac{1}{1 + e^{-\lambda x}},
 
-    where :math:`\\lambda` (:code:`lambda_`) is a slope parameter.
+    where :math:`\lambda` (:code:`lambda_`) is a slope parameter.
 
     See :func:`jax.nn.sigmoid` for more details.
 
@@ -201,6 +201,26 @@ def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
     :param x: The input array.
     :param `lambda_`: The slope parameter.
     :return: The corresponding sigmoid values.
+
+    :EXAMPLES:
+
+    .. plot::
+        :include-source: true
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from differt2d.logic import sigmoid
+
+        x = np.linspace(-5, +5, 200)
+
+        for lambda_ in [1, 10, 100]:
+            y = sigmoid(x, lambda_=lambda_)
+            _ = plt.plot(x, y, "--", label=f"$\\lambda = {lambda_}$")
+
+        plt.xlabel("$x$")
+        plt.ylabel(r"sigmoid$(x;\lambda)$")
+        plt.legend()
+        plt.show()
     """
     return jax.nn.sigmoid(lambda_ * x)
 
@@ -208,7 +228,15 @@ def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
 @jit_approx
 def logical_or(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
     """
-    Element-wise logical OR operation betwen :code:`x` and :code:`y`.
+    Element-wise logical :python:`x or y`.
+
+    Calls :func:`jax.numpy.maximum` if approximation is enabled,
+    :func:`jax.numpy.logical_or` otherwise.
+
+    :param x: The first input array.
+    :param y: The second input array.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array, with element-wise comparison.
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
@@ -217,6 +245,17 @@ def logical_or(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
 
 @jit_approx
 def logical_and(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
+    """
+    Element-wise logical :python:`x and y`.
+
+    Calls :func:`jax.numpy.maximum` if approximation is enabled,
+    :func:`jax.numpy.logical_or` otherwise.
+
+    :param x: The first input array.
+    :param y: The second input array.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array, with element-wise comparison.
+    """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.multiply(x, y) if approx else jnp.logical_and(x, y)
@@ -224,6 +263,17 @@ def logical_and(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
 
 @jit_approx
 def logical_not(x: Array, *, approx: Optional[bool] = None) -> Array:
+    """
+    Element-wise logical :python:`not x`.
+
+    Calls :func:`jax.numpy.subtract`
+    (:python:`1 - x`) if approximation is enabled,
+    :func:`jax.numpy.logical_or` otherwise.
+
+    :param x: The input array.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array, with element-wise comparison.
+    """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
@@ -237,6 +287,18 @@ def greater(
     approx: Optional[bool] = None,
     **kwargs,
 ) -> Array:
+    """
+    Element-wise logical :python:`x > y`.
+
+    Calls :func:`jax.numpy.subtract`
+    then :func:`sigmoid` if approximation is enabled,
+    :func:`jax.numpy.greater` otherwise.
+
+    :param x: The first input array.
+    :param y: The second input array.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array, with element-wise comparison.
+    """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
@@ -246,6 +308,18 @@ def greater(
 def greater_equal(
     x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs
 ) -> Array:
+    """
+    Element-wise logical :python:`x >= y`.
+
+    Calls :func:`jax.numpy.subtract`
+    then :func:`sigmoid` if approximation is enabled,
+    :func:`jax.numpy.greater_equal` otherwise.
+
+    :param x: The first input array.
+    :param y: The second input array.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array, with element-wise comparison.
+    """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
@@ -253,6 +327,18 @@ def greater_equal(
 
 @jit_approx
 def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
+    """
+    Element-wise logical :python:`x < y`.
+
+    Calls :func:`jax.numpy.subtract` (arguments swapped)
+    then :func:`sigmoid` if approximation is enabled,
+    :func:`jax.numpy.less` otherwise.
+
+    :param x: The first input array.
+    :param y: The second input array.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array, with element-wise comparison.
+    """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
@@ -260,6 +346,18 @@ def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Arra
 
 @jit_approx
 def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
+    """
+    Element-wise logical :python:`x <= y`.
+
+    Calls :func:`jax.numpy.subtract` (arguments swapped)
+    then :func:`sigmoid` if approximation is enabled,
+    :func:`jax.numpy.less_equal` otherwise.
+
+    :param x: The first input array.
+    :param y: The second input array.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array, with element-wise comparison.
+    """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
@@ -273,11 +371,11 @@ def is_true(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Arr
     When using approximation,
     this function checks whether the value is close to 1.
 
-    :param x: A truth array.
+    :param x: The input array.
     :param tol: The tolerance on how close it should be to 1.
         Only used if :code:`approx` is set to :python:`True`.
-    :param approx: Whether approximation is used or not.
-    :return: True if the value is considered to be true.
+    :param approx: Whether approximation is enabled or not.
+    :return: True array if the value is considered to be true.
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
@@ -292,10 +390,10 @@ def is_false(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Ar
     When using approximation,
     this function checks whether the value is close to 0.
 
-    :param x: A truth array.
+    :param x: The input array.
     :param tol: The tolerance on how close it should be to 0.
         Only used if :code:`approx` is set to :python:`True`.
-    :param approx: Whether approximation is used or not.
+    :param approx: Whether approximation is enabled or not.
     :return: True if the value is considered to be false.
     """
     if approx is None:
