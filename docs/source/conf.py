@@ -166,7 +166,7 @@ NOTE_ABOUT_ABSTRACT = r"""
 
 
 def add_to_impl_not(app, what, name, obj, options, lines):
-    if getattr(obj, '__isabstractmethod__', False):
+    if getattr(obj, "__isabstractmethod__", False):
         lines.extend(NOTE_ABOUT_ABSTRACT)
 
 
