@@ -215,6 +215,17 @@ python-versions = ">=3.7"
 test = ["pytest (>=6)"]
 
 [[package]]
+name = "execnet"
+version = "1.9.0"
+description = "execnet: rapid multi-Python deployment"
+category = "dev"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+
+[package.extras]
+testing = ["pre-commit"]
+
+[[package]]
 name = "filelock"
 version = "3.12.2"
 description = "A platform independent file lock."
@@ -789,6 +800,23 @@ pytest = ">=7.3.1"
 test = ["coverage (>=7.2.7)", "pytest-mock (>=3.10)"]
 
 [[package]]
+name = "pytest-xdist"
+version = "3.3.1"
+description = "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+execnet = ">=1.1"
+pytest = ">=6.2.0"
+
+[package.extras]
+psutil = ["psutil (>=3.0)"]
+setproctitle = ["setproctitle"]
+testing = ["filelock"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -1207,7 +1235,7 @@ gui = ["pyside6"]
 [metadata]
 lock-version = "1.1"
 python-versions = "<3.12,>=3.8"
-content-hash = "1aa45cdbf64ec74eaad2b1538a187a3a295e4d6f72ed704c32269a543f370143"
+content-hash = "9d80ae6d825541d3631cc8a6dd836e1677d1a9efc33b08dc82a999f0d9e72c0e"
 
 [metadata.files]
 absl-py = [
@@ -1446,6 +1474,10 @@ docutils = [
 exceptiongroup = [
     {file = "exceptiongroup-1.1.1-py3-none-any.whl", hash = "sha256:232c37c63e4f682982c8b6459f33a8981039e5fb8756b2074364e5055c498c9e"},
     {file = "exceptiongroup-1.1.1.tar.gz", hash = "sha256:d484c3090ba2889ae2928419117447a14daf3c1231d5e30d0aae34f354f01785"},
+]
+execnet = [
+    {file = "execnet-1.9.0-py2.py3-none-any.whl", hash = "sha256:a295f7cc774947aac58dde7fdc85f4aa00c42adf5d8f5468fc630c1acf30a142"},
+    {file = "execnet-1.9.0.tar.gz", hash = "sha256:8f694f3ba9cc92cab508b152dcfe322153975c29bda272e2fd7f3f00f36e47c5"},
 ]
 filelock = [
     {file = "filelock-3.12.2-py3-none-any.whl", hash = "sha256:cbb791cdea2a72f23da6ac5b5269ab0a0d161e9ef0100e653b69049a7706d1ec"},
@@ -1960,6 +1992,10 @@ pytest = [
 pytest-env = [
     {file = "pytest_env-0.8.2-py3-none-any.whl", hash = "sha256:5e533273f4d9e6a41c3a3120e0c7944aae5674fa773b329f00a5eb1f23c53a38"},
     {file = "pytest_env-0.8.2.tar.gz", hash = "sha256:baed9b3b6bae77bd75b9238e0ed1ee6903a42806ae9d6aeffb8754cd5584d4ff"},
+]
+pytest-xdist = [
+    {file = "pytest-xdist-3.3.1.tar.gz", hash = "sha256:d5ee0520eb1b7bcca50a60a518ab7a7707992812c578198f8b44fdfac78e8c93"},
+    {file = "pytest_xdist-3.3.1-py3-none-any.whl", hash = "sha256:ff9daa7793569e6a68544850fd3927cd257cc03a7ef76c95e86915355e82b5f2"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},

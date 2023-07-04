@@ -159,6 +159,17 @@ def unskip_jitted(app, what, name, obj, skip, options):
         return obj.__doc__ == ""
 
 
+NOTE_ABOUT_ABSTRACT = r"""
+.. warning::
+    This method is abstract and must be implemented by any of its subsclasses.
+""".splitlines()
+
+
+def add_to_impl_not(app, what, name, obj, options, lines):
+    if getattr(obj, "__isabstractmethod__", False):
+        lines.extend(NOTE_ABOUT_ABSTRACT)
+
+
 def setup(app):
     app.connect(
         "autodoc-skip-member",
@@ -172,4 +183,9 @@ def setup(app):
     app.connect(
         "autodoc-process-docstring",
         between(r".*#.*doc\s*:\s*hide", keepempty=True, exclude=True),
+    )
+    app.connect(
+        "autodoc-process-docstring",
+        add_to_impl_not,
+        priority=501,
     )
