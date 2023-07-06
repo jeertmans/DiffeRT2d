@@ -62,7 +62,7 @@ extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-# html_static_path = ["_static"]
+html_static_path = ["_static"]
 
 html_theme_options = {
     "light_logo": "logo_light_transparent.png",
