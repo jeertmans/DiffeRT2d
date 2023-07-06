@@ -440,9 +440,7 @@ class MinPath(Path):
         :return: The resulting path of the MPT method.
         """
         n = len(objects)
-        n_unknowns = sum(
-            obj.parameters_count() for obj in objects
-        )
+        n_unknowns = sum(obj.parameters_count() for obj in objects)
 
         @jit
         def parametric_to_cartesian(parametric_coords):
