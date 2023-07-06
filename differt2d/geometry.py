@@ -13,7 +13,7 @@ import jax.numpy as jnp
 import optax
 from jax import jit
 
-from .abc import Interactable, Parametric, Plottable
+from .abc import Interactable, Plottable
 from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
 
 if TYPE_CHECKING:
@@ -138,7 +138,7 @@ class Point(Plottable):
 
 
 @dataclass
-class Wall(Ray, Parametric, Interactable):
+class Wall(Ray, Interactable):
     """
     A wall object defined by its corners.
     """
@@ -249,6 +249,11 @@ class Path(Plottable, ABC):
     Array of cartesian coordinates.
     """
 
+    loss: float = 0.0
+    """
+    The loss value for the given path.
+    """
+
     @classmethod
     @abstractmethod
     def from_tx_objects_rx(
@@ -279,7 +284,7 @@ class Path(Plottable, ABC):
         return path_length(self.points)
 
     @jit
-    def on_objects(self, objects: List[Parametric]) -> Array:
+    def on_objects(self, objects: List[Interactable]) -> Array:
         contains = jnp.array(True)
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
@@ -289,7 +294,7 @@ class Path(Plottable, ABC):
 
     @jit
     def intersects_with_objects(
-        self, objects: List[Parametric], path_candidate: List[int]
+        self, objects: List[Interactable], path_candidate: List[int]
     ) -> Array:
         interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
         intersects = jnp.array(False)
@@ -337,7 +342,7 @@ class FermatPath(Path):
     def from_tx_objects_rx(
         cls,
         tx: Point,
-        objects: List[Parametric],
+        objects: List[Interactable],
         rx: Point,
         seed: int = 1234,
         steps: int = 100,
@@ -377,6 +382,14 @@ class FermatPath(Path):
 
             return path_length(cartesian_coords)
 
+        @jit
+        def path_loss(cartesian_coords):
+            _loss = 0.0
+            for i, obj in enumerate(objects):
+                _loss += obj.evaluate_cartesian(cartesian_coords[i : i + 3, :])
+
+            return _loss
+
         key = jax.random.PRNGKey(seed)
         optimizer = optax.adam(learning_rate=1)
         theta = jax.random.uniform(key, shape=(n_unknowns,))
@@ -396,7 +409,7 @@ class FermatPath(Path):
 
         points = parametric_to_cartesian(theta)
 
-        return FermatPath(points=points)
+        return FermatPath(points=points, loss=path_loss(points))
 
 
 @dataclass
@@ -405,20 +418,15 @@ class MinPath(Path):
     A Path object that was obtain with the Min-Path-Tracing method.
     """
 
-    loss: float
-    """
-    The loss value for the given path.
-    """
-
     @classmethod
     @partial(jit, static_argnames=("cls", "steps"))
     def from_tx_objects_rx(
         cls,
         tx: Point,
-        objects: List[Union[Interactable, Parametric]],
+        objects: List[Interactable],
         rx: Point,
         seed: int = 1234,
-        steps: int = 100,
+        steps: int = 1000,
     ) -> "MinPath":
         """
         Returns a path that minimizes the sum of interactions.
@@ -433,7 +441,7 @@ class MinPath(Path):
         """
         n = len(objects)
         n_unknowns = sum(
-            obj.parameters_count() for obj in objects  # type: ignore[misc,union-attr]
+            obj.parameters_count() for obj in objects
         )
 
         @jit

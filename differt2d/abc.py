@@ -6,7 +6,6 @@ from __future__ import annotations
 
 __all__ = [
     "Interactable",
-    "Parametric",
     "Plottable",
 ]
 
@@ -48,9 +47,9 @@ class Plottable(Protocol):
         pass
 
 
-class Parametric(Protocol):
+class Interactable(Protocol):
     """
-    Protocol for any object that can be expressed using parametric coordinates.
+    Protocol for any object that a ray path can interact with.
     """
 
     @staticmethod
@@ -105,12 +104,6 @@ class Parametric(Protocol):
         :return: True if it intersects, ().
         """
         pass
-
-
-class Interactable(Protocol):
-    """
-    Protocol for any object that a ray path can interact with.
-    """
 
     @abstractmethod
     def evaluate_cartesian(self, ray_path: Array) -> Array:
