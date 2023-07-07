@@ -11,4 +11,5 @@ public functions and classes present in the Differt2D package.
    abc <differt2d.abc>
    geometry <differt2d.geometry>
    logic <differt2d.logic>
+   optimize <differt2d.optimize>
    scene <differt2d.scene>

@@ -364,7 +364,7 @@ def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -
 
 
 @jit_approx
-def is_true(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
+def is_true(x: Array, *, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be true.
 
@@ -383,7 +383,7 @@ def is_true(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Arr
 
 
 @jit_approx
-def is_false(x: Array, *, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
+def is_false(x: Array, *, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be false.
 

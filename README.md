@@ -4,4 +4,9 @@
   <img alt="Manim Slides Logo" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo.png">
 </picture>
 
+[![codecov][codecov-badge]][codecov-url]
+
 # DiffeRT2d
+
+[codecov-badge]: https://codecov.io/gh/jeertmans/DiffeRT2d/branch/main/graph/badge.svg?token=8P4DY9JCE4
+[codecov-url]: https://codecov.io/gh/jeertmans/DiffeRT2d

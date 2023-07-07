@@ -1,20 +1,20 @@
 """
-Geometrical objects.
+Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, List
 
 import jax
 import jax.numpy as jnp
-import optax
 from jax import jit
 
 from .abc import Interactable, Plottable
 from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
+from .optimize import minimize_many_random_uniform
 
 if TYPE_CHECKING:
     from dataclasses import dataclass
@@ -203,12 +203,20 @@ class Wall(Ray, Interactable):
         n = self.normal()  # Normal
         li = jnp.linalg.norm(i)  # Incident's length
         lr = jnp.linalg.norm(r)  # Reflected's length
-        i = i / li
-        r = r / lr
 
-        e = r - (i - 2 * jnp.dot(i, n) * n)
+        mode = "normalized"
 
-        return jnp.dot(e, e)
+        if mode == "normalized":
+            i = i / li
+            r = r / lr
+            e = r - (i - 2 * jnp.dot(i, n) * n)
+        elif mode == "multiplied":
+            e = li * r - lr * (i - 2 * jnp.dot(i, n) * n)
+        elif mode == "other":
+            re = i - 2 * jnp.dot(i, n) * n
+            e = jnp.cross(re, r)
+
+        return jnp.dot(e, e)  # * 0.05
 
 
 @dataclass
@@ -288,6 +296,7 @@ class Path(Plottable, ABC):
         contains = jnp.array(True)
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
+            # jax.debug.print("Contains: {obj}, {coords}", obj=obj, coords=param_coords)
             contains = logical_and(contains, obj.contains_parametric(param_coords))
 
         return contains
@@ -325,10 +334,26 @@ class Path(Plottable, ABC):
         )
 
 
-@partial(jax.jit, static_argnums=(3,))
+@partial(jax.jit, static_argnames=("size",))
 def parametric_to_cartesian_from_slice(obj, parametric_coords, start, size):
     parametric_coords = jax.lax.dynamic_slice(parametric_coords, (start,), (size,))
     return obj.parametric_to_cartesian(parametric_coords)
+
+
+@partial(jit, static_argnames=("n",))
+def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords):
+    cartesian_coords = jnp.empty((n + 2, 2))
+    cartesian_coords = cartesian_coords.at[0].set(tx_coords)
+    cartesian_coords = cartesian_coords.at[-1].set(rx_coords)
+    j = 0
+    for i, obj in enumerate(objects):
+        size = obj.parameters_count()
+        cartesian_coords = cartesian_coords.at[i + 1].set(
+            parametric_to_cartesian_from_slice(obj, parametric_coords, j, size)
+        )
+        j += size
+
+    return cartesian_coords
 
 
 @dataclass
@@ -345,7 +370,7 @@ class FermatPath(Path):
         objects: List[Interactable],
         rx: Point,
         seed: int = 1234,
-        steps: int = 100,
+        steps: int = 400,
     ) -> "FermatPath":
         """
         Returns a path with minimal length.
@@ -362,23 +387,10 @@ class FermatPath(Path):
         n_unknowns = sum([obj.parameters_count() for obj in objects])
 
         @jit
-        def parametric_to_cartesian(parametric_coords):
-            cartesian_coords = jnp.empty((n + 2, 2))
-            cartesian_coords = cartesian_coords.at[0].set(tx.point)
-            cartesian_coords = cartesian_coords.at[-1].set(rx.point)
-            j = 0
-            for i, obj in enumerate(objects):
-                size = obj.parameters_count()
-                cartesian_coords = cartesian_coords.at[i + 1].set(
-                    parametric_to_cartesian_from_slice(obj, parametric_coords, j, size)
-                )
-                j += size
-
-            return cartesian_coords
-
-        @jit
-        def loss(theta):
-            cartesian_coords = parametric_to_cartesian(theta)
+        def loss_fun(theta):
+            cartesian_coords = parametric_to_cartesian(
+                objects, theta, n, tx.point, rx.point
+            )
 
             return path_length(cartesian_coords)
 
@@ -391,23 +403,9 @@ class FermatPath(Path):
             return _loss
 
         key = jax.random.PRNGKey(seed)
-        optimizer = optax.adam(learning_rate=1)
-        theta = jax.random.uniform(key, shape=(n_unknowns,))
+        theta, _ = minimize_many_random_uniform(fun=loss_fun, n=n_unknowns, key=key)
 
-        f_and_df = jax.value_and_grad(loss)
-        opt_state = optimizer.init(theta)
-
-        def f(carry, x):
-            theta, opt_state = carry
-            loss, grads = f_and_df(theta)
-            updates, opt_state = optimizer.update(grads, opt_state)
-            theta = theta + updates
-            carry = (theta, opt_state)
-            return carry, loss
-
-        (theta, _), _ = jax.lax.scan(f, init=(theta, opt_state), xs=None, length=steps)
-
-        points = parametric_to_cartesian(theta)
+        points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
 
         return FermatPath(points=points, loss=path_loss(points))
 
@@ -426,7 +424,7 @@ class MinPath(Path):
         objects: List[Interactable],
         rx: Point,
         seed: int = 1234,
-        steps: int = 1000,
+        steps: int = 100,
     ) -> "MinPath":
         """
         Returns a path that minimizes the sum of interactions.
@@ -440,28 +438,13 @@ class MinPath(Path):
         :return: The resulting path of the MPT method.
         """
         n = len(objects)
-        n_unknowns = sum(
-            obj.parameters_count() for obj in objects
-        )
+        n_unknowns = sum(obj.parameters_count() for obj in objects)
 
         @jit
-        def parametric_to_cartesian(parametric_coords):
-            cartesian_coords = jnp.empty((n + 2, 2))
-            cartesian_coords = cartesian_coords.at[0].set(tx.point)
-            cartesian_coords = cartesian_coords.at[-1].set(rx.point)
-            j = 0
-            for i, obj in enumerate(objects):
-                size = obj.parameters_count()
-                cartesian_coords = cartesian_coords.at[i + 1].set(
-                    parametric_to_cartesian_from_slice(obj, parametric_coords, j, size)
-                )
-                j += size
-
-            return cartesian_coords
-
-        @jit
-        def loss(theta):
-            cartesian_coords = parametric_to_cartesian(theta)
+        def loss_fun(theta):
+            cartesian_coords = parametric_to_cartesian(
+                objects, theta, n, tx.point, rx.point
+            )
 
             _loss = 0.0
             for i, obj in enumerate(objects):
@@ -470,24 +453,8 @@ class MinPath(Path):
             return _loss
 
         key = jax.random.PRNGKey(seed)
-        optimizer = optax.adam(learning_rate=1)
-        theta = jax.random.uniform(key, shape=(n_unknowns,))
+        theta, loss = minimize_many_random_uniform(fun=loss_fun, n=n_unknowns, key=key)
 
-        f_and_df = jax.value_and_grad(loss)
-        opt_state = optimizer.init(theta)
+        points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
 
-        def f(carry, x):
-            theta, opt_state = carry
-            loss, grads = f_and_df(theta)
-            updates, opt_state = optimizer.update(grads, opt_state)
-            theta = theta + updates
-            carry = (theta, opt_state)
-            return carry, loss
-
-        (theta, _), losses = jax.lax.scan(
-            f, init=(theta, opt_state), xs=None, length=steps
-        )
-
-        points = parametric_to_cartesian(theta)
-
-        return MinPath(points=points, loss=losses[-1])
+        return MinPath(points=points, loss=loss)

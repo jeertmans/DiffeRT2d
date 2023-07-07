@@ -29,8 +29,8 @@ class Plottable(Protocol):
         Plot this object on the given axes and returns the results.
 
         :param ax: The axes to plot on.
-        :param args: Parameters to be passed to the plot function.
-        :param kwargs: Keyword parameters to be passed to the plot function.
+        :param args: Arguments to be passed to the plot function.
+        :param kwargs: Keyword arguments to be passed to the plot function.
         :return: The artist(s).
         """
         pass

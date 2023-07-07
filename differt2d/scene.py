@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Type, Union
 
 import jax
 import jax.numpy as jnp
@@ -45,7 +45,7 @@ def accumulate_at_location(
     for path_candidate in path_candidates:
         interacting_objects = [objects[i - 1] for i in path_candidate[1:-1]]
 
-        path = MinPath.from_tx_objects_rx(tx, interacting_objects, rx)
+        path = FermatPath.from_tx_objects_rx(tx, interacting_objects, rx)
 
         valid = path.on_objects(interacting_objects)
         valid = logical_and(
@@ -120,7 +120,7 @@ class Scene(Plottable):
             plt.show()
         """
         tx = Point(point=jnp.array([0.1, 0.1]))
-        rx = Point(point=jnp.array([0.415, 0.2]))
+        rx = Point(point=jnp.array([0.302, 0.2147]))
 
         walls = [
             # Outer walls
@@ -150,17 +150,17 @@ class Scene(Plottable):
     ) -> Union[Artist, List[Artist]]:
         """
         :param tx_args:
-            Parameters to be passed to TX's plot function.
+            Arguments to be passed to TX's plot function.
         :param tx_kwargs:
-            Keyword parameters to be passed to TX's plot function.
+            Keyword arguments to be passed to TX's plot function.
         :param objects_args:
-            Parameters to be passed to the objects' plot function.
+            Arguments to be passed to the objects' plot function.
         :param objects_kwargs:
-            Keyword parameters to be passed to the objects' plot function.
+            Keyword arguments to be passed to the objects' plot function.
         :param rx_args:
-            Parameters to be passed to RX's plot function.
+            Arguments to be passed to RX's plot function.
         :param rx_kwargs:
-            Keyword parameters to be passed to RX's plot function.
+            Keyword arguments to be passed to RX's plot function.
         """
         tx_kwargs.setdefault("color", "blue")
         rx_kwargs.setdefault("color", "green")
@@ -228,7 +228,10 @@ class Scene(Plottable):
         )
 
     def all_paths(
-        self, tol: float = 1e-4, method: Literal["FPT", "MPT"] = "FPT", **kwargs: Any
+        self,
+        tol: float = 1e-2,
+        method: Type[Path] = MinPath,
+        **kwargs: Any,
     ) -> List[Path]:
         """
         Returns all valid paths from :attr:`tx` to :attr:`rx`,
@@ -244,32 +247,26 @@ class Scene(Plottable):
         """
         paths = []
 
-        path_class: type[Path]
-        if method == "FPT":
-            path_class = FermatPath
-        elif method == "MPT":
-            path_class = MinPath
-        else:
-            raise ValueError(f"Unknown method name '{method}'")
-
         for path_candidate in self.all_path_candidates(**kwargs):
             interacting_objects = [self.objects[i - 1] for i in path_candidate[1:-1]]
 
-            path = path_class.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
+            path = method.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
 
             valid = path.on_objects(interacting_objects)
+
             valid = logical_and(
                 valid,
                 logical_not(path.intersects_with_objects(self.objects, path_candidate)),
             )
 
-            if isinstance(path, MinPath):
-                valid = logical_and(valid, less(path.loss, tol))
+            valid = logical_and(valid, less(path.loss, tol))
 
-            jax.debug.print("Path is valid: {v}, path={p}", v=valid, p=path)
+            jax.debug.print("Path is valid: {v},\n\tpath={p}", v=valid, p=path)
 
             if is_true(valid):
                 paths.append(path)
+            else:
+                jax.debug.print("That was not considered to be valid {v}", v=valid)
 
         return paths
 
