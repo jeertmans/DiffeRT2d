@@ -24,7 +24,7 @@ jobs:
         poetry install --with test
 
     - name: Run pytest and coverage
-      run: poetry run pytest --cov-report xml --cov=manim_slides tests/
+      run: poetry run pytest --cov-report xml --cov=differt2d tests/
 
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v3
