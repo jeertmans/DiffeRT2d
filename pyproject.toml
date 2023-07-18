@@ -68,9 +68,9 @@ sphinxext-opengraph = "^0.7.5"
 [tool.poetry.group.test.dependencies]
 byexample = "^10.5.6"
 pytest = "^7.3.1"
+pytest-cov = "^4.1.0"
 pytest-env = "^0.8.1"
 pytest-xdist = "^3.3.1"
-pytest-cov = "^4.1.0"
 
 [tool.pytest.ini_options]
 env = [
