@@ -458,7 +458,7 @@ class FermatPath(Path):
     """
 
     @classmethod
-    @partial(jit, static_argnames=("cls", "steps"))
+    @partial(jit, static_argnames=("cls", "steps", "optimizer"))
     def from_tx_objects_rx(
         cls,
         tx: Point,
@@ -466,7 +466,6 @@ class FermatPath(Path):
         rx: Point,
         key: Optional[jax.random.PRNGKey] = None,
         seed: int = 1234,
-        steps: int = 100,
         **kwargs: Any,
     ) -> "FermatPath":
         """
@@ -479,7 +478,6 @@ class FermatPath(Path):
         :param key: The random key to generate the initial guess.
         :param seed: The random seed used to generate the start iteration,
             only used if :python:`key is None`.
-        :param steps: The number of iterations performed by the minimizer.
         :param kwargs:
             Keyword arguments to be passed to
             :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
@@ -540,7 +538,7 @@ class MinPath(Path):
     """
 
     @classmethod
-    # @partial(jit, static_argnames=("cls", "steps"))
+    @partial(jit, static_argnames=("cls", "steps", "optimizer"))
     def from_tx_objects_rx(
         cls,
         tx: Point,
@@ -548,7 +546,6 @@ class MinPath(Path):
         rx: Point,
         key: Optional[jax.random.PRNGKey] = None,
         seed: int = 1234,
-        steps: int = 100,
         **kwargs: Any,
     ) -> "MinPath":
         """
@@ -561,7 +558,6 @@ class MinPath(Path):
         :param key: The random key to generate the initial guess.
         :param seed: The random seed used to generate the start iteration,
             only used if :python:`key is None`.
-        :param steps: The number of iterations performed by the minimizer.
         :param kwargs:
             Keyword arguments to be passed to
             :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
