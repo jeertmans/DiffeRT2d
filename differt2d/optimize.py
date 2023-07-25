@@ -39,7 +39,7 @@ def minimize(
     fun: Callable[[X], Y],
     x0: Array,
     steps: int = 100,
-    optimizer: optax.GradientTransformation = optax.adam(learning_rate=1),
+    optimizer: optax.GradientTransformation = optax.adam(learning_rate=0.1),
 ) -> Tuple[X, Y]:
     """
     Minimizes a scalar function of one or more variables.
@@ -47,7 +47,8 @@ def minimize(
     :param fun: The objective function to be minimized.
     :param x0: The initial guess, (n,).
     :param steps: The number of steps to perform.
-    :param optimizer: The optimizer to use.
+    :param optimizer: The optimizer to use,
+        defaults to :func:`optax.adam` with :python:`learning_rate = .1`.
     :return: The solution array and the corresponding loss.
 
     :Examples:

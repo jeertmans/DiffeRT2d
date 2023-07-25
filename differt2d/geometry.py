@@ -4,9 +4,8 @@ Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, List
 
 import jax
 import jax.numpy as jnp
@@ -61,6 +60,14 @@ def path_length(points: Array) -> Array:
 
     :param points: An array of points, (N, 2).
     :return: The path length, ().
+
+    :Examples:
+
+    >>> from differt2d.geometry import path_length
+    >>> import jax.numpy as jnp
+    >>> points = jnp.array([[0., 0.], [1., 0.], [1., 1.], [0., 0.]])
+    >>> path_length(points)  # 1 + 1 + sqrt(2)
+    Array(3.4142137, dtype=float32)
     """
     vectors = jnp.diff(points, axis=0)
     lengths = jnp.linalg.norm(vectors, axis=1)
@@ -72,6 +79,18 @@ def path_length(points: Array) -> Array:
 class Ray(Plottable):
     """
     A ray object with origin and destination points.
+
+    .. plot::
+        :include-source: true
+
+        import matplotlib.pyplot as plt
+        import jax.numpy as jnp
+        from differt2d.geometry import Ray
+
+        ax = plt.gca()
+        ray = Ray(points=jnp.array([[0., 0.], [1., 1.]]))
+        _ = ray.plot(ax)
+        plt.show()
     """
 
     points: Array  # a b
@@ -118,6 +137,18 @@ class Ray(Plottable):
 class Point(Plottable):
     """
     A point object defined by its coordinates.
+
+    .. plot::
+        :include-source: true
+
+        import matplotlib.pyplot as plt
+        import jax.numpy as jnp
+        from differt2d.geometry import Point
+
+        ax = plt.gca()
+        point = Point(point=jnp.array([0., 0.]))
+        _ = point.plot(ax)
+        plt.show()
     """
 
     point: Array
@@ -141,6 +172,18 @@ class Point(Plottable):
 class Wall(Ray, Interactable):
     """
     A wall object defined by its corners.
+
+    .. plot::
+        :include-source: true
+
+        import matplotlib.pyplot as plt
+        import jax.numpy as jnp
+        from differt2d.geometry import Wall
+
+        ax = plt.gca()
+        wall = Wall(points=jnp.array([[0., 0.], [1., 0.]]))
+        _ = wall.plot(ax)
+        plt.show()
     """
 
     @jit
@@ -247,9 +290,21 @@ class RIS(Wall):
 
 
 @dataclass
-class Path(Plottable, ABC):
+class Path(Plottable):
     """
     A path object with at least two points.
+
+    .. plot::
+        :include-source: true
+
+        import matplotlib.pyplot as plt
+        import jax.numpy as jnp
+        from differt2d.geometry import Path
+
+        ax = plt.gca()
+        path = Path(points=jnp.array([[0., 0.], [.8, .2], [1., 1.]]))
+        _ = path.plot(ax)
+        plt.show()
     """
 
     points: Array
@@ -263,24 +318,45 @@ class Path(Plottable, ABC):
     """
 
     @classmethod
-    @abstractmethod
     def from_tx_objects_rx(
         cls,
-        tx: Any,
-        objects: List[Any],
-        rx: Any,
+        tx: Point,
+        objects: List[Interactable],
+        rx: Point,
     ) -> "Path":
         """
         Returns a path from TX to RX, traversing each object in the list
         in the provided order.
+
+        The present implementation will sample a point at :python:`t = 0.5`
+        on each object.
 
         :param tx: The emitting node.
         :param objects:
             The list of objects to interact with (order is important).
         :param rx: The receiving node.
         :return: The resulting path.
+
+        :Examples:
+
+        .. plot::
+            :include-source: true
+
+            import matplotlib.pyplot as plt
+            import jax.numpy as jnp
+            from differt2d.geometry import Path
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene()
+            _ = scene.plot(ax)
+            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            _ = path.plot(ax)
+            plt.show()
         """
-        pass
+        points = [obj.parametric_to_cartesian(0.5) for obj in objects]
+        points = jnp.row_stack([tx.point, points, rx.point])
+        return cls(points=points)
 
     @jit
     def length(self) -> Array:
@@ -293,6 +369,15 @@ class Path(Plottable, ABC):
 
     @jit
     def on_objects(self, objects: List[Interactable]) -> Array:
+        """
+        Returns whether the path correctly passes on the objects.
+
+        For each object i, it will check whether it contains the ith point
+        in the path (start and end points are ignored).
+
+        :param objects: The list of objects to check against.
+        :return: Whether this path passes on the objects, ().
+        """
         contains = jnp.array(True)
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
@@ -305,6 +390,16 @@ class Path(Plottable, ABC):
     def intersects_with_objects(
         self, objects: List[Interactable], path_candidate: List[int]
     ) -> Array:
+        """
+        Returns whether the path intersects with any of the objects.
+
+        The ``path_candidate`` argument is used to avoid checking for
+        intersection on objects the path is allowed to pass on.
+
+        :param objects: The list of objects in the scene.
+        :param path_candidate: The object indices on which the path should pass.
+        :return: Whether this path intersects any of the objects, ().
+        """
         interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
         intersects = jnp.array(False)
 
@@ -382,6 +477,23 @@ class FermatPath(Path):
         :param seed: The random seed used to generate the start iteration.
         :param steps: The number of iterations performed by the minimizer.
         :return: The resulting path of the FPT method.
+
+        :Examples:
+
+        .. plot::
+            :include-source: true
+
+            import matplotlib.pyplot as plt
+            import jax.numpy as jnp
+            from differt2d.geometry import FermatPath
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene()
+            _ = scene.plot(ax)
+            path = FermatPath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            _ = path.plot(ax)
+            plt.show()
         """
         n = len(objects)
         n_unknowns = sum([obj.parameters_count() for obj in objects])
@@ -407,7 +519,7 @@ class FermatPath(Path):
 
         points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
 
-        return FermatPath(points=points, loss=path_loss(points))
+        return cls(points=points, loss=path_loss(points))
 
 
 @dataclass
@@ -436,6 +548,23 @@ class MinPath(Path):
         :param seed: The random seed used to generate the start iteration.
         :param steps: The number of iterations performed by the minimizer.
         :return: The resulting path of the MPT method.
+
+        :Examples:
+
+        .. plot::
+            :include-source: true
+
+            import matplotlib.pyplot as plt
+            import jax.numpy as jnp
+            from differt2d.geometry import MinPath
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene()
+            _ = scene.plot(ax)
+            path = MinPath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            _ = path.plot(ax)
+            plt.show()
         """
         n = len(objects)
         n_unknowns = sum(obj.parameters_count() for obj in objects)
@@ -457,4 +586,4 @@ class MinPath(Path):
 
         points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
 
-        return MinPath(points=points, loss=loss)
+        return cls(points=points, loss=loss)

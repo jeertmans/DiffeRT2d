@@ -94,9 +94,8 @@ class Scene(Plottable):
         with a small entrance.
 
         :return: The scene.
-        :rtype: Scene
 
-        :EXAMPLES:
+        :Examples:
 
         >>> from differt2d.scene import Scene
         >>>
@@ -132,6 +131,48 @@ class Scene(Plottable):
             Wall(points=jnp.array([[0.4, 0.0], [0.4, 0.4]])),
             Wall(points=jnp.array([[0.4, 0.4], [0.3, 0.4]])),
             Wall(points=jnp.array([[0.1, 0.4], [0.0, 0.4]])),
+        ]
+
+        return cls(tx=tx, rx=rx, objects=walls)
+
+    @classmethod
+    def square_scene(cls) -> "Scene":
+        """
+        Instantiates a square scene with one main room.
+
+        :return: The scene.
+
+        :Examples:
+
+        >>> from differt2d.scene import Scene
+        >>>
+        >>> scene = Scene.square_scene()
+        >>> scene.bounding_box()
+        Array([[0., 0.],
+               [1., 1.]], dtype=float32)
+        >>> len(scene.objects)
+        4
+        >>> scene.tx
+        Point(point=Array([0.2, 0.2], dtype=float32))
+
+        .. plot::
+
+            import matplotlib.pyplot as plt
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene()
+            _ = scene.plot(ax)
+            plt.show()
+        """
+        tx = Point(point=jnp.array([0.2, 0.2]))
+        rx = Point(point=jnp.array([0.5, 0.5]))
+
+        walls = [
+            Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
+            Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
+            Wall(points=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
+            Wall(points=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
         ]
 
         return Scene(tx=tx, rx=rx, objects=walls)
@@ -248,7 +289,9 @@ class Scene(Plottable):
         paths = []
 
         for path_candidate in self.all_path_candidates(**kwargs):
-            interacting_objects = [self.objects[i - 1] for i in path_candidate[1:-1]]
+            interacting_objects: List[Interactable] = [
+                self.objects[i - 1] for i in path_candidate[1:-1]  # type: ignore
+            ]
 
             path = method.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
 
