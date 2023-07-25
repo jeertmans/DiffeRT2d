@@ -54,12 +54,11 @@ jobs:
       run: |
         poetry install --with test
 
-    - name: Get files to check
-      uses: jeertmans/filesfinder@v0.4.5
-      id: ff
+    - name: Install FilesFinder
+      uses: taiki-e/install-action@v2
       with:
-        args: differt2d/**.py README.md
+        tool: filesfinder@latest
 
     - name: Run ByExample
       run: |
-        echo "${{ steps.ff.outputs.files }}" | xargs poetry run byexample -l python +timeout=60
+        ff "differt2d/**py" README.md | xargs poetry run byexample -l python +timeout=60
