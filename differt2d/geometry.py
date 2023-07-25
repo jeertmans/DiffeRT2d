@@ -5,7 +5,7 @@ Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, List, Optional
 
 import jax
 import jax.numpy as jnp
@@ -458,14 +458,15 @@ class FermatPath(Path):
     """
 
     @classmethod
-    @partial(jit, static_argnames=("cls", "steps"))
+    @partial(jit, static_argnames=("cls", "steps", "optimizer"))
     def from_tx_objects_rx(
         cls,
         tx: Point,
         objects: List[Interactable],
         rx: Point,
+        key: Optional[jax.random.PRNGKey] = None,
         seed: int = 1234,
-        steps: int = 400,
+        **kwargs: Any,
     ) -> "FermatPath":
         """
         Returns a path with minimal length.
@@ -474,8 +475,12 @@ class FermatPath(Path):
         :param objects:
             The list of objects to interact with (order is important).
         :param rx: The receiving node.
-        :param seed: The random seed used to generate the start iteration.
-        :param steps: The number of iterations performed by the minimizer.
+        :param key: The random key to generate the initial guess.
+        :param seed: The random seed used to generate the start iteration,
+            only used if :python:`key is None`.
+        :param kwargs:
+            Keyword arguments to be passed to
+            :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
         :return: The resulting path of the FPT method.
 
         :Examples:
@@ -514,8 +519,12 @@ class FermatPath(Path):
 
             return _loss
 
-        key = jax.random.PRNGKey(seed)
-        theta, _ = minimize_many_random_uniform(fun=loss_fun, n=n_unknowns, key=key)
+        if key is None:
+            key = jax.random.PRNGKey(seed)
+
+        theta, _ = minimize_many_random_uniform(
+            fun=loss_fun, n=n_unknowns, key=key, **kwargs
+        )
 
         points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
 
@@ -529,14 +538,15 @@ class MinPath(Path):
     """
 
     @classmethod
-    @partial(jit, static_argnames=("cls", "steps"))
+    @partial(jit, static_argnames=("cls", "steps", "optimizer"))
     def from_tx_objects_rx(
         cls,
         tx: Point,
         objects: List[Interactable],
         rx: Point,
+        key: Optional[jax.random.PRNGKey] = None,
         seed: int = 1234,
-        steps: int = 100,
+        **kwargs: Any,
     ) -> "MinPath":
         """
         Returns a path that minimizes the sum of interactions.
@@ -545,8 +555,12 @@ class MinPath(Path):
         :param objects:
             The list of objects to interact with (order is important).
         :param rx: The receiving node.
-        :param seed: The random seed used to generate the start iteration.
-        :param steps: The number of iterations performed by the minimizer.
+        :param key: The random key to generate the initial guess.
+        :param seed: The random seed used to generate the start iteration,
+            only used if :python:`key is None`.
+        :param kwargs:
+            Keyword arguments to be passed to
+            :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
         :return: The resulting path of the MPT method.
 
         :Examples:
@@ -581,8 +595,12 @@ class MinPath(Path):
 
             return _loss
 
-        key = jax.random.PRNGKey(seed)
-        theta, loss = minimize_many_random_uniform(fun=loss_fun, n=n_unknowns, key=key)
+        if key is None:
+            key = jax.random.PRNGKey(seed)
+
+        theta, loss = minimize_many_random_uniform(
+            fun=loss_fun, n=n_unknowns, key=key, **kwargs
+        )
 
         points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
 

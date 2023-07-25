@@ -87,6 +87,35 @@ class Scene(Plottable):
     """
 
     @classmethod
+    @partial(jax.jit, static_argnames=("cls", "n"))
+    def random_uniform_scene(cls, key: jax.random.KeyArray, n: int) -> "Scene":
+        """
+        Generates a random scene with ``n`` walls,
+        drawing coordinates from a random distribution.
+
+        :Examples:
+
+        .. plot::
+            :include-source: true
+
+            import matplotlib.pyplot as plt
+            import jax
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            key = jax.random.PRNGKey(1234)
+            scene = Scene.random_uniform_scene(key, 5)
+            _ = scene.plot(ax)
+            plt.show()
+        """
+        points = jax.random.uniform(key, (2 * n + 2, 2))
+        tx = Point(point=points[+0, :])
+        rx = Point(point=points[-1, :])
+
+        walls = [Wall(points=points[2 * i : 2 * i + 2, :]) for i in range(1, n + 1)]
+        return cls(tx=tx, rx=rx, objects=walls)
+
+    @classmethod
     def basic_scene(cls) -> "Scene":
         """
         Instantiates a basic scene with a main room,

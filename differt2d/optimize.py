@@ -67,7 +67,6 @@ def minimize(
     f_and_df = jax.value_and_grad(fun)
     opt_state = optimizer.init(x0)
 
-    @jax.jit
     def f(carry, x):
         x, opt_state = carry
         loss, grads = f_and_df(x)
@@ -91,7 +90,7 @@ def minimize_random_uniform(
     with initial guess drawn randomly from a uniform distribution.
 
     :param fun: The objective function to be minimized.
-    :param key: The random key to generate the initial guess.
+    :param key: The random key used to generate the initial guess.
     :param n: The size of the random vector to generate.
     :param kwargs:
         Keyword arguments to be passed to :func:`minimize`.
@@ -128,7 +127,7 @@ def minimize_many_random_uniform(
     and returns the best minimum out of the :code:`many` trials.
 
     :param fun: The objective function to be minimized.
-    :param key: The random key to generate the initial guess.
+    :param key: The random key used to generate the initial guesses.
     :param n: The size of the random vector to generate.
     :param many:
         How many times the minimization should be performed.
