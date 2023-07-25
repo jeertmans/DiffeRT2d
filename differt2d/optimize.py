@@ -1,5 +1,27 @@
 """
 Otimization toolbox.
+
+All the functions present in this toolbox support
+Just-in-time compilation with :func:`jax.jit`.
+
+Examples
+========
+
+>>> from differt2d.optimize import minimize
+>>> import chex
+>>> import jax
+>>> import jax.numpy as jnp
+>>> @jax.jit
+... def parabola_min(a, b, c):
+...     def f(x):
+...         x = a * (x + b) + c
+...         return jnp.dot(x, x)
+...
+...     return minimize(f, jnp.array(0.0))
+>>>
+>>> x, y = parabola_min(2.0, 1.0, 1.0)
+>>> chex.assert_trees_all_close(x, -1.5, rtol=1e-2)
+>>> chex.assert_trees_all_close(y, +0.0, atol=1e-3)
 """
 
 from typing import Any, Callable, Tuple, TypeVar
@@ -27,6 +49,19 @@ def minimize(
     :param steps: The number of steps to perform.
     :param optimizer: The optimizer to use.
     :return: The solution array and the corresponding loss.
+
+    :Examples:
+
+    >>> from differt2d.optimize import minimize
+    >>> import chex
+    >>> import jax.numpy as jnp
+    >>> def f(x):
+    ...     x = x - 1.0
+    ...     return jnp.dot(x, x)
+    >>>
+    >>> x, y = minimize(f, jnp.zeros(10))
+    >>> chex.assert_trees_all_close(x, jnp.ones(10), rtol=1e-2)
+    >>> chex.assert_trees_all_close(y, 0.0, atol=1e-4)
     """
     f_and_df = jax.value_and_grad(fun)
     opt_state = optimizer.init(x0)
@@ -60,6 +95,20 @@ def minimize_random_uniform(
     :param kwargs:
         Keyword arguments to be passed to :func:`minimize`.
     :return: The solution array and the corresponding loss.
+
+    :Examples:
+
+    >>> from differt2d.optimize import minimize_random_uniform
+    >>> import chex
+    >>> import jax
+    >>> import jax.numpy as jnp
+    >>> def f(x):
+    ...     x = x - 1.0
+    ...     return jnp.dot(x, x)
+    >>>
+    >>> x, y = minimize_random_uniform(f, jax.random.PRNGKey(1234), 10)
+    >>> chex.assert_trees_all_close(x, jnp.ones(10), rtol=1e-2)
+    >>> chex.assert_trees_all_close(y, 0.0, atol=1e-3)
     """
     x0 = jax.random.uniform(key, shape=(n,))
     return minimize(fun=fun, x0=x0, **kwargs)
@@ -85,6 +134,20 @@ def minimize_many_random_uniform(
     :param kwargs:
         Keyword arguments to be passed to :func:`minimize`.
     :return: The solution array and the corresponding loss.
+
+    :Examples:
+
+    >>> from differt2d.optimize import minimize_many_random_uniform
+    >>> import chex
+    >>> import jax
+    >>> import jax.numpy as jnp
+    >>> def f(x):
+    ...     x = x - 1.0
+    ...     return jnp.dot(x, x)
+    >>>
+    >>> x, y = minimize_many_random_uniform(f, jax.random.PRNGKey(1234), 10)
+    >>> chex.assert_trees_all_close(x, jnp.ones(10), rtol=1e-2)
+    >>> chex.assert_trees_all_close(y, 0.0, atol=1e-4)
     """
     keys = jax.random.split(key, num=many)
 
