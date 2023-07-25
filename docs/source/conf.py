@@ -171,20 +171,6 @@ def add_note_about_abstract(app, what, name, obj, options, lines):
         lines.extend(NOTE_ABOUT_ABSTRACT)
 
 
-MODULE_USAGE = """
-:USAGE:
-
->>> from {module} import *
->>> # or
->>> import {module}
-"""
-
-
-def add_module_usage(app, what, name, obj, options, lines):
-    if what == "module":
-        lines.extend(MODULE_USAGE.format(module=obj.__name__).splitlines())
-
-
 def setup(app):
     app.connect(
         "autodoc-skip-member",
@@ -202,10 +188,5 @@ def setup(app):
     app.connect(
         "autodoc-process-docstring",
         add_note_about_abstract,
-        priority=501,
-    )
-    app.connect(
-        "autodoc-process-docstring",
-        add_module_usage,
         priority=501,
     )
