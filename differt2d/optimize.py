@@ -39,7 +39,7 @@ def minimize(
     fun: Callable[[X], Y],
     x0: Array,
     steps: int = 100,
-    optimizer: optax.GradientTransformation = optax.adam(learning_rate=0.1),
+    optimizer: optax.GradientTransformation = optax.adam(learning_rate=0.01),
 ) -> Tuple[X, Y]:
     """
     Minimizes a scalar function of one or more variables.
@@ -91,7 +91,7 @@ def minimize_random_uniform(
     with initial guess drawn randomly from a uniform distribution.
 
     :param fun: The objective function to be minimized.
-    :param key: The random key to generate the initial guess.
+    :param key: The random key used to generate the initial guess.
     :param n: The size of the random vector to generate.
     :param kwargs:
         Keyword arguments to be passed to :func:`minimize`.
@@ -128,7 +128,7 @@ def minimize_many_random_uniform(
     and returns the best minimum out of the :code:`many` trials.
 
     :param fun: The objective function to be minimized.
-    :param key: The random key to generate the initial guess.
+    :param key: The random key used to generate the initial guesses.
     :param n: The size of the random vector to generate.
     :param many:
         How many times the minimization should be performed.
