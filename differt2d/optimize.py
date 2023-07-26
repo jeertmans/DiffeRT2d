@@ -35,11 +35,35 @@ X = TypeVar("X", bound=Array)
 Y = TypeVar("Y", bound=Array)
 
 
+class DefaultOptimizer(optax.GradientTransformationExtraArgs):
+    def __repr__(self):
+        return "optax.adam(learning_rate=0.1)"
+
+
+def default_optimizer() -> optax.GradientTransformation:
+    """
+    Returns the default optimizer.
+
+    Useful to override the :func:`repr` method in the documentation.
+
+    :return: The default optimizer.
+
+    :Examples:
+
+    >>> from differt2d.optimize import default_optimizer
+    >>> default_optimizer()
+    optax.adam(learning_rate=0.1)
+    """
+    optimizer = optax.adam(learning_rate=0.1)
+    optimizer.__class__ = DefaultOptimizer
+    return optimizer
+
+
 def minimize(
     fun: Callable[[X], Y],
     x0: Array,
     steps: int = 100,
-    optimizer: optax.GradientTransformation = optax.adam(learning_rate=0.1),
+    optimizer: optax.GradientTransformation = default_optimizer(),
 ) -> Tuple[X, Y]:
     """
     Minimizes a scalar function of one or more variables.
@@ -47,8 +71,7 @@ def minimize(
     :param fun: The objective function to be minimized.
     :param x0: The initial guess, (n,).
     :param steps: The number of steps to perform.
-    :param optimizer: The optimizer to use,
-        defaults to :func:`optax.adam` with :python:`learning_rate = .1`.
+    :param optimizer: The optimizer to use.
     :return: The solution array and the corresponding loss.
 
     :Examples:
