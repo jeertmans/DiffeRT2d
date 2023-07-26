@@ -38,7 +38,7 @@ __all__ = [
 
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Optional, Literal
+from typing import TYPE_CHECKING, Literal, Optional
 
 import jax
 import jax.numpy as jnp
@@ -176,7 +176,11 @@ def disable_approx(disable: bool = True):
 
 
 @partial(jax.jit, inline=True, static_argnames=("function",))
-def activation(x: Array, alpha: float = 1e2, function: Literal["sigmoid", "hard_sigmoid"] = "sigmoid") -> Array:
+def activation(
+    x: Array,
+    alpha: float = 1e2,
+    function: Literal["sigmoid", "hard_sigmoid"] = "sigmoid",
+) -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1,
     with a smoothed transition centered at :python:`x = 0.0`.
@@ -335,7 +339,9 @@ def greater_equal(
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
-    return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
+    return (
+        activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
+    )
 
 
 @jit_approx
