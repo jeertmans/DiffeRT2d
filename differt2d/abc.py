@@ -12,13 +12,13 @@ __all__ = [
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, List, Protocol, Union
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from jax import Array
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
 
-class Plottable(Protocol):
+class Plottable(Protocol):  # pragma: no cover
     """
     Protocol for any object that can be plotted using matplotlib.
     """
@@ -47,7 +47,7 @@ class Plottable(Protocol):
         pass
 
 
-class Interactable(Protocol):
+class Interactable(Protocol):  # pragma: no cover
     """
     Protocol for any object that a ray path can interact with.
     """
