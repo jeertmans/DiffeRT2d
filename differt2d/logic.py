@@ -38,7 +38,7 @@ __all__ = [
 
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import jax
 import jax.numpy as jnp
@@ -52,7 +52,7 @@ _enable_approx = jax.config.define_bool_state(
     help=("Enable approximation using some activation function."),
 )
 
-jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
+jit_approx = partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 
 
 @contextmanager
@@ -175,11 +175,11 @@ def disable_approx(disable: bool = True):
         yield
 
 
-@partial(jax.jit, inline=True, static_argnames=("function",))
+@partial(jax.jit, inline=True, static_argnames=["function"])
 def activation(
     x: Array,
     alpha: float = 1e2,
-    function: Literal["sigmoid", "hard_sigmoid"] = "sigmoid",
+    function: Literal["sigmoid", "hard_sigmoid"] = "hard_sigmoid",
 ) -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1,
@@ -242,8 +242,8 @@ def activation(
         raise ValueError(f"Unknown function '{function}'")
 
 
-@jit_approx
-def logical_or(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=["approx"])
+def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical :python:`x or y`.
 
@@ -260,12 +260,12 @@ def logical_or(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
     return jnp.maximum(x, y) if approx else jnp.logical_or(x, y)
 
 
-@jit_approx
-def logical_and(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=["approx"])
+def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical :python:`x and y`.
 
-    Calls :func:`jax.numpy.maximum` if approximation is enabled,
+    Calls :func:`jax.numpy.minimum` if approximation is enabled,
     :func:`jax.numpy.logical_or` otherwise.
 
     :param x: The first input array.
@@ -275,11 +275,11 @@ def logical_and(x: Array, y: Array, *, approx: Optional[bool] = None) -> Array:
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
-    return jnp.multiply(x, y) if approx else jnp.logical_and(x, y)
+    return jnp.minimum(x, y) if approx else jnp.logical_and(x, y)
 
 
-@jit_approx
-def logical_not(x: Array, *, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=["approx"])
+def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical :python:`not x`.
 
@@ -296,13 +296,12 @@ def logical_not(x: Array, *, approx: Optional[bool] = None) -> Array:
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
 
-@jit_approx
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def greater(
     x: Array,
     y: Array,
-    *,
     approx: Optional[bool] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Array:
     """
     Element-wise logical :python:`x > y`.
@@ -314,6 +313,8 @@ def greater(
     :param x: The first input array.
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
+    :param kwargs:
+        Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
@@ -321,9 +322,9 @@ def greater(
     return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
 
-@jit_approx
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def greater_equal(
-    x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs
+    x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any
 ) -> Array:
     """
     Element-wise logical :python:`x >= y`.
@@ -335,6 +336,8 @@ def greater_equal(
     :param x: The first input array.
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
+    :param kwargs:
+        Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
@@ -344,8 +347,8 @@ def greater_equal(
     )
 
 
-@jit_approx
-def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Array:
     """
     Element-wise logical :python:`x < y`.
 
@@ -356,6 +359,8 @@ def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Arra
     :param x: The first input array.
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
+    :param kwargs:
+        Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
@@ -363,8 +368,10 @@ def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Arra
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
 
-@jit_approx
-def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Array:
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+def less_equal(
+    x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any
+) -> Array:
     """
     Element-wise logical :python:`x <= y`.
 
@@ -375,6 +382,8 @@ def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -
     :param x: The first input array.
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
+    :param kwargs:
+        Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
@@ -382,8 +391,8 @@ def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
 
-@jit_approx
-def is_true(x: Array, *, tol: float = 0.01, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=["approx"])
+def is_true(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be true.
 
@@ -401,8 +410,8 @@ def is_true(x: Array, *, tol: float = 0.01, approx: Optional[bool] = None) -> Ar
     return jnp.greater(x, 1.0 - tol) if approx else jnp.asarray(x)
 
 
-@jit_approx
-def is_false(x: Array, *, tol: float = 0.01, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=["approx"])
+def is_false(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be false.
 
