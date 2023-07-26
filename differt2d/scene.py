@@ -12,7 +12,7 @@ from .abc import Interactable, Plottable
 from .geometry import FermatPath, MinPath, Path, Point, Wall
 from .logic import is_true, less, logical_and, logical_not
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from dataclasses import dataclass
 
     from jax import Array

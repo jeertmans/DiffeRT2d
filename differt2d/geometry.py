@@ -12,10 +12,17 @@ import jax.numpy as jnp
 from jax import jit
 
 from .abc import Interactable, Plottable
-from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
+from .logic import (
+    greater,
+    greater_equal,
+    less,
+    less_equal,
+    logical_and,
+    logical_or,
+)
 from .optimize import minimize_many_random_uniform
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from dataclasses import dataclass
 
     from jax import Array
@@ -23,34 +30,76 @@ else:
     from chex import dataclass
 
 
-@jit
-def segments_intersect_including_extremities(P1, P2, P3, P4):
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+def segments_intersect(P1: Array, P2: Array, P3: Array, P4: Array, **kwargs: Any) -> Array:
+    """
+    Checks whether two line segments intersect.
+
+    The first segment is defined by points P1-P2, and the second by
+    points P3-P4.
+
+    :param P1:
+        The coordinates of the first point of the first segment, (2,).
+    :param P2:
+        The coordinates of the second point of the first segment, (2,).
+    :param P3:
+        The coordinates of the first point of the second segment, (2,).
+    :param P4:
+        The coordinates of the second point of the second segment, (2,).
+    :param kwargs:
+        Keyword arguments to be passed to logical functions.
+    :return: Whether the two segments intersect, ().
+
+    .. warning::
+
+        Division by zero may occur if the two segments are colinear.
+
+    :Examples:
+
+    >>> from differt2d.geometry import segments_intersect
+    >>> import jax.numpy as jnp
+    >>> P1 = jnp.array([+0., +0.]); P2 = jnp.array([+1., +0.])
+    >>> P3 = jnp.array([+.5, -1.]); P4 = jnp.array([+.5, +1.])
+    >>> segments_intersect(P1, P2, P3, P4)
+    Array(1., dtype=float32)
+    >>> segments_intersect(P1, P2, P3, P4, approx=False)
+    Array(True, dtype=bool)
+    >>> segments_intersect(P1, P2, P3, P4, function="sigmoid")
+    Array(1., dtype=float32)
+
+
+    :References:
+
+    Code inspired from "Graphics Gems III - 1st Edition", section IV.6.
+
+    https://www.realtimerendering.com/resources/GraphicsGems/gemsiii/insectc.c
+    http://www.graphicsgems.org/
+    """
     A = P2 - P1
     B = P3 - P4
     C = P1 - P3
-    a = B[1] * C[0] - B[0] * C[1]
-    b = A[0] * C[1] - A[1] * C[0]
-    d = A[1] * B[0] - A[0] * B[1]
-    a = a / d
-    b = b / d
-    a = logical_and(greater_equal(a, 0.0), less_equal(a, 1.0))
-    b = logical_and(greater_equal(b, 0.0), less_equal(b, 1.0))
-    return logical_and(a, b)
+    a = B[1] * C[0] - B[0] * C[1]  # alpha numerator
+    b = A[0] * C[1] - A[1] * C[0]  # beta numerator
+    d = A[1] * B[0] - A[0] * B[1]  # both denominator
+    kwargs_no_function = kwargs.copy()
+    kwargs_no_function.pop("function", None)
 
+    @jit
+    def test(num, den):
+        t = num / den
+        return logical_and(
+            greater(t, 0.0, **kwargs),
+            less(t, 1.0, **kwargs),
+            **kwargs_no_function
+        )
 
-@jit
-def segments_intersect_excluding_extremities(P1, P2, P3, P4):
-    A = P2 - P1
-    B = P3 - P4
-    C = P1 - P3
-    a = B[1] * C[0] - B[0] * C[1]
-    b = A[0] * C[1] - A[1] * C[0]
-    d = A[1] * B[0] - A[0] * B[1]
-    a = a / d
-    b = b / d
-    a = logical_and(greater(a, 0.0), less(a, 1.0))
-    b = logical_and(greater(b, 0.0), less(b, 1.0))
-    return logical_and(a, b)
+    intersect = logical_and(
+        test(a, d),
+        test(b, d),
+        **kwargs_no_function
+    )
+
+    return intersect
 
 
 @partial(jax.jit, inline=True)
@@ -226,7 +275,7 @@ class Wall(Ray, Interactable):
         ray: Array,
         patch: float = 0.0,
     ) -> Array:
-        return segments_intersect_including_extremities(
+        return segments_intersect(
             self.origin() - patch * self.t(),
             self.dest() + patch * self.t(),
             ray[0, :],
