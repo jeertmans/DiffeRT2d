@@ -222,22 +222,16 @@ class Wall(Ray, Interactable):
 
     @jit
     def intersects_cartesian(
-        self, ray: Array, patch: float = 0.05, include_extremities: bool = True
+        self,
+        ray: Array,
+        patch: float = 0.0,
     ) -> Array:
-        if include_extremities:
-            return segments_intersect_including_extremities(
-                self.origin() - patch * self.t(),
-                self.dest() + patch * self.t(),
-                ray[0, :],
-                ray[1, :],
-            )
-        else:
-            return segments_intersect_excluding_extremities(
-                self.origin() - patch * self.t(),
-                self.dest() + patch * self.t(),
-                ray[0, :],
-                ray[1, :],
-            )
+        return segments_intersect_including_extremities(
+            self.origin() - patch * self.t(),
+            self.dest() + patch * self.t(),
+            ray[0, :],
+            ray[1, :],
+        )
 
     @jit
     def evaluate_cartesian(self, ray_path: Array) -> Array:
