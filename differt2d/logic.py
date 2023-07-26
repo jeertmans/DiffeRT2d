@@ -22,6 +22,7 @@ when :code:`approx` is set to :python:`False`.
 from __future__ import annotations
 
 __all__ = [
+    "activation",
     "disable_approx",
     "enable_approx",
     "greater",
@@ -33,12 +34,11 @@ __all__ = [
     "logical_and",
     "logical_not",
     "logical_or",
-    "sigmoid",
 ]
 
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Literal
 
 import jax
 import jax.numpy as jnp
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 _enable_approx = jax.config.define_bool_state(
     name="jax_enable_approx",
     default=True,
-    help=("Enable approximation using sigmoids."),
+    help=("Enable approximation using some activation function."),
 )
 
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx"])
@@ -175,32 +175,30 @@ def disable_approx(disable: bool = True):
         yield
 
 
-@partial(jax.jit, inline=True)
-def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
+@partial(jax.jit, inline=True, static_argnames=("function",))
+def activation(x: Array, alpha: float = 1e2, function: Literal["sigmoid", "hard_sigmoid"] = "sigmoid") -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1,
-    with a smoothed transition.
+    with a smoothed transition centered at :python:`x = 0.0`.
+
+    Depending on the ``function`` argument, the activation function has the
+    following definition:
 
     .. math::
-        \text{sigmoid}(x;\lambda) = \frac{1}{1 + e^{-\lambda x}},
+        \text{sigmoid}(x;\alpha) = \frac{1}{1 + e^{-\alpha x}},
 
-    where :math:`\lambda` (:code:`lambda_`) is a slope parameter.
+    or
 
-    See :func:`jax.nn.sigmoid` for more details.
+    .. math::
+        \text{hard_sigmoid}(x;\alpha) = \frac{\text{relu6}(\alpha x+3)}{6},
 
-    .. note::
+    where :math:`\alpha` (:code:`alpha`) is a slope parameter.
 
-        Using the above definition for the sigmoid will produce
-        undesirable effects when computing its gradient. This is why we rely
-        on JAX's implementation, that does not produce :code:`NaN` values
-        when :code:`x` is small.
-
-        You can read more about this in
-        :sothread:`questions/68290850/jax-autograd-of-a-sigmoid-always-returns-nan`.
+    See :func:`jax.nn.sigmoid` or :func:`jax.nn.hard_sigmoid` for more details.
 
     :param x: The input array.
-    :param `lambda_`: The slope parameter.
-    :return: The corresponding sigmoid values.
+    :param alpha: The slope parameter.
+    :return: The corresponding values.
 
     :EXAMPLES:
 
@@ -209,20 +207,35 @@ def sigmoid(x: Array, *, lambda_: float = 100.0) -> Array:
 
         import matplotlib.pyplot as plt
         import numpy as np
-        from differt2d.logic import sigmoid
+        from differt2d.logic import activation
+        from jax import grad, vmap
 
         x = np.linspace(-5, +5, 200)
 
-        for lambda_ in [1, 10, 100]:
-            y = sigmoid(x, lambda_=lambda_)
-            _ = plt.plot(x, y, "--", label=f"$\\lambda = {lambda_}$")
+        _, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=[6.4, 8])
 
-        plt.xlabel("$x$")
-        plt.ylabel(r"sigmoid$(x;\lambda)$")
+        for function in ["sigmoid", "hard_sigmoid"]:
+            def f(x):
+                return activation(x, alpha=1.0, function=function)
+
+            y = f(x)
+            dydx = vmap(grad(f))(x)
+            _ = ax1.plot(x, y, "--", label=f"{function}")
+            _ = ax2.plot(x, dydx, "-", label=f"{function}")
+
+        ax2.set_xlabel("$x$")
+        ax1.set_ylabel("$f(x)$")
+        ax2.set_ylabel(r"$\frac{\partial f(x)}{\partial x}$")
         plt.legend()
+        plt.tight_layout()
         plt.show()
     """
-    return jax.nn.sigmoid(lambda_ * x)
+    if function == "sigmoid":
+        return jax.nn.sigmoid(alpha * x)
+    elif function == "hard_sigmoid":
+        return jax.nn.hard_sigmoid(alpha * x)
+    else:
+        raise ValueError(f"Unknown function '{function}'")
 
 
 @jit_approx
@@ -291,7 +304,7 @@ def greater(
     Element-wise logical :python:`x > y`.
 
     Calls :func:`jax.numpy.subtract`
-    then :func:`sigmoid` if approximation is enabled,
+    then :func:`activation` if approximation is enabled,
     :func:`jax.numpy.greater` otherwise.
 
     :param x: The first input array.
@@ -301,7 +314,7 @@ def greater(
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
-    return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
+    return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
 
 @jit_approx
@@ -312,7 +325,7 @@ def greater_equal(
     Element-wise logical :python:`x >= y`.
 
     Calls :func:`jax.numpy.subtract`
-    then :func:`sigmoid` if approximation is enabled,
+    then :func:`activation` if approximation is enabled,
     :func:`jax.numpy.greater_equal` otherwise.
 
     :param x: The first input array.
@@ -322,7 +335,7 @@ def greater_equal(
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
-    return sigmoid(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
+    return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
 
 
 @jit_approx
@@ -331,7 +344,7 @@ def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Arra
     Element-wise logical :python:`x < y`.
 
     Calls :func:`jax.numpy.subtract` (arguments swapped)
-    then :func:`sigmoid` if approximation is enabled,
+    then :func:`activation` if approximation is enabled,
     :func:`jax.numpy.less` otherwise.
 
     :param x: The first input array.
@@ -341,7 +354,7 @@ def less(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -> Arra
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
-    return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
+    return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
 
 @jit_approx
@@ -350,7 +363,7 @@ def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -
     Element-wise logical :python:`x <= y`.
 
     Calls :func:`jax.numpy.subtract` (arguments swapped)
-    then :func:`sigmoid` if approximation is enabled,
+    then :func:`activation` if approximation is enabled,
     :func:`jax.numpy.less_equal` otherwise.
 
     :param x: The first input array.
@@ -360,11 +373,11 @@ def less_equal(x: Array, y: Array, *, approx: Optional[bool] = None, **kwargs) -
     """
     if approx is None:
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
-    return sigmoid(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
+    return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
 
 @jit_approx
-def is_true(x: Array, *, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
+def is_true(x: Array, *, tol: float = 0.01, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be true.
 
@@ -383,7 +396,7 @@ def is_true(x: Array, *, tol: float = 0.05, approx: Optional[bool] = None) -> Ar
 
 
 @jit_approx
-def is_false(x: Array, *, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
+def is_false(x: Array, *, tol: float = 0.01, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be false.
 
