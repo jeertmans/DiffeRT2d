@@ -108,3 +108,12 @@ def test_activation(function, jax_fun, alpha):
     got = activation(x, alpha=alpha, function=function)
     chex.assert_trees_all_close(expected, got)
     chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+
+@pytest.mark.parametrize(
+    ("function",), [("relu",), ("SIGMOID",), ("HARD_SIGMOID",), ("hard-sigmoid",)]
+)
+def test_invalid_activation(function):
+    with pytest.raises(ValueError) as e:
+        activation(1.0, function=function)
+        assert "Unknown" in str(e)
