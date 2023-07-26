@@ -46,6 +46,13 @@ def default_optimizer() -> optax.GradientTransformation:
 
     Useful to override the :func:`repr` method in the documentation.
 
+    .. note::
+
+        This optimizer should be a good default choise when used by
+        :class:`MinPath<differt2d.geometry.MinPath>` as it gave the
+        best convergence results when compared to other optimizers
+        provided by :mod:`optax`.
+
     :return: The default optimizer.
 
     :Examples:
@@ -155,7 +162,7 @@ def minimize_many_random_uniform(
     :param many:
         How many times the minimization should be performed.
     :param kwargs:
-        Keyword arguments to be passed to :func:`minimize`.
+        Keyword arguments to be passed to :func:`minimize_random_uniform`.
     :return: The solution array and the corresponding loss.
 
     :Examples:
