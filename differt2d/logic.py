@@ -43,7 +43,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 import jax
 import jax.numpy as jnp
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from jax import Array
 
 _enable_approx = jax.config.define_bool_state(
@@ -156,7 +156,7 @@ def enable_approx(enable: bool = True):
 
 
 @contextmanager
-def disable_approx(disable: bool = True):
+def disable_approx(disable: bool = True):  # pragma: no cover
     """
     Context manager for disable or enabling approximation of true/false values
     with continuous numbers from 0 (false) to 1 (true).
@@ -179,7 +179,7 @@ def disable_approx(disable: bool = True):
 def activation(
     x: Array,
     alpha: float = 1e2,
-    function: Literal["sigmoid", "hard_sigmoid"] = "hard_sigmoid",
+    function: Literal["sigmoid", "hard_sigmoid"] = "sigmoid",
 ) -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1,
@@ -255,7 +255,7 @@ def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     :param approx: Whether approximation is enabled or not.
     :return: Output array, with element-wise comparison.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.maximum(x, y) if approx else jnp.logical_or(x, y)
 
@@ -273,7 +273,7 @@ def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     :param approx: Whether approximation is enabled or not.
     :return: Output array, with element-wise comparison.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.minimum(x, y) if approx else jnp.logical_and(x, y)
 
@@ -291,7 +291,7 @@ def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
     :param approx: Whether approximation is enabled or not.
     :return: Output array, with element-wise comparison.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
@@ -317,7 +317,7 @@ def greater(
         Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
@@ -340,7 +340,7 @@ def greater_equal(
         Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return (
         activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
@@ -363,7 +363,7 @@ def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Ar
         Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
@@ -386,7 +386,7 @@ def less_equal(
         Keyword arguments to be passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
@@ -405,7 +405,7 @@ def is_true(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Array
     :param approx: Whether approximation is enabled or not.
     :return: True array if the value is considered to be true.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.greater(x, 1.0 - tol) if approx else jnp.asarray(x)
 
@@ -424,6 +424,6 @@ def is_false(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Arra
     :param approx: Whether approximation is enabled or not.
     :return: True if the value is considered to be false.
     """
-    if approx is None:
+    if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.less(x, tol) if approx else jnp.logical_not(x)
