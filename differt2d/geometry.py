@@ -12,7 +12,7 @@ import jax.numpy as jnp
 from jax import jit
 
 from .abc import Interactable, Plottable
-from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
+from .logic import greater_equal, less_equal, logical_and, logical_or
 from .optimize import minimize_many_random_uniform
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -83,7 +83,9 @@ def segments_intersect(
     def test(num, den):
         t = num / den
         return logical_and(
-            greater(t, 0.0, **kwargs), less(t, 1.0, **kwargs), **kwargs_no_function
+            greater_equal(t, 0.0, **kwargs),
+            less_equal(t, 1.0, **kwargs),
+            **kwargs_no_function,
         )
 
     intersect = logical_and(test(a, d), test(b, d), **kwargs_no_function)
