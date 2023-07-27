@@ -308,7 +308,7 @@ class RIS(Wall):
         sina = jnp.linalg.norm(v2) * jnp.sin(self.phi)
         return (sinx - sina) ** 2  # + (cosx - cosa) ** 2
 
-    def plot(self, ax, *args, **kwargs):  # pragma: ignore
+    def plot(self, ax, *args, **kwargs):  # pragma: no cover
         kwargs.setdefault("color", "green")
         super().plot(ax, *args, **kwargs)
 
@@ -402,6 +402,7 @@ class Path(Plottable):
         :param objects: The list of objects to check against.
         :return: Whether this path passes on the objects, ().
         """
+        # TODO: allow to pass kwargs
         contains = jnp.array(True)
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
@@ -424,6 +425,7 @@ class Path(Plottable):
         :param path_candidate: The object indices on which the path should pass.
         :return: Whether this path intersects any of the objects, ().
         """
+        # TODO: allow to pass kwargs
         interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
         intersects = jnp.array(False)
 
@@ -449,7 +451,7 @@ class Path(Plottable):
 
     def bounding_box(self) -> Array:
         return jnp.row_stack(
-            [jnp.min(self.points, axis=1), jnp.max(self.points, axis=1)]
+            [jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)]
         )
 
 

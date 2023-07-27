@@ -281,6 +281,36 @@ class TestPath:
         got = Path(points=points).length()
         chex.assert_trees_all_equal(expected, got)
 
+    @pytest.mark.xfail
+    def test_on_objects(self):
+        raise NotImplementedError
+
+    @pytest.mark.xfail
+    def test_intersects_with_objects(self):
+        raise NotImplementedError
+
+    def test_plot(self, ax):
+        wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
+        tx = Point(point=jnp.array([0.0, 1.0]))
+        rx = Point(point=jnp.array([2.0, 1.0]))
+        path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
+        _ = path.plot(ax)
+
+    def test_bounding_box(self):
+        expected = jnp.array(
+            [
+                [0.0, 0.0],
+                [2.0, 1.0],
+            ]
+        )
+        wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
+        tx = Point(point=jnp.array([0.0, 1.0]))
+        rx = Point(point=jnp.array([2.0, 1.0]))
+        path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
+        got = path.bounding_box()
+        chex.assert_trees_all_equal(expected, got)
+        chex.assert_shape(got, (2, 2))
+
 
 class TestFermatPath:
     def test_simple_reflection(self, seed: int, steps: int):
