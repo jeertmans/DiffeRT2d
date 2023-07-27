@@ -25,13 +25,28 @@ else:
 
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def segments_intersect(
-    P1: Array, P2: Array, P3: Array, P4: Array, **kwargs: Any
+        P1: Array, P2: Array, P3: Array, P4: Array, tol: float = 0.0, **kwargs: Any
 ) -> Array:
-    """
+    r"""
     Checks whether two line segments intersect.
 
     The first segment is defined by points P1-P2, and the second by
     points P3-P4.
+
+    If they exist, the intersection coordinates can expressed as either:
+
+    .. math::
+
+        P = \alpha \left(P_2 - P_1 \right) + P_1,
+
+    or,
+
+    .. math::
+
+        P = \alpha \left(P_4 - P_3 \right) + P_3.
+
+    For :math:`P` to exist, both :math:`\alpha` and :math:`\beta`
+    must be in the range :math:`[0;1]`.
 
     :param P1:
         The coordinates of the first point of the first segment, (2,).
@@ -41,6 +56,8 @@ def segments_intersect(
         The coordinates of the first point of the second segment, (2,).
     :param P4:
         The coordinates of the second point of the second segment, (2,).
+    :param tol:
+        Relaxes the condition to :math:`[-\texttt{tol};1+\texttt{tol}]`.
     :param kwargs:
         Keyword arguments to be passed to logical functions.
     :return: Whether the two segments intersect, ().
@@ -83,8 +100,8 @@ def segments_intersect(
     def test(num, den):
         t = num / den
         return logical_and(
-            greater_equal(t, 0.0, **kwargs),
-            less_equal(t, 1.0, **kwargs),
+            greater_equal(t, -tol, **kwargs),
+            less_equal(t, 1.0 + tol, **kwargs),
             **kwargs_no_function,
         )
 
