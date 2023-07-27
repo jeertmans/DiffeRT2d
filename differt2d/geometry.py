@@ -280,19 +280,9 @@ class Wall(Ray, Interactable):
         n = self.normal()  # Normal
         li = jnp.linalg.norm(i)  # Incident's length
         lr = jnp.linalg.norm(r)  # Reflected's length
-
-        mode = "normalized"
-
-        if mode == "normalized":
-            i = i / li
-            r = r / lr
-            e = r - (i - 2 * jnp.dot(i, n) * n)
-        elif mode == "multiplied":
-            e = li * r - lr * (i - 2 * jnp.dot(i, n) * n)
-        elif mode == "other":
-            re = i - 2 * jnp.dot(i, n) * n
-            e = jnp.cross(re, r)
-
+        i = i / li
+        r = r / lr
+        e = r - (i - 2 * jnp.dot(i, n) * n)
         return jnp.dot(e, e)  # * 0.05
 
 
@@ -318,7 +308,7 @@ class RIS(Wall):
         sina = jnp.linalg.norm(v2) * jnp.sin(self.phi)
         return (sinx - sina) ** 2  # + (cosx - cosa) ** 2
 
-    def plot(self, ax, *args, **kwargs):
+    def plot(self, ax, *args, **kwargs):  # pragma: ignore
         kwargs.setdefault("color", "green")
         super().plot(ax, *args, **kwargs)
 

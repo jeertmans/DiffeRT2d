@@ -1,10 +1,21 @@
 import chex
+import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import pytest
 from jax import disable_jit
 
-from differt2d.geometry import FermatPath, MinPath, Point, Ray, Wall
+from differt2d.geometry import (
+    RIS,
+    FermatPath,
+    MinPath,
+    Path,
+    Point,
+    Ray,
+    Wall,
+    path_length,
+    segments_intersect,
+)
 from differt2d.logic import enable_approx, is_false, is_true
 
 origin_dest = pytest.mark.parametrize(
@@ -53,6 +64,43 @@ def seed():
 @pytest.fixture
 def steps():
     return 100
+
+
+@approx
+def test_segments_intersect(approx: bool):
+    P1 = jnp.array([+0.0, +0.0])
+    P2 = jnp.array([+1.0, +0.0])
+    P3 = jnp.array([+0.5, -1.0])
+    P4 = jnp.array([+0.5, +1.0])
+    intersect = segments_intersect(P1, P2, P3, P4, approx=approx)
+
+    assert is_true(intersect, approx=approx)
+
+
+@approx
+def test_segments_dont_intersect(approx: bool):
+    P1 = jnp.array([+0.0, +0.0])
+    P2 = jnp.array([+1.0, +0.0])
+    P3 = jnp.array([+0.0, +1.0])
+    P4 = jnp.array([+1.0, +1.0])
+    intersect = segments_intersect(P1, P2, P3, P4, approx=approx)
+
+    assert is_false(intersect, approx=approx)
+
+
+def test_path_length():
+    points = jnp.array(
+        [
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 0.0],
+        ]
+    )
+    expected = jnp.array(4.0)
+    got = path_length(points)
+    chex.assert_trees_all_equal(expected, got)
 
 
 class TestRay:
@@ -202,6 +250,36 @@ class TestWall:
         with pytest.raises(AssertionError):
             chex.assert_tree_all_close(expected, got)
         chex.assert_shape(got, ())
+
+
+class TestRIS:
+    def test_evaluate_cartesian(self):
+        wall = RIS(points=jnp.array([[0.0, 0.0], [4.0, 0.0]]), phi=0.0)
+        expected = jnp.array(0.0)
+        ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [2.0, 1.0]])
+        got = wall.evaluate_cartesian(ray_path)
+        chex.assert_tree_all_close(expected, got)
+        chex.assert_shape(got, ())
+        ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [4.0, 1.0]])
+        got = wall.evaluate_cartesian(ray_path)
+        with pytest.raises(AssertionError):
+            chex.assert_tree_all_close(expected, got)
+        chex.assert_shape(got, ())
+
+
+class TestPath:
+    def test_from_tx_objects_rx(self):
+        wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
+        tx = Point(point=jnp.array([0.0, 1.0]))
+        rx = Point(point=jnp.array([2.0, 1.0]))
+        path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
+        chex.assert_trees_all_equal(path.length(), 2.0 * jnp.sqrt(2.0))
+
+    def test_path_length(self, key: jax.random.PRNGKey):
+        points = jax.random.uniform(key, (200, 2))
+        expected = path_length(points)
+        got = Path(points=points).length()
+        chex.assert_trees_all_equal(expected, got)
 
 
 class TestFermatPath:
