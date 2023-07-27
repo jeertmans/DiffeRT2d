@@ -12,14 +12,7 @@ import jax.numpy as jnp
 from jax import jit
 
 from .abc import Interactable, Plottable
-from .logic import (
-    greater,
-    greater_equal,
-    less,
-    less_equal,
-    logical_and,
-    logical_or,
-)
+from .logic import greater, greater_equal, less, less_equal, logical_and, logical_or
 from .optimize import minimize_many_random_uniform
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -31,7 +24,9 @@ else:
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
-def segments_intersect(P1: Array, P2: Array, P3: Array, P4: Array, **kwargs: Any) -> Array:
+def segments_intersect(
+    P1: Array, P2: Array, P3: Array, P4: Array, **kwargs: Any
+) -> Array:
     """
     Checks whether two line segments intersect.
 
@@ -88,16 +83,10 @@ def segments_intersect(P1: Array, P2: Array, P3: Array, P4: Array, **kwargs: Any
     def test(num, den):
         t = num / den
         return logical_and(
-            greater(t, 0.0, **kwargs),
-            less(t, 1.0, **kwargs),
-            **kwargs_no_function
+            greater(t, 0.0, **kwargs), less(t, 1.0, **kwargs), **kwargs_no_function
         )
 
-    intersect = logical_and(
-        test(a, d),
-        test(b, d),
-        **kwargs_no_function
-    )
+    intersect = logical_and(test(a, d), test(b, d), **kwargs_no_function)
 
     return intersect
 
