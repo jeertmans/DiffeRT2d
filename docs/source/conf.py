@@ -177,11 +177,16 @@ def is_singledispatch_classmethod(obj):
 
 
 def patch_singledispatch_classmethod_signature(app, obj, bound_method):
+    # TODO: fix [source] not appearing
     if bound_method and is_singledispatch_classmethod(obj):
         original = obj.__wrapped__.__func__
         obj.__wrapped__ = original
-        obj.__annotations__ = original.__annotations__
-        obj.__doc__ = original.__doc__
+        for keyword in dir(original):
+            if value := getattr(original, keyword, None):
+                try:
+                    setattr(obj, keyword, value)
+                except:  # noqa: E722
+                    pass  # Cannot set this
 
 
 def setup(app):
@@ -207,10 +212,3 @@ def setup(app):
         "autodoc-before-process-signature",
         patch_singledispatch_classmethod_signature,
     )
-    """
-    app.connect(
-        "autodoc-process-signature",
-        patch_singledispatch_classmethod_signature,
-        priority=499,
-    )
-    """

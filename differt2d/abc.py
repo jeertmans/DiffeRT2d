@@ -10,12 +10,16 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, List, Protocol, Union
+from typing import TYPE_CHECKING, Any, List, Literal, Protocol, Union
+
+import jax.numpy as jnp
 
 if TYPE_CHECKING:  # pragma: no cover
     from jax import Array
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
+
+LOC = Literal["N", "E", "S", "W", "C", "NE", "NW", "SE", "SW"]
 
 
 class Plottable(Protocol):  # pragma: no cover
@@ -45,6 +49,52 @@ class Plottable(Protocol):  # pragma: no cover
         :return: The min. and max. coordinates of this object, (2, 2).
         """
         pass
+
+    def center(self) -> Array:
+        """
+        Returns the center coordinates of this object.
+
+        This is: :python:`[avg_x, avg_y]`.
+
+        :return: The average coordinates of this object, (2,).
+        """
+        bounding_box = self.bounding_box()
+
+        return 0.5 * (bounding_box[0, :] + bounding_box[1, :])
+
+    def get_location(self, location: LOC) -> Array:
+        """
+        Returns the relative location within this object's extents.
+
+        'N', 'E', 'S', 'W', 'C' stand, respectively for North, East,
+        South, West, and center. You can also combine two letters
+        to define one of the four corners.
+
+        :param location: A literal denothing the location.
+        :return: The location coordinates within this
+            object's extents.
+        """
+        (xmin, ymin), (xmax, ymax) = self.bounding_box()
+        xavg = 0.5 * (xmin + xmax)
+        yavg = 0.5 * (ymin + ymax)
+
+        try:
+            x, y = dict(
+                N=(xavg, ymax),
+                E=(xmax, yavg),
+                S=(xavg, ymin),
+                W=(xmin, yavg),
+                C=(xavg, yavg),
+                NE=(xmax, ymax),
+                NW=(xmin, ymax),
+                SE=(xmax, ymin),
+                SW=(xmin, ymin),
+            )[location]
+
+            return jnp.array([x, y])
+
+        except KeyError as e:
+            raise ValueError(f"Invalid location '{location}'") from e
 
 
 class Interactable(Protocol):  # pragma: no cover

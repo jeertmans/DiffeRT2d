@@ -20,7 +20,7 @@ import jax.numpy as jnp
 import numpy as np
 import rustworkx as rx
 
-from .abc import Interactable, Plottable
+from .abc import LOC, Interactable, Plottable
 from .geometry import FermatPath, MinPath, Path, Point, Wall
 from .logic import is_true, less, logical_and, logical_not
 
@@ -109,172 +109,199 @@ class Scene(Plottable):
 
     @singledispatchmethod
     @classmethod
-    def from_geojson(cls, s_or_fp: Union[S, Readable]) -> "Scene":
+    def from_geojson(
+        cls, s_or_fp: Union[S, Readable], tx_loc: LOC = "NW", rx_loc: LOC = "SE"
+    ) -> "Scene":
         r"""
+        Creates a scene from a GEOJSON file, generating one Wall per
+        line segment. TX and RX positions are located on the corner
+        of the bounding box.
+
         :param s_or_fp: Source from which to read the GEOJSON object,
             either a string-like or a file-like object.
+        :param tx_loc: Where to place TX, see
+            :meth:`Plottable.get_location<differt2d.abc.Plottable.get_location`.
+        :param rx_loc: Where to place RX, see
+            :meth:`Plottable.get_location<differt2d.abc.Plottable.get_location`.
         :return: The scene representation of the GEOJSON.
 
         :Examples:
 
-        >>> from differt2d.scene import Scene
-        >>> s = r'''
-        ... {
-        ...   "type": "FeatureCollection",
-        ...   "generator": "overpass-ide",
-        ...   "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
-        ...   "timestamp": "2023-07-27T15:01:41Z",
-        ...   "features": [
-        ...     {
-        ...       "type": "Feature",
-        ...       "properties": {
-        ...         "@id": "way/492286203",
-        ...         "building": "yes",
-        ...         "building:levels": "1"
-        ...       },
-        ...       "geometry": {
-        ...         "type": "Polygon",
-        ...         "coordinates": [
-        ...           [
-        ...             [
-        ...               4.6251085,
-        ...               50.6682201
-        ...             ],
-        ...             [
-        ...               4.6251756,
-        ...               50.6682511
-        ...             ],
-        ...             [
-        ...               4.625094,
-        ...               50.6683219
-        ...             ],
-        ...             [
-        ...               4.6250833,
-        ...               50.6683312
-        ...             ],
-        ...             [
-        ...               4.6250217,
-        ...               50.6683016
-        ...             ],
-        ...             [
-        ...               4.6250217,
-        ...               50.6682916
-        ...             ],
-        ...             [
-        ...               4.6251085,
-        ...               50.6682201
-        ...             ]
-        ...           ]
-        ...         ]
-        ...       },
-        ...       "id": "way/492286203"
-        ...     },
-        ...     {
-        ...       "type": "Feature",
-        ...       "properties": {
-        ...         "@id": "way/492286204",
-        ...         "addr:housenumber": "1",
-        ...         "addr:street": "Avenue Georges Lemaître",
-        ...         "building": "yes",
-        ...         "building:levels": "2"
-        ...       },
-        ...       "geometry": {
-        ...         "type": "Polygon",
-        ...         "coordinates": [
-        ...           [
-        ...             [
-        ...               4.6250343,
-        ...               50.6683956
-        ...             ],
-        ...             [
-        ...               4.6251091,
-        ...               50.668334
-        ...             ],
-        ...             [
-        ...               4.6252786,
-        ...               50.6684176
-        ...             ],
-        ...             [
-        ...               4.6253134,
-        ...               50.6683623
-        ...             ],
-        ...             [
-        ...               4.6252795,
-        ...               50.6683505
-        ...             ],
-        ...             [
-        ...               4.6253126,
-        ...               50.6682971
-        ...             ],
-        ...             [
-        ...               4.6253341,
-        ...               50.6683029
-        ...             ],
-        ...             [
-        ...               4.6253868,
-        ...               50.668224
-        ...             ],
-        ...             [
-        ...               4.6254999,
-        ...               50.6682531
-        ...             ],
-        ...             [
-        ...               4.6254757,
-        ...               50.6682932
-        ...             ],
-        ...             [
-        ...               4.6255124,
-        ...               50.6683029
-        ...             ],
-        ...             [
-        ...               4.625476,
-        ...               50.6683594
-        ...             ],
-        ...             [
-        ...               4.6254341,
-        ...               50.6683482
-        ...             ],
-        ...             [
-        ...               4.6254087,
-        ...               50.6683895
-        ...             ],
-        ...             [
-        ...               4.6253801,
-        ...               50.668382
-        ...             ],
-        ...             [
-        ...               4.6253402,
-        ...               50.6684467
-        ...             ],
-        ...             [
-        ...               4.6253647,
-        ...               50.6684615
-        ...             ],
-        ...             [
-        ...               4.6253092,
-        ...               50.6685068
-        ...             ],
-        ...             [
-        ...               4.6251988,
-        ...               50.6684496
-        ...             ],
-        ...             [
-        ...               4.6251799,
-        ...               50.6684664
-        ...             ],
-        ...             [
-        ...               4.6250343,
-        ...               50.6683956
-        ...             ]
-        ...           ]
-        ...         ]
-        ...       },
-        ...       "id": "way/492286204"
-        ...     }
-        ...   ]
-        ... }'''
-        >>> scene = Scene.from_geojson(s)
-        >>> scene
+        The following example was obtained from https://overpass-turbo.eu/
+        using following query:
+
+        .. code::
+
+            [out:json][timeout:30];(
+            way["building"](50.66815414931746,4.624882042407989,50.66856810072477,4.6256572008132935);
+            relation["building"]["type"="multipolygon"](50.66815414931746,4.624882042407989,50.66856810072477,4.6256572008132935);
+            );out;>;out qt;
+
+
+        .. plot::
+            :include-source: true
+
+            import matplotlib.pyplot as plt
+            from differt2d.scene import Scene
+            s = r'''
+            {
+              "type": "FeatureCollection",
+              "generator": "overpass-ide",
+              "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+              "timestamp": "2023-07-27T15:01:41Z",
+              "features": [
+                {
+                  "type": "Feature",
+                  "properties": {
+                    "@id": "way/492286203",
+                    "building": "yes",
+                    "building:levels": "1"
+                  },
+                  "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                      [
+                        [
+                          4.6251085,
+                          50.6682201
+                        ],
+                        [
+                          4.6251756,
+                          50.6682511
+                        ],
+                        [
+                          4.625094,
+                          50.6683219
+                        ],
+                        [
+                          4.6250833,
+                          50.6683312
+                        ],
+                        [
+                          4.6250217,
+                          50.6683016
+                        ],
+                        [
+                          4.6250217,
+                          50.6682916
+                        ],
+                        [
+                          4.6251085,
+                          50.6682201
+                        ]
+                      ]
+                    ]
+                  },
+                  "id": "way/492286203"
+                },
+                {
+                  "type": "Feature",
+                  "properties": {
+                    "@id": "way/492286204",
+                    "addr:housenumber": "1",
+                    "addr:street": "Avenue Georges Lemaître",
+                    "building": "yes",
+                    "building:levels": "2"
+                  },
+                  "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                      [
+                        [
+                          4.6250343,
+                          50.6683956
+                        ],
+                        [
+                          4.6251091,
+                          50.668334
+                        ],
+                        [
+                          4.6252786,
+                          50.6684176
+                        ],
+                        [
+                          4.6253134,
+                          50.6683623
+                        ],
+                        [
+                          4.6252795,
+                          50.6683505
+                        ],
+                        [
+                          4.6253126,
+                          50.6682971
+                        ],
+                        [
+                          4.6253341,
+                          50.6683029
+                        ],
+                        [
+                          4.6253868,
+                          50.668224
+                        ],
+                        [
+                          4.6254999,
+                          50.6682531
+                        ],
+                        [
+                          4.6254757,
+                          50.6682932
+                        ],
+                        [
+                          4.6255124,
+                          50.6683029
+                        ],
+                        [
+                          4.625476,
+                          50.6683594
+                        ],
+                        [
+                          4.6254341,
+                          50.6683482
+                        ],
+                        [
+                          4.6254087,
+                          50.6683895
+                        ],
+                        [
+                          4.6253801,
+                          50.668382
+                        ],
+                        [
+                          4.6253402,
+                          50.6684467
+                        ],
+                        [
+                          4.6253647,
+                          50.6684615
+                        ],
+                        [
+                          4.6253092,
+                          50.6685068
+                        ],
+                        [
+                          4.6251988,
+                          50.6684496
+                        ],
+                        [
+                          4.6251799,
+                          50.6684664
+                        ],
+                        [
+                          4.6250343,
+                          50.6683956
+                        ]
+                      ]
+                    ]
+                  },
+                  "id": "way/492286204"
+                }
+              ]
+            }'''
+
+            ax = plt.gca()
+            scene = Scene.from_geojson(s)
+            _ = scene.plot(ax)
         """
         raise NotImplementedError(f"Unsupported type {type(s_or_fp)}")
 
@@ -282,14 +309,12 @@ class Scene(Plottable):
     @from_geojson.register(bytes)
     @from_geojson.register(bytearray)
     @classmethod
-    def _(cls, s_or_fp: S) -> "Scene":
-        dictionary = json.loads(s_or_fp)
+    def _(cls, s: S, tx_loc: LOC = "NW", rx_loc: LOC = "SE") -> "Scene":
+        dictionary = json.loads(s)
 
         features = dictionary.get("features", [])
-        tx = Point(point=jnp.array([0.0, 0.0]))
-        rx = Point(point=jnp.array([1.0, 1.0]))
 
-        objects = []
+        walls = []
 
         for feature in features:
             if geometry := feature.get("geometry", None):
@@ -303,14 +328,25 @@ class Scene(Plottable):
                             [coordinates[i - 1], coordinates[i]], dtype=float
                         )
                         wall = Wall(points=points)
-                        objects.append(wall)
+                        walls.append(wall)
 
-        return cls(tx=tx, rx=rx, objects=objects)
+        if len(walls) > 0:
+            tx = Point(point=walls[0].origin())
+            rx = Point(point=walls[0].dest())
+
+        else:
+            tx = Point(point=jnp.array([0.0, 0.0]))
+            rx = Point(point=jnp.array([1.0, 1.0]))
+
+        scene = cls(tx=tx, rx=rx, objects=walls)
+        scene.tx = Point(point=scene.get_location(tx_loc))
+        scene.rx = Point(point=scene.get_location(rx_loc))
+        return scene
 
     @from_geojson.register(Readable)
     @classmethod
-    def _(cls, fp: Readable) -> "Scene":
-        return cls.from_geojson(fp.read())
+    def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> "Scene":
+        return cls.from_geojson(fp.read(), *args, **kwargs)
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "n"))
@@ -329,7 +365,7 @@ class Scene(Plottable):
             from differt2d.scene import Scene
 
             ax = plt.gca()
-            key = jax.random.PRNGKey(1234)
+            key = jax.random.PRNGKey(134)
             scene = Scene.random_uniform_scene(key, 5)
             _ = scene.plot(ax)
             plt.show()
@@ -338,7 +374,7 @@ class Scene(Plottable):
         tx = Point(point=points[+0, :])
         rx = Point(point=points[-1, :])
 
-        walls = [Wall(points=points[2 * i : 2 * i + 2, :]) for i in range(1, n + 1)]
+        walls = [Wall(points=points[2 * i + 1 : 2 * i + 3, :]) for i in range(n)]
         return cls(tx=tx, rx=rx, objects=walls)
 
     @classmethod
@@ -526,7 +562,7 @@ class Scene(Plottable):
     def all_paths(
         self,
         tol: float = 1e-2,
-        method: Type[Path] = MinPath,
+        method: Type[Path] = FermatPath,
         **kwargs: Any,
     ) -> List[Path]:
         """
