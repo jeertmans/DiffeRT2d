@@ -1,9 +1,19 @@
 from __future__ import annotations
 
 import json
-
-from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Type, Union, IO
+from functools import partial, singledispatchmethod
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    runtime_checkable,
+)
 
 import jax
 import jax.numpy as jnp
@@ -69,6 +79,15 @@ def _accumulate_at_location(
     )
 
 
+S = Union[str, bytes, bytearray]
+
+
+@runtime_checkable
+class Readable(Protocol):
+    def read(self) -> S:
+        pass
+
+
 @dataclass
 class Scene(Plottable):
     """
@@ -88,13 +107,19 @@ class Scene(Plottable):
     The list of objects in the scene.
     """
 
+    @singledispatchmethod
     @classmethod
-    def from_geojson(cls, str_or_fp: Union[str, IO]) -> "Scene":
+    def from_geojson(cls, s_or_fp: Union[S, Readable]) -> "Scene":
         r"""
+        :param s_or_fp: Source from which to read the GEOJSON object,
+            either a string-like or a file-like object.
+        :return: The scene representation of the GEOJSON.
+
+        :Examples:
 
         >>> from differt2d.scene import Scene
         >>> s = r'''
-        ...         {
+        ... {
         ...   "type": "FeatureCollection",
         ...   "generator": "overpass-ide",
         ...   "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
@@ -251,14 +276,18 @@ class Scene(Plottable):
         >>> scene = Scene.from_geojson(s)
         >>> scene
         """
-        if isinstance(str_or_fp, str):
-            dictionary = json.loads(str_or_fp)
-        else:
-            dictionary = json.load(str_or_fp)
-            
+        raise NotImplementedError(f"Unsupported type {type(s_or_fp)}")
+
+    @from_geojson.register(str)
+    @from_geojson.register(bytes)
+    @from_geojson.register(bytearray)
+    @classmethod
+    def _(cls, s_or_fp: S) -> "Scene":
+        dictionary = json.loads(s_or_fp)
+
         features = dictionary.get("features", [])
-        tx = Point(point=jnp.array([0., 0.]))
-        rx = Point(point=jnp.array([1., 1.]))
+        tx = Point(point=jnp.array([0.0, 0.0]))
+        rx = Point(point=jnp.array([1.0, 1.0]))
 
         objects = []
 
@@ -270,12 +299,18 @@ class Scene(Plottable):
 
                 if _type == "Polygon":
                     for i in range(n):
-                        points = jnp.row_stack([coordinates[i - 1], coordinates[i]], dtype=float)
+                        points = jnp.row_stack(
+                            [coordinates[i - 1], coordinates[i]], dtype=float
+                        )
                         wall = Wall(points=points)
                         objects.append(wall)
 
         return cls(tx=tx, rx=rx, objects=objects)
 
+    @from_geojson.register(Readable)
+    @classmethod
+    def _(cls, fp: Readable) -> "Scene":
+        return cls.from_geojson(fp.read())
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "n"))

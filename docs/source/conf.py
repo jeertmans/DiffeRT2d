@@ -12,6 +12,7 @@ import inspect
 from textwrap import dedent
 
 from sphinx.ext.autodoc import between
+from sphinx.util.inspect import isclassmethod
 
 project = "DiffeRT2d"
 copyright = "2023, Jérome Eertmans"
@@ -171,6 +172,18 @@ def add_note_about_abstract(app, what, name, obj, options, lines):
         lines.extend(NOTE_ABOUT_ABSTRACT)
 
 
+def is_singledispatch_classmethod(obj):
+    return hasattr(obj, "register") and isclassmethod(getattr(obj, "__wrapped__"), None)
+
+
+def patch_singledispatch_classmethod_signature(app, obj, bound_method):
+    if bound_method and is_singledispatch_classmethod(obj):
+        original = obj.__wrapped__.__func__
+        obj.__wrapped__ = original
+        obj.__annotations__ = original.__annotations__
+        obj.__doc__ = original.__doc__
+
+
 def setup(app):
     app.connect(
         "autodoc-skip-member",
@@ -179,7 +192,7 @@ def setup(app):
     app.connect(
         "autodoc-process-docstring",
         merge_documentation_from_parent,
-        priority=499,
+        priority=498,
     )
     app.connect(
         "autodoc-process-docstring",
@@ -190,3 +203,14 @@ def setup(app):
         add_note_about_abstract,
         priority=501,
     )
+    app.connect(
+        "autodoc-before-process-signature",
+        patch_singledispatch_classmethod_signature,
+    )
+    """
+    app.connect(
+        "autodoc-process-signature",
+        patch_singledispatch_classmethod_signature,
+        priority=499,
+    )
+    """

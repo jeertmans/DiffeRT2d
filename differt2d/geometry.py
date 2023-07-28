@@ -25,7 +25,7 @@ else:
 
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def segments_intersect(
-        P1: Array, P2: Array, P3: Array, P4: Array, tol: float = 0.0, **kwargs: Any
+    P1: Array, P2: Array, P3: Array, P4: Array, tol: float = 0.0, **kwargs: Any
 ) -> Array:
     r"""
     Checks whether two line segments intersect.

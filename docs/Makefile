@@ -1,5 +1,6 @@
 # Minimal makefile for Sphinx documentation
 #
+export JAX_PLATFORM_NAME = cpu
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
