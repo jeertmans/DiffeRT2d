@@ -273,7 +273,7 @@ class TestPath:
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
         path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
-        chex.assert_trees_all_equal(path.length(), 2.0 * jnp.sqrt(2.0))
+        chex.assert_trees_all_close(path.length(), 2.0 * jnp.sqrt(2.0))
 
     def test_path_length(self, key: jax.random.PRNGKey):
         points = jax.random.uniform(key, (200, 2))
