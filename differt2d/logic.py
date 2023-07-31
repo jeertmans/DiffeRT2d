@@ -392,7 +392,7 @@ def less_equal(
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx"])
-def is_true(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
+def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be true.
 
@@ -411,7 +411,7 @@ def is_true(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Array
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx"])
-def is_false(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Array:
+def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be false.
 
@@ -427,3 +427,18 @@ def is_false(x: Array, tol: float = 0.05, approx: Optional[bool] = None) -> Arra
     if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.less(x, tol) if approx else jnp.logical_not(x)
+
+
+@partial(jax.jit, inline=True, static_argnames=["approx"])
+def true_value(approx: Optional[bool] = None) -> Array:
+    """
+    Returns a scalar true value.
+
+    When using approximation, this function returns 1.
+
+    :param approx: Whether approximation is enabled or not.
+    :return: True if the value is considered to be false.
+    """
+    if approx is None:  # pragma: no cover
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+    return jnp.array(1.0) if approx else jnp.array(True)

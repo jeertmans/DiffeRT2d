@@ -12,7 +12,7 @@ import jax.numpy as jnp
 from jax import jit
 
 from .abc import Interactable, Plottable
-from .logic import greater_equal, less_equal, logical_and, logical_or
+from .logic import greater_equal, less_equal, logical_and, logical_or, true_value
 from .optimize import minimize_many_random_uniform
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -457,7 +457,7 @@ class Path(Plottable):
         :return: Whether this path passes on the objects, ().
         """
         # TODO: allow to pass kwargs
-        contains = jnp.array(True)
+        contains = true_value()
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
             # jax.debug.print("Contains: {obj}, {coords}", obj=obj, coords=param_coords)
