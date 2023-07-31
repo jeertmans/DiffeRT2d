@@ -5,7 +5,7 @@ Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -98,7 +98,9 @@ def segments_intersect(
 
     @jit
     def test(num, den):
-        t = num / den
+        den_is_zero = den == 0.0
+        den = jnp.where(den_is_zero, 1.0, den)
+        t = jnp.where(den_is_zero, jnp.inf, num / den)
         return logical_and(
             greater_equal(t, -tol, **kwargs),
             less_equal(t, 1.0 + tol, **kwargs),
@@ -118,6 +120,12 @@ def path_length(points: Array) -> Array:
     :param points: An array of points, (N, 2).
     :return: The path length, ().
 
+    .. note::
+
+        Currently, some epsilon value is added to each path segment to avoid
+        division by zero in the gradient of this function. Hopefully, this
+        should not be perceived by the user.
+
     :Examples:
 
     >>> from differt2d.geometry import path_length
@@ -127,9 +135,36 @@ def path_length(points: Array) -> Array:
     Array(3.4142137, dtype=float32)
     """
     vectors = jnp.diff(points, axis=0)
+    vectors = vectors + jnp.finfo(points.dtype).eps
     lengths = jnp.linalg.norm(vectors, axis=1)
 
     return jnp.sum(lengths)
+
+
+@partial(jax.jit, inline=True)
+def normalize(vector: Array) -> Tuple[Array, Array]:
+    """
+    Normalizes a vector, and also returns its length.
+
+    :param vector: A vector, (2,).
+    :return: The normalized vector and its length, (2,) and ().
+
+    :Examples:
+
+    >>> from differt2d.geometry import normalize
+    >>> import jax.numpy as jnp
+    >>> vector = jnp.array([1., 1.])
+    >>> normalize(vector)  # [1., 1.] / sqrt(2), sqrt(2)
+    (Array([0.70710677, 0.70710677], dtype=float32),
+     Array(1.4142135, dtype=float32))
+    >>> zero = jnp.array([0., 0.])
+    >>> normalize(zero)  # Special behavior at 0.
+    (Array([0., 0.], dtype=float32), Array(1., dtype=float32))
+    """
+    length = jnp.linalg.norm(vector)
+    length = jnp.where(length == 0.0, jnp.ones_like(length), length)
+
+    return vector / length, length
 
 
 @dataclass
@@ -150,6 +185,7 @@ class Ray(Plottable):
         plt.show()
     """
 
+    """Ray points (origin, dest)."""
     points: Array  # a b
 
     @partial(jit, inline=True)
@@ -255,7 +291,8 @@ class Wall(Ray, Interactable):
         t = self.t()
         n = t.at[0].set(t[1])
         n = n.at[1].set(-t[0])
-        return n / jnp.linalg.norm(n)
+        n, _ = normalize(n)
+        return n
 
     @staticmethod
     @partial(jit, inline=True)
@@ -269,7 +306,9 @@ class Wall(Ray, Interactable):
     @jit
     def cartesian_to_parametric(self, carte_coords: Array) -> Array:
         other = carte_coords - self.origin()
-        return jnp.dot(self.t(), other) / jnp.dot(self.t(), self.t())
+        squared_length = jnp.dot(self.t(), self.t())
+        squared_length = jnp.where(squared_length == 0.0, 1.0, squared_length)
+        return jnp.dot(self.t(), other) / squared_length
 
     @jit
     def contains_parametric(self, param_coords: Array) -> Array:
@@ -295,12 +334,10 @@ class Wall(Ray, Interactable):
         i = ray_path[1, :] - ray_path[0, :]  # Incident
         r = ray_path[2, :] - ray_path[1, :]  # Reflected
         n = self.normal()  # Normal
-        li = jnp.linalg.norm(i)  # Incident's length
-        lr = jnp.linalg.norm(r)  # Reflected's length
-        i = i / li
-        r = r / lr
+        i, _ = normalize(i)
+        r, _ = normalize(r)
         e = r - (i - 2 * jnp.dot(i, n) * n)
-        return jnp.dot(e, e)  # * 0.05
+        return jnp.dot(e, e)
 
 
 @dataclass
