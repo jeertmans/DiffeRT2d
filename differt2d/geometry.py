@@ -339,6 +339,26 @@ class Wall(Ray, Interactable):
         e = r - (i - 2 * jnp.dot(i, n) * n)
         return jnp.dot(e, e)
 
+    @jit
+    def image_of(self, point: Array) -> Array:
+        """
+        Returns the image of a point with respect to
+        this mirror (wall), using specular reflection.
+
+        :param point: The starting point, (2,).
+        :return: The image of the point.
+
+        :Examples:
+
+        >>> from differt2d.geometry import Wall
+        >>> import jax.numpy as jnp
+        >>> wall = Wall(points=jnp.array([[0., 0.], [1., 0.]]))
+        >>> wall.image_of(jnp.array([0., 1.]))
+        Array([ 0., -1.], dtype=float32)
+        """
+        i = point - self.origin()
+        return point - 2.0 * jnp.dot(i, self.normal()) * self.normal() 
+
 
 @dataclass
 class RIS(Wall):
@@ -532,9 +552,88 @@ def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords)
 
 
 @dataclass
+class ImagePath(Path):
+    """
+    A path object that was obtain with the Image method.
+    """
+
+    @classmethod
+    @partial(jit, static_argnames=["cls"])
+    def from_tx_objects_rx(
+        cls,
+        tx: Point,
+        objects: List[Wall],
+        rx: Point,
+        **kwargs: Any,
+    ) -> "ImagePath":
+        """
+        Returns a path with minimal length.
+
+        :param tx: The emitting node.
+        :param objects:
+            The list of objects to interact with (order is important).
+        :param rx: The receiving node.
+        :param kwargs:
+            Keyword arguments to be passed to
+            :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
+        :return: The resulting path of the Image method.
+
+        :Examples:
+
+        .. plot::
+            :include-source: true
+
+            import matplotlib.pyplot as plt
+            import jax.numpy as jnp
+            from differt2d.geometry import ImagePath
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene()
+            _ = scene.plot(ax)
+            path = ImagePath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            _ = path.plot(ax)
+            plt.show()
+        """
+        n = len(objects)
+
+        @jit
+        def path_loss(cartesian_coords):
+            _loss = 0.0
+            for i, obj in enumerate(objects):
+                _loss += obj.evaluate_cartesian(cartesian_coords[i : i + 3, :])
+
+            return _loss
+
+        image = tx.point
+        images = jnp.empty((n, 2))
+
+        for i in range(n):
+            image = objects[i].image_of(image)
+            images = images.at[i, :].set(image)
+
+        points = jnp.empty_like(images)
+
+        point = rx.point
+        for i in reversed(range(n)):
+            obj = objects[i]
+            p = obj.origin()
+            n = obj.normal()
+            u = point - images[i, :]
+            v = p - point
+            point = point + jnp.dot(v, n) * u / jnp.dot(u, n)
+            points = points.at[i, :].set(point)
+
+        points = jnp.row_stack([tx.point, points, rx.point])
+
+        return cls(points=points, loss=path_loss(points))
+
+
+
+@dataclass
 class FermatPath(Path):
     """
-    A Path object that was obtain with the Fermat's Principle Tracing method.
+    A path object that was obtain with the Fermat's Principle Tracing method.
     """
 
     @classmethod
@@ -614,7 +713,7 @@ class FermatPath(Path):
 @dataclass
 class MinPath(Path):
     """
-    A Path object that was obtain with the Min-Path-Tracing method.
+    A path object that was obtain with the Min-Path-Tracing method.
     """
 
     @classmethod
