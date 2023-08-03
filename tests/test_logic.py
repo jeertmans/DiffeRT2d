@@ -6,8 +6,8 @@ from jax import disable_jit
 
 from differt2d.logic import (
     activation,
-    enable_approx,
     disable_approx,
+    enable_approx,
     greater,
     greater_equal,
     is_false,
@@ -114,6 +114,7 @@ def test_enable_approx_clear_cache():
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
+
 def test_disable_approx():
     @jax.jit
     def approx_enabled():
@@ -185,6 +186,7 @@ def test_enable_approx_clear_cache():
         got = is_true(True)
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
 
 def test_enable_approx_with_keyword():
     expected = jnp.array(True)

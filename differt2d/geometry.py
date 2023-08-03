@@ -357,7 +357,7 @@ class Wall(Ray, Interactable):
         Array([ 0., -1.], dtype=float32)
         """
         i = point - self.origin()
-        return point - 2.0 * jnp.dot(i, self.normal()) * self.normal() 
+        return point - 2.0 * jnp.dot(i, self.normal()) * self.normal()
 
 
 @dataclass
@@ -627,7 +627,6 @@ class ImagePath(Path):
         points = jnp.row_stack([tx.point, points, rx.point])
 
         return cls(points=points, loss=path_loss(points))
-
 
 
 @dataclass

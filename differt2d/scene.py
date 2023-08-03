@@ -21,7 +21,7 @@ import numpy as np
 import rustworkx as rx
 
 from .abc import LOC, Interactable, Plottable
-from .geometry import FermatPath, MinPath, Path, Point, Wall
+from .geometry import FermatPath, ImagePath, MinPath, Path, Point, Wall
 from .logic import is_true, less, logical_and, logical_not
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -57,7 +57,7 @@ def accumulate_at_location(
     for path_candidate in path_candidates:
         interacting_objects = [objects[i - 1] for i in path_candidate[1:-1]]
 
-        path = FermatPath.from_tx_objects_rx(tx, interacting_objects, rx)
+        path = ImagePath.from_tx_objects_rx(tx, interacting_objects, rx)
 
         valid = path.on_objects(interacting_objects)
         valid = logical_and(
@@ -562,13 +562,14 @@ class Scene(Plottable):
     def all_paths(
         self,
         tol: float = 1e-2,
-        method: Type[Path] = FermatPath,
+        method: Type[Path] = ImagePath,
         **kwargs: Any,
     ) -> List[Path]:
         """
         Returns all valid paths from :attr:`tx` to :attr:`rx`,
         using the given method,
-        see :class:`differt2d.geometry.FermatPath`
+        see, :class:`differt2d.geometry.ImagePath`
+        :class:`differt2d.geometry.FermatPath`
         and :class:`differt2d.geometry.MinPath`.
 
         :param tol: The threshold tolerance for a path loss to be accepted.
@@ -595,12 +596,8 @@ class Scene(Plottable):
 
             valid = logical_and(valid, less(path.loss, tol))
 
-            jax.debug.print("Path is valid: {v},\n\tpath={p}", v=valid, p=path)
-
             if is_true(valid):
                 paths.append(path)
-            else:
-                jax.debug.print("That was not considered to be valid {v}", v=valid)
 
         return paths
 

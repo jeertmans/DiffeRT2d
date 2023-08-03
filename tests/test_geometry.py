@@ -8,6 +8,7 @@ from jax import disable_jit
 from differt2d.geometry import (
     RIS,
     FermatPath,
+    ImagePath,
     MinPath,
     Path,
     Point,
@@ -17,6 +18,7 @@ from differt2d.geometry import (
     segments_intersect,
 )
 from differt2d.logic import enable_approx, is_false, is_true
+from differt2d.scene import Scene
 
 origin_dest = pytest.mark.parametrize(
     ("origin", "dest"),
@@ -310,6 +312,13 @@ class TestPath:
         got = path.bounding_box()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2, 2))
+
+
+class TestImagePath:
+    def test_path_loss_is_zero(self):
+        scene = Scene.square_scene()
+        got = ImagePath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+        chex.assert_tree_all_close(jnp.array(0.0), got.loss, atol=1e-13)
 
 
 class TestFermatPath:
