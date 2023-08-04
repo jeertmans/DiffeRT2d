@@ -39,13 +39,11 @@ def line_of_sight(
 
 def main():
     ax = plt.gca()
+    ax.set_facecolor((1.0, 1.0, 1.0, 0.0))
     scene = Scene.basic_scene()
     scene.plot(ax)
 
-    for path in scene.all_paths():
-        path.plot(ax)
-
-    X, Y = scene.grid(n=100)
+    X, Y = scene.grid(n=300)
 
     grid = jnp.dstack((X, Y))
 

@@ -1,27 +1,25 @@
 import matplotlib.pyplot as plt
+import typer
 
 from differt2d.scene import Scene
 
 
-def main():
+def main(min_order: int = 0, max_order: int = 1, resolution: int = 150):
     ax = plt.gca()
     scene = Scene.basic_scene()
-    # scene = Scene.from_geojson(open("examples/example.geojson"), tx_loc="C", rx_loc="S")
-    # print(scene)
     scene.plot(ax)
 
     for path in scene.all_paths():
         path.plot(ax)
 
-    X, Y = scene.grid(n=150)
+    X, Y = scene.grid(n=resolution)
 
-    Z = scene.accumulate_on_grid(X, Y, max_order=1)
+    Z = scene.accumulate_on_grid(X, Y, min_order=min_order, max_order=max_order)
 
     plt.pcolormesh(X, Y, Z)
 
-    plt.savefig("power.png", transparent=True)
     plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

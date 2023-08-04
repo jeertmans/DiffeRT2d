@@ -5,7 +5,7 @@ Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -551,6 +551,37 @@ def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords)
     return cartesian_coords
 
 
+Pytree = Union[list, tuple, dict]
+
+
+def stack_leaves(pytrees: Pytree, axis: int = 0) -> Pytree:
+    """
+    Stack the leaves of one or more Pytrees along a new axis.
+
+    Solution inspired from:
+    https://github.com/google/jax/discussions/16882#discussioncomment-6638501.
+
+    :param pytress: One or more Pytrees.
+    :param axis: Axis along which leaves are stacked.
+    :return: A new Pytree with leaves stacked along the new axis.
+    """
+    return jax.tree_util.tree_map(lambda *xs: jnp.stack(xs, axis=axis), *pytrees)
+
+
+def unstack_leaves(pytrees) -> List[Pytree]:
+    """
+    Unstack the leaves of a Pytree.
+    Reciprocal of :func:`stack_leaves`.
+
+    :param pytrees: A Pytree.
+    :return: A list of Pytrees,
+        where each Pytree has the same structure as the input Pytree,
+        but each leaf contains only one part of the original leaf.
+    """
+    leaves, treedef = jax.tree_util.tree_flatten(pytrees)
+    return [treedef.unflatten(leaf) for leaf in zip(*leaves)]
+
+
 @dataclass
 class ImagePath(Path):
     """
@@ -597,6 +628,12 @@ class ImagePath(Path):
         """
         n = len(objects)
 
+        if n == 0:
+            points = jnp.row_stack([tx.point, rx.point])
+            return cls(points=points, loss=jnp.array(0.0))
+
+        walls = stack_leaves(objects)
+
         @jit
         def path_loss(cartesian_coords):
             _loss = 0.0
@@ -605,24 +642,23 @@ class ImagePath(Path):
 
             return _loss
 
-        image = tx.point
-        images = jnp.empty((n, 2))
+        def forward(image, wall):
+            image = wall.image_of(image)
+            return image, image
 
-        for i in range(n):
-            image = objects[i].image_of(image)
-            images = images.at[i, :].set(image)
-
-        points = jnp.empty_like(images)
-
-        point = rx.point
-        for i in reversed(range(n)):
-            obj = objects[i]
-            p = obj.origin()
-            n = obj.normal()
-            u = point - images[i, :]
+        def backward(point, x):
+            wall, image = x
+            p = wall.origin()
+            n = wall.normal()
+            u = point - image
             v = p - point
             point = point + jnp.dot(v, n) * u / jnp.dot(u, n)
-            points = points.at[i, :].set(point)
+            return point, point
+
+        _, images = jax.lax.scan(forward, init=tx.point, xs=walls)
+        _, points = jax.lax.scan(
+            backward, init=rx.point, xs=(walls, images), reverse=True
+        )
 
         points = jnp.row_stack([tx.point, points, rx.point])
 
@@ -679,6 +715,11 @@ class FermatPath(Path):
             plt.show()
         """
         n = len(objects)
+
+        if n == 0:
+            points = jnp.row_stack([tx.point, rx.point])
+            return cls(points=points, loss=jnp.array(0.0))
+
         n_unknowns = sum([obj.parameters_count() for obj in objects])
 
         @jit
@@ -759,6 +800,11 @@ class MinPath(Path):
             plt.show()
         """
         n = len(objects)
+
+        if n == 0:
+            points = jnp.row_stack([tx.point, rx.point])
+            return cls(points=points, loss=jnp.array(0.0))
+
         n_unknowns = sum(obj.parameters_count() for obj in objects)
 
         @jit

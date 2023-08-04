@@ -318,7 +318,7 @@ class TestImagePath:
     def test_path_loss_is_zero(self):
         scene = Scene.square_scene()
         got = ImagePath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
-        chex.assert_tree_all_close(jnp.array(0.0), got.loss, atol=1e-13)
+        chex.assert_trees_all_close(jnp.array(0.0), got.loss, atol=1e-13)
 
 
 class TestFermatPath:

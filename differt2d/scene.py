@@ -40,13 +40,6 @@ def power(path, path_candidate, objects):
     return 1 / (1.0 + l2)
 
 
-@partial(jax.jit, inline=True)
-def los_exists(path, path_candidate, objects):
-    l1 = path.length()
-    l2 = l1 * l1
-    return 1 / (1.0 + l2)
-
-
 # @partial(jax.jit, static_argnames=("objects", "function"))
 def accumulate_at_location(
     tx: Point, objects, rx: Point, path_candidates, function
@@ -601,9 +594,12 @@ class Scene(Plottable):
 
         return paths
 
-    def accumulate_over_paths(
-        self, function=power, tol: float = 1e-4, **kwargs: Any
-    ) -> Array:
+    def accumulate_over_paths(self, function=power, **kwargs: Any) -> Array:
+        """
+        Accumulates some function evaluated for each path in the scene.
+
+        :param function: The function to accumulate.
+        """
         path_candidates = self.all_path_candidates(**kwargs)
 
         return accumulate_at_location(
@@ -611,9 +607,11 @@ class Scene(Plottable):
         )
 
     def accumulate_on_grid(
-        self, X, Y, function=power, tol: float = 1e-4, **kwargs
+        self, X, Y, function=power, min_order: int = 0, max_order: int = 1, **kwargs
     ) -> Array:
-        path_candidates = self.all_path_candidates(**kwargs)
+        path_candidates = self.all_path_candidates(
+            min_order=min_order, max_order=max_order
+        )
 
         grid = jnp.dstack((X, Y))
 
@@ -622,4 +620,4 @@ class Scene(Plottable):
             in_axes=(None, None, 0, None, None),
         )
 
-        return vacc(self.tx, self.objects, grid, path_candidates, function)
+        return vacc(self.tx, self.objects, grid, path_candidates, function, **kwargs)
