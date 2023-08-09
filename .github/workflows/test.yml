@@ -27,7 +27,7 @@ jobs:
 
     - name: Install Differt2D
       run: |
-        poetry install --with test
+        poetry install --with test,github-action
 
     - name: Run Pytest
       run: |
