@@ -74,6 +74,12 @@ sphinx-click = "^4.4.0"
 sphinx-copybutton = "^0.5.1"
 sphinxext-opengraph = "^0.7.5"
 
+[tool.poetry.group.github-action]
+optional = true
+
+[tool.poetry.group.github-action.dependencies]
+jax = {extras = ["cpu"], version = "^0.4.7"}
+
 [tool.poetry.group.test]
 optional = true
 
@@ -83,12 +89,6 @@ pytest = "^7.3.1"
 pytest-cov = "^4.1.0"
 pytest-env = "^0.8.1"
 pytest-xdist = "^3.3.1"
-
-[tool.poetry.group.github-action]
-optional = true
-
-[tool.poetry.group.github-action.dependencies]
-jax = {extras = ["cpu"], version = "^0.4.7"}
 
 [tool.pytest.ini_options]
 env = [
