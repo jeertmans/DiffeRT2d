@@ -52,7 +52,7 @@ jobs:
 
     - name: Install Differt2D
       run: |
-        poetry install --with test
+        poetry install --with test,github-action
 
     - name: Install FilesFinder
       uses: taiki-e/install-action@v2

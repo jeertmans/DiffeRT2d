@@ -89,8 +89,8 @@ List of available extras:
 
 + **`examples`**: install required dependencies to run all the scripts in the
   [examples](https://github.com/jeertmans/DiffeRT2d/tree/main/examples)
-  folder. 
-+ **`gui`**: W.I.P, do not use.
+  folder.
++ **`gui`**: W.I.P., do not use.
 
 
 <!-- end install -->
