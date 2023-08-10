@@ -8,6 +8,7 @@ from differt2d.logic import (
     activation,
     disable_approx,
     enable_approx,
+    false_value,
     greater,
     greater_equal,
     is_false,
@@ -358,3 +359,10 @@ def test_is_false(x, approx, tol):
 def test_true_value(approx, tol):
     x = true_value(approx=approx)
     assert is_true(x, tol=tol, approx=approx)
+
+
+@approx
+@tol
+def test_false_value(approx, tol):
+    x = false_value(approx=approx)
+    assert is_false(x, tol=tol, approx=approx)
