@@ -113,9 +113,9 @@ class Scene(Plottable):
         :param s_or_fp: Source from which to read the GEOJSON object,
             either a string-like or a file-like object.
         :param tx_loc: Where to place TX, see
-            :meth:`Plottable.get_location<differt2d.abc.Plottable.get_location`.
+            :meth:`Plottable.get_location<differt2d.abc.Plottable.get_location>`.
         :param rx_loc: Where to place RX, see
-            :meth:`Plottable.get_location<differt2d.abc.Plottable.get_location`.
+            :meth:`Plottable.get_location<differt2d.abc.Plottable.get_location>`.
         :return: The scene representation of the GEOJSON.
 
         :Examples:
