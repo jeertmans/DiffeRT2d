@@ -12,7 +12,7 @@
 Differentiable Ray Tracing (RT) Python framework for Telecommunications-oriented applications.
 
 > **NOTE**: the present work offers a simple Python module to create basic 2D scenarios,
-> and should be used for experimental purposes.
+> and should be used for experimental purposes only.
 
 - [Installation](#installation)
   * [Dependencies](#dependencies)
@@ -24,7 +24,9 @@ Differentiable Ray Tracing (RT) Python framework for Telecommunications-oriented
 
 <!-- start install -->
 
-While installing DiffeRT2D and its dependencies on your global Python is fine, I recommend using a virtual environment (e.g., [venv](https://docs.python.org/3/tutorial/venv.html)) for a local installation.
+While installing DiffeRT2D and its dependencies on your global Python is fine,
+I recommend using a virtual environment
+(e.g., [venv](https://docs.python.org/3/tutorial/venv.html)) for a local installation.
 
 ### Dependencies
 
@@ -50,7 +52,7 @@ The recommended way to install the latest release is to use pip:
 pip install differt2d
 ```
 
-Optionally, you can also install its graphical user interface using extras[^1]:
+Optionally, you can also install its graphical user interface using [extras](#package-extras):
 
 ```bash
 pip install differt2d[gui]
@@ -66,6 +68,31 @@ read the
 [contributing guide](https://eertmans.be/DiffeRT2d/contributing/workflow.html)
 to know how.
 
+### Package Extras
+
+On top of the default features this package provides, you can optionally
+install additional dependencies using *extras*:
+
+```bash
+pip install differt2d[extra]
+```
+
+where `extra` is the name of some additional features, or
+
+```bash
+pip install differt2d[extra1,extra2]
+```
+
+if you want to install multiple extras.
+
+List of available extras:
+
++ **`examples`**: install required dependencies to run all the scripts in the
+  [examples](https://github.com/jeertmans/DiffeRT2d/tree/main/examples)
+  folder. 
++ **`gui`**: W.I.P, do not use.
+
+
 <!-- end install -->
 
 ## Usage
@@ -73,7 +100,8 @@ to know how.
 <!-- start usage -->
 
 You may find a multitude of usage examples across the documentation
-or the [examples](./examples/) folder.
+or the [examples](https://github.com/jeertmans/DiffeRT2d/tree/main/examples)
+folder.
 
 <!-- end usage -->
 

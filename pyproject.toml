@@ -3,11 +3,11 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
 
 [tool.black]
-target-version = ["py38"]
+target-version = ["py39"]
 
 [tool.isort]
 profile = "black"
-py_version = 38
+py_version = 39
 
 [tool.poetry]
 authors = ["Jérome Eertmans <jeertmans@icloud.com>"]

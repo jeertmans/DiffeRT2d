@@ -51,7 +51,7 @@ def default_optimizer() -> optax.GradientTransformation:
         This optimizer should be a good default choise when used by
         :class:`MinPath<differt2d.geometry.MinPath>` as it gave the
         best convergence results when compared to other optimizers
-        provided by :mod:`optax`.
+        provided by `Optax <https://optax.readthedocs.io/>`_.
 
     :return: The default optimizer.
 
