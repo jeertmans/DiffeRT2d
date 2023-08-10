@@ -16,8 +16,10 @@ from differt2d.geometry import (
     Wall,
     path_length,
     segments_intersect,
+    stack_leaves,
+    unstack_leaves,
 )
-from differt2d.logic import enable_approx, is_false, is_true
+from differt2d.logic import enable_approx, false_value, is_false, is_true, true_value
 from differt2d.scene import Scene
 
 origin_dest = pytest.mark.parametrize(
@@ -245,12 +247,12 @@ class TestWall:
         expected = jnp.array(0.0)
         ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [4.0, 1.0]])
         got = wall.evaluate_cartesian(ray_path)
-        chex.assert_tree_all_close(expected, got)
+        chex.assert_trees_all_close(expected, got)
         chex.assert_shape(got, ())
         ray_path = jnp.array([[0.0, 1.0], [2.1, 0.0], [4.0, 1.0]])
         got = wall.evaluate_cartesian(ray_path)
         with pytest.raises(AssertionError):
-            chex.assert_tree_all_close(expected, got)
+            chex.assert_trees_all_close(expected, got)
         chex.assert_shape(got, ())
 
 
@@ -260,12 +262,12 @@ class TestRIS:
         expected = jnp.array(0.0)
         ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [2.0, 1.0]])
         got = wall.evaluate_cartesian(ray_path)
-        chex.assert_tree_all_close(expected, got)
+        chex.assert_trees_all_close(expected, got)
         chex.assert_shape(got, ())
         ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [4.0, 1.0]])
         got = wall.evaluate_cartesian(ray_path)
         with pytest.raises(AssertionError):
-            chex.assert_tree_all_close(expected, got)
+            chex.assert_trees_all_close(expected, got)
         chex.assert_shape(got, ())
 
 
@@ -283,13 +285,39 @@ class TestPath:
         got = Path(points=points).length()
         chex.assert_trees_all_equal(expected, got)
 
-    @pytest.mark.xfail
-    def test_on_objects(self):
-        raise NotImplementedError
+    @approx
+    def test_on_objects(self, approx: bool, key: jax.random.PRNGKey):
+        with enable_approx(approx), disable_jit():
+            scene = Scene.random_uniform_scene(key, 5)
+            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            expected = true_value()
+            got = path.on_objects(scene.objects)
+            chex.assert_trees_all_close(expected, got, atol=1e-8)
 
-    @pytest.mark.xfail
-    def test_intersects_with_objects(self):
-        raise NotImplementedError
+            key = jax.random.split(key)[1]
+            scene = Scene.random_uniform_scene(key, 5)
+            expected = false_value()
+            got = path.on_objects(scene.objects)
+            chex.assert_trees_all_close(expected, got, atol=1e-8)
+
+    @approx
+    def test_intersects_with_objects(self, approx: bool, key: jax.random.PRNGKey):
+        with enable_approx(approx), disable_jit():
+            scene = Scene.random_uniform_scene(key, 10)
+            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
+            expected = true_value()
+            # Very high probability that random paths intersect
+            # at least one object in the scene.
+            got = path.intersects_with_objects(scene.objects, path_candidate)
+            chex.assert_trees_all_close(expected, got, atol=1e-8)
+
+            scene = Scene.square_scene()
+            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
+            expected = false_value()
+            got = path.intersects_with_objects(scene.objects, path_candidate)
+            chex.assert_trees_all_close(expected, got, atol=1e-8)
 
     def test_plot(self, ax):
         wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
@@ -328,7 +356,7 @@ class TestFermatPath:
         rx = Point(point=jnp.array([2.0, 1.0]))
         expected_points = jnp.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0]])
         got = FermatPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
-        chex.assert_tree_all_close(expected_points, got.points, rtol=1e-2)
+        chex.assert_trees_all_close(expected_points, got.points, rtol=1e-2)
         chex.assert_shape(got.points, (3, 2))
 
 
@@ -340,7 +368,34 @@ class TestMinPath:
         expected_loss = jnp.array(0.0)
         expected_points = jnp.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0]])
         got = MinPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
-        chex.assert_tree_all_close(expected_points, got.points, rtol=1e-2)
+        chex.assert_trees_all_close(expected_points, got.points, rtol=1e-2)
         chex.assert_shape(got.points, (3, 2))
-        chex.assert_tree_all_close(expected_loss, got.loss, atol=1e-4)
+        chex.assert_trees_all_close(expected_loss, got.loss, atol=1e-4)
         chex.assert_shape(got.loss, ())
+
+
+def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
+    scene = Scene.random_uniform_scene(key, 10)
+    walls = scene.objects
+
+    assert all(isinstance(wall, Wall) for wall in walls)
+
+    stacked_walls = stack_leaves(walls)
+
+    assert isinstance(stacked_walls, Wall)
+
+    unstacked_walls = unstack_leaves(stacked_walls)
+
+    for w1, w2 in zip(walls, unstacked_walls):
+        chex.assert_trees_all_equal(w1, w2)
+
+
+def test_stack_and_unstack_different_pytrees(key: jax.random.PRNGKey):
+    scene = Scene.random_uniform_scene(key, 2)
+    walls = scene.objects
+    walls[0] = RIS(points=walls[0].points)
+
+    assert all(isinstance(wall, Wall) for wall in walls)
+
+    with pytest.raises(ValueError):
+        _ = stack_leaves(walls)

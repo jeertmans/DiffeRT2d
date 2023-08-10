@@ -437,8 +437,23 @@ def true_value(approx: Optional[bool] = None) -> Array:
     When using approximation, this function returns 1.
 
     :param approx: Whether approximation is enabled or not.
-    :return: True if the value is considered to be false.
+    :return: A value that evaluates to true.
     """
     if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return jnp.array(1.0) if approx else jnp.array(True)
+
+
+@partial(jax.jit, inline=True, static_argnames=["approx"])
+def false_value(approx: Optional[bool] = None) -> Array:
+    """
+    Returns a scalar false value.
+
+    When using approximation, this function returns 0.
+
+    :param approx: Whether approximation is enabled or not.
+    :return: A value that evaluates to false.
+    """
+    if approx is None:  # pragma: no cover
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+    return jnp.array(0.0) if approx else jnp.array(False)
