@@ -5,7 +5,7 @@ Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -13,6 +13,7 @@ import jax.numpy as jnp
 from .abc import Interactable, Plottable
 from .logic import greater_equal, less_equal, logical_and, logical_or, true_value
 from .optimize import minimize_many_random_uniform
+from .utils import stack_leaves
 
 if TYPE_CHECKING:  # pragma: no cover
     from dataclasses import dataclass
@@ -184,8 +185,8 @@ class Ray(Plottable):
         plt.show()
     """
 
-    """Ray points (origin, dest)."""
     points: Array  # a b
+    """Ray points (origin, dest)."""
 
     @partial(jax.jit, inline=True)
     def origin(self) -> Array:
@@ -548,37 +549,6 @@ def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords)
         j += size
 
     return cartesian_coords
-
-
-Pytree = Union[list, tuple, dict]
-
-
-def stack_leaves(pytrees: Pytree, axis: int = 0) -> Pytree:
-    """
-    Stack the leaves of one or more Pytrees along a new axis.
-
-    Solution inspired from:
-    https://github.com/google/jax/discussions/16882#discussioncomment-6638501.
-
-    :param pytress: One or more Pytrees.
-    :param axis: Axis along which leaves are stacked.
-    :return: A new Pytree with leaves stacked along the new axis.
-    """
-    return jax.tree_util.tree_map(lambda *xs: jnp.stack(xs, axis=axis), *pytrees)
-
-
-def unstack_leaves(pytrees) -> List[Pytree]:
-    """
-    Unstack the leaves of a Pytree.
-    Reciprocal of :func:`stack_leaves`.
-
-    :param pytrees: A Pytree.
-    :return: A list of Pytrees,
-        where each Pytree has the same structure as the input Pytree,
-        but each leaf contains only one part of the original leaf.
-    """
-    leaves, treedef = jax.tree_util.tree_flatten(pytrees)
-    return [treedef.unflatten(leaf) for leaf in zip(*leaves)]
 
 
 @dataclass

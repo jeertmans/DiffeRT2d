@@ -526,9 +526,7 @@ class Scene(Plottable):
         X, Y = jnp.meshgrid(x, y)
         return X, Y
 
-    def all_path_candidates(
-        self, min_order: int = 0, max_order: int = 1
-    ) -> List[List[int]]:
+    def all_path_candidates(self, min_order: int = 0, max_order: int = 1) -> Array:
         """
         Returns all path candidates, from :attr:`tx` to :attr:`rx`,
         as a list of list of indices.
@@ -539,17 +537,25 @@ class Scene(Plottable):
             The minimum order of the path, i.e., the number of interactions.
         :param max_order:
             The maximum order of the path, i.e., the number of interactions.
-        :type order: int
-        :return: The list of list of indices.
-        :rtype: typing.List[typing.List[int]]
+        :return: The list of list of indices, padded with -1 values for
+            paths when length smaller than ``max_order + 2``.
         """
         n = len(self.objects)
         matrix = np.ones((n + 2, n + 2))
 
         graph = rx.PyGraph.from_adjacency_matrix(matrix)
 
-        return rx.all_simple_paths(
-            graph, 0, n + 1, min_depth=min_order + 2, cutoff=max_order + 2
+        cutoff = max_order + 2
+
+        paths_generator = rx.all_simple_paths(
+            graph, 0, n + 1, min_depth=min_order + 2, cutoff=cutoff
+        )
+
+        return jnp.row_stack(
+            [
+                jnp.pad(jnp.asarray(path), (0, cutoff - len(path)), constant_values=-1)
+                for path in paths_generator
+            ]
         )
 
     def all_paths(
@@ -571,9 +577,11 @@ class Scene(Plottable):
             Keyword arguments to be passed to :meth:`all_path_candidates`.
         :return: The list of paths.
         """
+        path_candidates = self.all_path_candidates(**kwargs)
         paths = []
 
         for path_candidate in self.all_path_candidates(**kwargs):
+            path_candidate = path_candidate[path_candidate != -1]
             interacting_objects: List[Interactable] = [
                 self.objects[i - 1] for i in path_candidate[1:-1]  # type: ignore
             ]
