@@ -72,6 +72,23 @@ def _accumulate_at_location(
     )
 
 
+def reduce_along_path_candidates(f, path_candidate):
+    pass
+
+
+@jax.jit
+def select_objects_from_path_candidate(objects: List[Interactable], path_candidate: List[int]) -> List[Interactable]:
+    """
+    Returns the selection of objects from the given path candidate.
+
+    :param object: The list of all objects.
+    :param path_candidate: A path candidate,
+        as returned by ...
+    :return: The selection of objects.
+    """
+    return [objects[i - 1] for i in path_candidate[1:-1]]
+
+
 S = Union[str, bytes, bytearray]
 
 
@@ -574,9 +591,8 @@ class Scene(Plottable):
         paths = []
 
         for path_candidate in self.all_path_candidates(**kwargs):
-            interacting_objects: List[Interactable] = [
-                self.objects[i - 1] for i in path_candidate[1:-1]  # type: ignore
-            ]
+            interacting_objects = select_objects_from_path_candidate(self.objects, path_candidate)
+            valid = check_path(path, 
 
             path = method.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
 
@@ -594,6 +610,9 @@ class Scene(Plottable):
 
         return paths
 
+    def reduce_along_paths(self, function, *args, **kwargs):
+        
+
     def accumulate_over_paths(self, function=power, **kwargs: Any) -> Array:
         """
         Accumulates some function evaluated for each path in the scene.
@@ -601,6 +620,8 @@ class Scene(Plottable):
         :param function: The function to accumulate.
         """
         path_candidates = self.all_path_candidates(**kwargs)
+
+        return reduce_over_paths(f, `
 
         return accumulate_at_location(
             self.tx, self.objects, self.rx, path_candidates, function
