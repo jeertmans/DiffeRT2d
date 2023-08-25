@@ -1,3 +1,4 @@
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import Optional
@@ -26,8 +27,14 @@ def power(path, path_candidate, objects):
     return (p - 1.0) ** 2
 
 
+class SceneName(str, Enum):
+    basic_scene = "basic_scene"
+    square_scene = "square_scene"
+    square_scene_with_obstacle = "square_scene_with_obstacle"
+
+
 def main(
-    scene_name: Scene.SceneName = Scene.SceneName.basic_scene,
+    scene_name: SceneName = SceneName.basic_scene,
     file: Optional[Path] = None,
     resolution: int = 150,
     min_order: int = 0,
@@ -45,10 +52,15 @@ def main(
             file.read_text(), tx_loc=tx_loc.value, rx_loc=rx_loc.value
         )
     else:
-        scene = Scene.from_scene_name(scene_name)
-        scene.rx.point = jnp.array([.5, .5])
+        scene = dict(
+            basic_scene=Scene.basic_scene,
+            square_scene=Scene.square_scene,
+            square_scene_with_obstacle=Scene.square_scene_with_obstacle,
+        )[scene_name]()
 
     scene.plot(ax)
+
+    print(max_order)
 
     with enable_approx(approx):
         if show_paths:
@@ -60,7 +72,6 @@ def main(
         Z = scene.accumulate_on_grid(
             X, Y, function=power, min_order=min_order, max_order=max_order
         )
-        print(Z)
 
         if log_scale:
             Z = jnp.log1p(Z)

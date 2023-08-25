@@ -10,6 +10,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
+from enum import Enum
 from typing import TYPE_CHECKING, Any, List, Literal, Protocol, Union
 
 import jax.numpy as jnp
@@ -20,6 +21,18 @@ if TYPE_CHECKING:  # pragma: no cover
     from matplotlib.axes import Axes
 
 LOC = Literal["N", "E", "S", "W", "C", "NE", "NW", "SE", "SW"]
+
+
+class LocEnum(str, Enum):
+    N = "N"
+    E = "E"
+    S = "S"
+    W = "W"
+    C = "C"
+    NE = "NE"
+    NW = "NW"
+    SE = "SE"
+    SW = "SW"
 
 
 class Plottable(Protocol):  # pragma: no cover

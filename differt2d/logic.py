@@ -178,8 +178,8 @@ def disable_approx(disable: bool = True):  # pragma: no cover
 @partial(jax.jit, inline=True, static_argnames=["function"])
 def activation(
     x: Array,
-    alpha: float = 1e2,
-    function: Literal["sigmoid", "hard_sigmoid"] = "sigmoid",
+    alpha: float = 100,
+    function: Literal["sigmoid", "hard_sigmoid"] = "hard_sigmoid",
 ) -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1,

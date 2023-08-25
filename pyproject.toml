@@ -48,8 +48,7 @@ rustworkx = "^0.12.1"
 typer = {version = "^0.9.0", extras = ["all"], optional = true}
 
 [tool.poetry.extras]
-examples = ["pandas", "typer"]
-gui = ["pyside6"]
+examples = ["pandas", "pyside6", "typer"]
 
 [tool.poetry.group.dev]
 optional = true

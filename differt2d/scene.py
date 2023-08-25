@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from enum import Enum
 from functools import partial, singledispatchmethod
 from typing import (
     TYPE_CHECKING,
@@ -95,7 +96,7 @@ class Scene(Plottable):
     """
     The receiving node.
     """
-    objects: Sequence[Union[Interactable, Plottable]]
+    objects: List[Union[Interactable, Plottable]]
     """
     The list of objects in the scene.
     """
@@ -341,12 +342,46 @@ class Scene(Plottable):
     def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> "Scene":
         return cls.from_geojson(fp.read(), *args, **kwargs)
 
+    def add_objects(self, objects: Sequence[Union[Interactable, Plottable]]) -> None:
+        """
+        Add objects to the scene.
+        """
+        self.objects.extend(objects)
+
+    class SceneName(str, Enum):
+        basic_scene = "basic_scene"
+        square_scene = "square_scene"
+        square_scene_with_obstacle = "square_scene_with_obstacle"
+
+    @classmethod
+    def from_scene_name(cls, scene_name: Union[SceneName, str], *args: Any, **kwargs: Any) -> "Scene":
+        """
+        Generates a new scene from the given scene name.
+
+        :param scene_name: The name of the scene.
+        :param args:
+            Positional arguments to be passed to the constructor.
+        :param kwargs:
+            Keyword arguments to be passed to the constructor.
+        :return: The scene.
+        """
+        if isinstance(scene_name, cls.SceneName):
+            scene_name_str = scene_name.value
+        else:
+            scene_name_str = scene_name
+
+        return getattr(cls, scene_name_str)(*args, **kwargs)
+
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "n"))
     def random_uniform_scene(cls, key: jax.random.KeyArray, n: int) -> "Scene":
         """
         Generates a random scene with ``n`` walls,
         drawing coordinates from a random distribution.
+
+        :param key: The random key to be used.
+        :param n: The number of walls.
+        :return: The scene.
 
         :Examples:
 
@@ -450,7 +485,7 @@ class Scene(Plottable):
             plt.show()
         """
         tx = Point(point=jnp.array([0.2, 0.2]))
-        rx = Point(point=jnp.array([0.5, 0.5]))
+        rx = Point(point=jnp.array([0.5, 0.6]))
 
         walls = [
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
@@ -460,6 +495,57 @@ class Scene(Plottable):
         ]
 
         return Scene(tx=tx, rx=rx, objects=walls)
+
+    @classmethod
+    def square_scene_with_obstacle(cls, ratio: float = 0.1) -> "Scene":
+        """
+        Instantiates a square scene with one main room,
+        and one square obstacle in the center.
+
+        :param ratio: The ratio of the obstacle's side length to
+            the room's side length.
+        :return: The scene.
+
+        :Examples:
+
+        >>> from differt2d.scene import Scene
+        >>>
+        >>> scene = Scene.square_scene_with_obstacle()
+        >>> scene.bounding_box()
+        Array([[0., 0.],
+               [1., 1.]], dtype=float32)
+        >>> len(scene.objects)
+        8
+        >>> scene.tx
+        Point(point=Array([0.2, 0.2], dtype=float32))
+
+        .. plot::
+
+            import matplotlib.pyplot as plt
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene()
+            _ = scene.plot(ax)
+            plt.show()
+        """
+        scene = Scene.square_scene()
+
+        hl = 0.5 * ratio
+
+        x0, x1 = 0.5 - hl, 0.5 + hl
+        y0, y1 = 0.5 - hl, 0.5 + hl
+
+        walls = [
+            Wall(points=jnp.array([[x0, y0], [x1, y0]])),
+            Wall(points=jnp.array([[x1, y0], [x1, y1]])),
+            Wall(points=jnp.array([[x1, y1], [x0, y1]])),
+            Wall(points=jnp.array([[x0, y1], [x0, y0]])),
+        ]
+
+        scene.add_objects(walls)
+
+        return scene
 
     def plot(
         self,

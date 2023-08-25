@@ -25,7 +25,7 @@ else:
 
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def segments_intersect(
-    P1: Array, P2: Array, P3: Array, P4: Array, tol: float = 0.0, **kwargs: Any
+    P1: Array, P2: Array, P3: Array, P4: Array, tol: float = 0.005, **kwargs: Any
 ) -> Array:
     r"""
     Checks whether two line segments intersect.
@@ -573,9 +573,6 @@ class ImagePath(Path):
         :param objects:
             The list of objects to interact with (order is important).
         :param rx: The receiving node.
-        :param kwargs:
-            Keyword arguments to be passed to
-            :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
         :return: The resulting path of the Image method.
 
         :Examples:
@@ -621,7 +618,11 @@ class ImagePath(Path):
             n = wall.normal()
             u = point - image
             v = p - point
-            point = point + jnp.dot(v, n) * u / jnp.dot(u, n)
+            un = jnp.dot(u, n)
+            vn = jnp.dot(v, n)
+            # Avoid division by zero
+            inc = jnp.where(un == 0.0, 0.0, vn * u / un)
+            point = point + inc
             return point, point
 
         _, images = jax.lax.scan(forward, init=tx.point, xs=walls)
