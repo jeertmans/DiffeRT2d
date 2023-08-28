@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 from enum import Enum
+from itertools import product
 from functools import partial, singledispatchmethod
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Generator,
     List,
     Protocol,
     Sequence,
@@ -18,6 +20,7 @@ from typing import (
 
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import numpy as np
 import rustworkx as rx
 
@@ -88,11 +91,11 @@ class Scene(Plottable):
     2D Scene made of objects, one emitting node, and one receiving node.
     """
 
-    tx: Point
+    emitters: Dict[str, Point]
     """
     The emitting node.
     """
-    rx: Point
+    receivers: Dict[str, Point]
     """
     The receiving node.
     """
@@ -332,9 +335,9 @@ class Scene(Plottable):
             tx = Point(point=jnp.array([0.0, 0.0]))
             rx = Point(point=jnp.array([1.0, 1.0]))
 
-        scene = cls(tx=tx, rx=rx, objects=walls)
-        scene.tx = Point(point=scene.get_location(tx_loc))
-        scene.rx = Point(point=scene.get_location(rx_loc))
+        scene = cls(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
+        scene.emitters["tx"] = Point(point=scene.get_location(tx_loc))
+        scene.receivers["rx"] = Point(point=scene.get_location(rx_loc))
         return scene
 
     @from_geojson.register(Readable)
@@ -354,7 +357,9 @@ class Scene(Plottable):
         square_scene_with_obstacle = "square_scene_with_obstacle"
 
     @classmethod
-    def from_scene_name(cls, scene_name: Union[SceneName, str], *args: Any, **kwargs: Any) -> "Scene":
+    def from_scene_name(
+        cls, scene_name: Union["Scene.SceneName", str], *args: Any, **kwargs: Any
+    ) -> "Scene":
         """
         Generates a new scene from the given scene name.
 
@@ -373,37 +378,49 @@ class Scene(Plottable):
         return getattr(cls, scene_name_str)(*args, **kwargs)
 
     @classmethod
-    @partial(jax.jit, static_argnames=("cls", "n"))
-    def random_uniform_scene(cls, key: jax.random.KeyArray, n: int) -> "Scene":
+    def random_uniform_scene(
+        cls,
+        key: jax.random.KeyArray,
+        *,
+        n_emitters: int = 1,
+        n_walls: int = 1,
+        n_receivers: int = 1,
+    ) -> "Scene":
         """
-        Generates a random scene with ``n`` walls,
+        Generates a random scene,
         drawing coordinates from a random distribution.
 
         :param key: The random key to be used.
-        :param n: The number of walls.
+        :param n_emitters: The number of emitters.
+        :param n_walls: The number of walls.
+        :param n_receivers: The number of receivers.
         :return: The scene.
 
         :Examples:
 
-        .. plot::
-            :include-source: true
+        .. code-block::
 
             import matplotlib.pyplot as plt
             import jax
             from differt2d.scene import Scene
 
             ax = plt.gca()
-            key = jax.random.PRNGKey(134)
-            scene = Scene.random_uniform_scene(key, 5)
-            _ = scene.plot(ax)
+            key = jax.random.PRNGKey(1234)
+            scene = Scene.random_uniform_scene(key, n_walls=5)
+            #_ = scene.plot(ax)
             plt.show()
         """
-        points = jax.random.uniform(key, (2 * n + 2, 2))
-        tx = Point(point=points[+0, :])
-        rx = Point(point=points[-1, :])
+        points = jax.random.uniform(key, (n_emitters + 2 * n_walls + n_receivers, 2))
+        emitters = {f"tx_{i}": Point(point=points[i, :]) for i in range(n_emitters)}
+        receivers = {
+            f"rx_{i}": Point(point=points[-(i + 1), :]) for i in range(n_receivers)
+        }
 
-        walls = [Wall(points=points[2 * i + 1 : 2 * i + 3, :]) for i in range(n)]
-        return cls(tx=tx, rx=rx, objects=walls)
+        walls = [
+            Wall(points=points[2 * i + n_emitters : 2 * i + 2 + n_emitters, :])
+            for i in range(n_walls)
+        ]
+        return cls(emitters=emitters, receivers=receivers, objects=walls)
 
     @classmethod
     def basic_scene(cls) -> "Scene":
@@ -424,7 +441,7 @@ class Scene(Plottable):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         7
-        >>> scene.tx
+        >>> scene.emitters["tx"]
         Point(point=Array([0.1, 0.1], dtype=float32))
 
         .. plot::
@@ -452,7 +469,7 @@ class Scene(Plottable):
             Wall(points=jnp.array([[0.1, 0.4], [0.0, 0.4]])),
         ]
 
-        return cls(tx=tx, rx=rx, objects=walls)
+        return cls(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
 
     @classmethod
     def square_scene(cls) -> "Scene":
@@ -471,7 +488,7 @@ class Scene(Plottable):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         4
-        >>> scene.tx
+        >>> scene.emitters["tx"]
         Point(point=Array([0.2, 0.2], dtype=float32))
 
         .. plot::
@@ -494,7 +511,7 @@ class Scene(Plottable):
             Wall(points=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
         ]
 
-        return Scene(tx=tx, rx=rx, objects=walls)
+        return Scene(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
 
     @classmethod
     def square_scene_with_obstacle(cls, ratio: float = 0.1) -> "Scene":
@@ -516,7 +533,7 @@ class Scene(Plottable):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         8
-        >>> scene.tx
+        >>> scene.emitters["tx"]
         Point(point=Array([0.2, 0.2], dtype=float32))
 
         .. plot::
@@ -551,42 +568,70 @@ class Scene(Plottable):
         self,
         ax,
         *args: Any,
-        tx_args: Sequence = (),
-        tx_kwargs: Dict[str, Any] = {},
+        emitters_args: Sequence = (),
+        emitters_kwargs: Dict[str, Any] = {},
         objects_args: Sequence = (),
         objects_kwargs: Dict[str, Any] = {},
-        rx_args: Sequence = (),
-        rx_kwargs: Dict[str, Any] = {},
+        receivers_args: Sequence = (),
+        receivers_kwargs: Dict[str, Any] = {},
+        annotate: bool = True,
         **kwargs: Any,
     ) -> Union[Artist, List[Artist]]:
         """
-        :param tx_args:
-            Arguments to be passed to TX's plot function.
+        :param emitters_args:
+            Arguments to be passed to each emitter's plot function.
         :param tx_kwargs:
-            Keyword arguments to be passed to TX's plot function.
+            Keyword arguments to be passed to each emitter's plot function.
         :param objects_args:
-            Arguments to be passed to the objects' plot function.
+            Arguments to be passed to the each object' plot function.
         :param objects_kwargs:
-            Keyword arguments to be passed to the objects' plot function.
-        :param rx_args:
-            Arguments to be passed to RX's plot function.
-        :param rx_kwargs:
-            Keyword arguments to be passed to RX's plot function.
+            Keyword arguments to be passed to each object' plot function.
+        :param receiver_args:
+            Arguments to be passed to each receiver's plot function.
+        :param receiver_kwargs:
+            Keyword arguments to be passed to each receiver's plot function.
+        :param annotate:
+            If set, will annotate all emitters and receivers with their name,
+            and append the corresponding artists
+            to the end of the returned list.
         """
-        tx_kwargs.setdefault("color", "blue")
-        rx_kwargs.setdefault("color", "green")
+        emitters_kwargs.setdefault("color", "blue")
+        receivers_kwargs.setdefault("color", "green")
 
-        return [
-            self.tx.plot(ax, *tx_args, *args, **tx_kwargs, **kwargs),
-            self.rx.plot(ax, *rx_args, *args, **rx_kwargs, **kwargs),
-        ] + [
-            obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs) for obj in self.objects  # type: ignore[union-attr]
-        ]
+        artists = (
+            [
+                emitter.plot(ax, *emitters_args, *args, **emitters_kwargs, **kwargs)
+                for emitter in self.emitters.values()
+            ]
+            + [
+                receiver.plot(ax, *receivers_args, *args, **receivers_kwargs, **kwargs)
+                for receiver in self.receivers.values()
+            ]
+            + [
+                obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs) for obj in self.objects  # type: ignore[union-attr]
+            ]
+        )
+
+        if annotate:
+            if ax is None:
+                ax = plt.gca()
+
+            artists += [
+                ax.annotate(e_key, emitter.point)
+                for e_key, emitter in self.emitters.items()
+            ] + [
+                ax.annotate(r_key, receiver.point)
+                for r_key, receiver in self.receivers.items()
+            ]
+
+        return artists
 
     def bounding_box(self) -> Array:
-        bounding_boxes_list = [self.tx.bounding_box(), self.rx.bounding_box()] + [
-            obj.bounding_box() for obj in self.objects  # type: ignore[union-attr]
-        ]
+        bounding_boxes_list = (
+            [emitter.bounding_box() for emitter in self.emitters.values()]
+            + [receiver.bounding_box() for receiver in self.receivers.values()]
+            + [obj.bounding_box() for obj in self.objects]  # type: ignore[union-attr]
+        )
         bounding_boxes = jnp.dstack(bounding_boxes_list)
 
         return jnp.row_stack(
@@ -612,14 +657,33 @@ class Scene(Plottable):
         X, Y = jnp.meshgrid(x, y)
         return X, Y
 
+    def all_emitter_receiver_pairs(
+        self,
+    ) -> Generator[Tuple[Tuple[str, int], Tuple[str, int]]]:
+        """
+        Returns all possible pairs of (emitter, receiver) in the scene.
+
+        Each pair ``P := ((KE, E), (KR, R))`` is made of the following:
+
+        + ``KE`` the name of the emitter (key);
+        + ``E`` the actual emitter :class:`Point<differt2d.geometry.Point>` (value);
+        + ``KR`` the name of the receiver (key);
+        + ``R`` the actual receiver :class:`Point<differt2d.geometry.Point>` (value).
+
+        :return: A generator of all possible pairs.
+        """
+        return product(self.emitters.items(), self.receivers.items())
+
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
     ) -> List[List[int]]:
         """
-        Returns all path candidates, from :attr:`tx` to :attr:`rx`,
+        Returns all path candidates, from any of the :attr:`emitters`
+        to any of the :attr:`receivers`,
         as a list of list of indices.
 
-        Note that index 0 is for :attr:`tx`, and last index is for :attr:`rx`.
+        Note that index 0 is for :attr:`emitters`,
+        and last index is for :attr:`receivers`.
 
         :param min_order:
             The minimum order of the path, i.e., the number of interactions.
@@ -643,9 +707,10 @@ class Scene(Plottable):
         tol: float = 1e-2,
         method: Type[Path] = ImagePath,
         **kwargs: Any,
-    ) -> List[Path]:
+    ) -> Dict[Tuple[str, str], Path]:
         """
-        Returns all valid paths from :attr:`tx` to :attr:`rx`,
+        Returns all valid paths from any of the :attr:`emitters`
+        to any of the :attr:`receivers`,
         using the given method,
         see, :class:`differt2d.geometry.ImagePath`
         :class:`differt2d.geometry.FermatPath`
@@ -655,28 +720,34 @@ class Scene(Plottable):
         :param method: Method to be used to find the path coordinates.
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_path_candidates`.
-        :return: The list of paths.
+        :return: The list of paths, as a mapping with
+            (emitter, receiver) names as entries.
         """
-        paths = []
+        paths = {}
 
-        for path_candidate in self.all_path_candidates(**kwargs):
-            interacting_objects: List[Interactable] = [
-                self.objects[i - 1] for i in path_candidate[1:-1]  # type: ignore
-            ]
+        path_candidates = self.all_path_candidates(**kwargs)
 
-            path = method.from_tx_objects_rx(self.tx, interacting_objects, self.rx)
+        for (e_key, emitter), (r_key, receiver) in self.all_emitter_receiver_pairs():
+            for path_candidate in path_candidates:
+                interacting_objects: List[Interactable] = [
+                    self.objects[i - 1] for i in path_candidate[1:-1]  # type: ignore
+                ]
 
-            valid = path.on_objects(interacting_objects)
+                path = method.from_tx_objects_rx(emitter, interacting_objects, receiver)
 
-            valid = logical_and(
-                valid,
-                logical_not(path.intersects_with_objects(self.objects, path_candidate)),
-            )
+                valid = path.on_objects(interacting_objects)
 
-            valid = logical_and(valid, less(path.loss, tol))
+                valid = logical_and(
+                    valid,
+                    logical_not(
+                        path.intersects_with_objects(self.objects, path_candidate)
+                    ),
+                )
 
-            if is_true(valid):
-                paths.append(path)
+                valid = logical_and(valid, less(path.loss, tol))
+
+                if is_true(valid):
+                    paths.setdefault((e_key, r_key), []).append(path)
 
         return paths
 

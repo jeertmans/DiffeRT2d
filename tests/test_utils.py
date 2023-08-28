@@ -8,7 +8,7 @@ from differt2d.utils import stack_leaves, unstack_leaves
 
 
 def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
-    scene = Scene.random_uniform_scene(key, 10)
+    scene = Scene.random_uniform_scene(key, n_walls=10)
     walls = scene.objects
 
     assert all(isinstance(wall, Wall) for wall in walls)
@@ -24,7 +24,7 @@ def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
 
 
 def test_stack_and_unstack_different_pytrees(key: jax.random.PRNGKey):
-    scene = Scene.random_uniform_scene(key, 2)
+    scene = Scene.random_uniform_scene(key, n_walls=2)
     walls = scene.objects
     walls[0] = RIS(points=walls[0].points)
 

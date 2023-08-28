@@ -16,10 +16,26 @@ class TestScene:
         ],
     )
     def test_random_uniform_scene(self, key, n):
-        scene = Scene.random_uniform_scene(key, n)
+        scene = Scene.random_uniform_scene(key, n_emitters=n)
 
         assert isinstance(scene, Scene)
+        assert len(scene.emitters) == n
+        assert len(scene.objects) == 1
+        assert len(scene.receivers) == 1
+
+        scene = Scene.random_uniform_scene(key, n_walls=n)
+
+        assert isinstance(scene, Scene)
+        assert len(scene.emitters) == 1
         assert len(scene.objects) == n
+        assert len(scene.receivers) == 1
+
+        scene = Scene.random_uniform_scene(key, n_receivers=n)
+
+        assert isinstance(scene, Scene)
+        assert len(scene.emitters) == 1
+        assert len(scene.objects) == 1
+        assert len(scene.receivers) == n
 
     def test_basic_scene(self):
         scene = Scene.basic_scene()
@@ -32,11 +48,31 @@ class TestScene:
         assert isinstance(scene, Scene)
         assert len(scene.objects) == 4
 
+    def test_square_scene_with_obstacle(self):
+        scene = Scene.square_scene_with_obstacle()
+
+        assert isinstance(scene, Scene)
+        assert len(scene.objects) == 8
+
+    def test_plot(self, ax, key):
+        scene = Scene.random_uniform_scene(key, n_emitters=3, n_walls=5, n_receivers=2)
+        _ = scene.plot(ax)
+
+        scene = Scene.basic_scene()
+        _ = scene.plot(ax)
+
+        scene = Scene.square_scene()
+        _ = scene.plot(ax)
+
+        scene = Scene.square_scene_with_obstacle()
+        _ = scene.plot(ax)
+
     def test_bounding_box(self, key):
-        scene = Scene.random_uniform_scene(key, 10)
+        scene = Scene.random_uniform_scene(key, n_walls=10)
 
         points = jnp.row_stack(
-            [scene.tx.point, scene.rx.point] + [obj.points for obj in scene.objects]
+            [scene.emitters["tx_0"].point, scene.receivers["rx_0"].point]
+            + [obj.points for obj in scene.objects]
         )
 
         expected = jnp.array(

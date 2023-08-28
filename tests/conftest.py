@@ -1,5 +1,11 @@
 import jax
 import pytest
+import matplotlib.pyplot as plt
+
+
+@pytest.fixture
+def ax():
+    return plt.gca()
 
 
 @pytest.fixture
