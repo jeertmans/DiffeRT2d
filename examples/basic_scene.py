@@ -46,7 +46,7 @@ def main(
         )
     else:
         scene = Scene.from_scene_name(scene_name)
-        scene.rx.point = jnp.array([.5, .5])
+        scene.rx.point = jnp.array([0.5, 0.5])
 
     scene.plot(ax)
 

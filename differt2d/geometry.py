@@ -448,7 +448,7 @@ class Path(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            path = Path.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
             _ = path.plot(ax)
             plt.show()
         """
@@ -588,7 +588,7 @@ class ImagePath(Path):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = ImagePath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            path = ImagePath.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
             _ = path.plot(ax)
             plt.show()
         """
@@ -680,7 +680,7 @@ class FermatPath(Path):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = FermatPath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            path = FermatPath.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
             _ = path.plot(ax)
             plt.show()
         """
@@ -765,7 +765,7 @@ class MinPath(Path):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = MinPath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            path = MinPath.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
             _ = path.plot(ax)
             plt.show()
         """

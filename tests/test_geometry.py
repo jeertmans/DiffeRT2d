@@ -1,7 +1,6 @@
 import chex
 import jax
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
 import pytest
 from jax import disable_jit
 
@@ -51,16 +50,6 @@ approx = pytest.mark.parametrize(
         (False,),
     ],
 )
-
-
-@pytest.fixture
-def ax():
-    return plt.gca()
-
-
-@pytest.fixture
-def seed():
-    return 1234
 
 
 @pytest.fixture
@@ -286,14 +275,16 @@ class TestPath:
     @approx
     def test_on_objects(self, approx: bool, key: jax.random.PRNGKey):
         with enable_approx(approx), disable_jit():
-            scene = Scene.random_uniform_scene(key, 5)
-            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            scene = Scene.random_uniform_scene(key, n_walls=5)
+            path = Path.from_tx_objects_rx(
+                scene.emitters["tx_0"], scene.objects, scene.receivers["rx_0"]
+            )
             expected = true_value()
             got = path.on_objects(scene.objects)
             chex.assert_trees_all_close(expected, got, atol=1e-8)
 
             key = jax.random.split(key)[1]
-            scene = Scene.random_uniform_scene(key, 5)
+            scene = Scene.random_uniform_scene(key, n_walls=5)
             expected = false_value()
             got = path.on_objects(scene.objects)
             chex.assert_trees_all_close(expected, got, atol=1e-8)
@@ -301,8 +292,10 @@ class TestPath:
     @approx
     def test_intersects_with_objects(self, approx: bool, key: jax.random.PRNGKey):
         with enable_approx(approx), disable_jit():
-            scene = Scene.random_uniform_scene(key, 10)
-            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            scene = Scene.random_uniform_scene(key, n_walls=10)
+            path = Path.from_tx_objects_rx(
+                scene.emitters["tx_0"], scene.objects, scene.receivers["rx_0"]
+            )
             path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
             expected = true_value()
             # Very high probability that random paths intersect
@@ -311,7 +304,9 @@ class TestPath:
             chex.assert_trees_all_close(expected, got, atol=1e-8)
 
             scene = Scene.square_scene()
-            path = Path.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+            path = Path.from_tx_objects_rx(
+                scene.emitters["tx"], scene.objects, scene.receivers["rx"]
+            )
             path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
             expected = false_value()
             got = path.intersects_with_objects(scene.objects, path_candidate)
@@ -343,7 +338,9 @@ class TestPath:
 class TestImagePath:
     def test_path_loss_is_zero(self):
         scene = Scene.square_scene()
-        got = ImagePath.from_tx_objects_rx(scene.tx, scene.objects, scene.rx)
+        got = ImagePath.from_tx_objects_rx(
+            scene.emitters["tx"], scene.objects, scene.receivers["rx"]
+        )
         chex.assert_trees_all_close(jnp.array(0.0), got.loss, atol=1e-13)
 
 
