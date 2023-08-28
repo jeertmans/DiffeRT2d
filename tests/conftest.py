@@ -1,6 +1,6 @@
 import jax
-import pytest
 import matplotlib.pyplot as plt
+import pytest
 
 
 @pytest.fixture

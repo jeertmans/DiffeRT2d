@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from itertools import product
 from functools import partial, singledispatchmethod
+from itertools import product
 from typing import (
     TYPE_CHECKING,
     Any,
