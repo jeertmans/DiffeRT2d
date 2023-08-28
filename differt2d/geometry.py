@@ -239,23 +239,36 @@ class Point(Plottable):
         from differt2d.geometry import Point
 
         ax = plt.gca()
-        point = Point(point=jnp.array([0., 0.]))
-        _ = point.plot(ax)
+        p1 = Point(point=jnp.array([0., 0.]))
+        _ = p1.plot(ax)
+        p2 = Point(point=jnp.array([1., 1.]))
+        _ = p2.plot(ax, color="b", annotate="$p_2$")
         plt.show()
     """
 
     point: Array
     """Cartesian coordinates."""
 
-    def plot(self, ax, *args, **kwargs):
+    def plot(self, ax, *args, annotate: Optional[str] = None, **kwargs):
+        """
+        :param annotate: Text to put next the the point.
+        """
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("color", "red")
-        return ax.plot(
-            [self.point[0]],
-            [self.point[1]],
+
+        x, y = self.point
+        
+        artists = [ax.plot(
+            [x],
+            [y],
             *args,
             **kwargs,
-        )
+        )]
+
+        if annotate:
+            artists.append(ax.annotate(annotate, xy=(x, y), xytext=(x, y)))
+
+        return artists
 
     def bounding_box(self) -> Array:
         return jnp.row_stack([self.point, self.point])

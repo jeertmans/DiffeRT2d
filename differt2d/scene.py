@@ -20,7 +20,6 @@ from typing import (
 
 import jax
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
 import numpy as np
 import rustworkx as rx
 
@@ -88,16 +87,17 @@ class Readable(Protocol):
 @dataclass
 class Scene(Plottable):
     """
-    2D Scene made of objects, one emitting node, and one receiving node.
+    2D Scene made of objects, one or more emitting node(s),
+    and one or more receiving node(s).
     """
 
     emitters: Dict[str, Point]
     """
-    The emitting node.
+    The emitting nodes.
     """
     receivers: Dict[str, Point]
     """
-    The receiving node.
+    The receiving nodes.
     """
     objects: List[Union[Interactable, Plottable]]
     """
@@ -593,38 +593,24 @@ class Scene(Plottable):
         :param annotate:
             If set, will annotate all emitters and receivers with their name,
             and append the corresponding artists
-            to the end of the returned list.
+            to the returned list.
         """
         emitters_kwargs.setdefault("color", "blue")
         receivers_kwargs.setdefault("color", "green")
 
-        artists = (
+        return (
             [
-                emitter.plot(ax, *emitters_args, *args, **emitters_kwargs, **kwargs)
-                for emitter in self.emitters.values()
+                emitter.plot(ax, *emitters_args, *args, annotate=e_key if annotate else None, **emitters_kwargs, **kwargs)
+                for e_key, emitter in self.emitters.items()
             ]
             + [
-                receiver.plot(ax, *receivers_args, *args, **receivers_kwargs, **kwargs)
-                for receiver in self.receivers.values()
+                receiver.plot(ax, *receivers_args, *args, annotate=r_key if annotate else None, **receivers_kwargs, **kwargs)
+                for r_key, receiver in self.receivers.items()
             ]
             + [
                 obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs) for obj in self.objects  # type: ignore[union-attr]
             ]
         )
-
-        if annotate:
-            if ax is None:
-                ax = plt.gca()
-
-            artists += [
-                ax.annotate(e_key, emitter.point)
-                for e_key, emitter in self.emitters.items()
-            ] + [
-                ax.annotate(r_key, receiver.point)
-                for r_key, receiver in self.receivers.items()
-            ]
-
-        return artists
 
     def bounding_box(self) -> Array:
         bounding_boxes_list = (
