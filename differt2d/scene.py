@@ -600,11 +600,25 @@ class Scene(Plottable):
 
         return (
             [
-                emitter.plot(ax, *emitters_args, *args, annotate=e_key if annotate else None, **emitters_kwargs, **kwargs)
+                emitter.plot(
+                    ax,
+                    *emitters_args,
+                    *args,
+                    annotate=e_key if annotate else None,
+                    **emitters_kwargs,
+                    **kwargs,
+                )
                 for e_key, emitter in self.emitters.items()
             ]
             + [
-                receiver.plot(ax, *receivers_args, *args, annotate=r_key if annotate else None, **receivers_kwargs, **kwargs)
+                receiver.plot(
+                    ax,
+                    *receivers_args,
+                    *args,
+                    annotate=r_key if annotate else None,
+                    **receivers_kwargs,
+                    **kwargs,
+                )
                 for r_key, receiver in self.receivers.items()
             ]
             + [

@@ -257,13 +257,15 @@ class Point(Plottable):
         kwargs.setdefault("color", "red")
 
         x, y = self.point
-        
-        artists = [ax.plot(
-            [x],
-            [y],
-            *args,
-            **kwargs,
-        )]
+
+        artists = [
+            ax.plot(
+                [x],
+                [y],
+                *args,
+                **kwargs,
+            )
+        ]
 
         if annotate:
             artists.append(ax.annotate(annotate, xy=(x, y), xytext=(x, y)))
