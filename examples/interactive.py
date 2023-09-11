@@ -1,4 +1,5 @@
-from enum import Enum
+import sys
+
 from functools import partial
 from pathlib import Path
 from typing import Optional
@@ -7,6 +8,20 @@ import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import typer
+
+from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
+from matplotlib.figure import Figure
+
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+)
 
 from differt2d.abc import LocEnum
 from differt2d.logic import enable_approx
@@ -27,58 +42,89 @@ def power(path, path_candidate, objects):
     return (p - 1.0) ** 2
 
 
-class SceneName(str, Enum):
-    basic_scene = "basic_scene"
-    square_scene = "square_scene"
-    square_scene_with_obstacle = "square_scene_with_obstacle"
+class PlotWidget(QWidget):
+    def __init__(self, scene: Scene, parent=None):
+        super().__init__(parent)
+
+        self.scene = scene
+
+        # -- Create widgets --
+
+        # Matplotlib figures
+        self.fig = Figure(figsize=(10, 10), tight_layout=True)
+        self.view = FigureCanvas(self.fig)
+        self.ax = self.fig.add_subplot() 
+
+        # Toolbar above the figure
+        self.toolbar = NavigationToolbar2QT(self.view, self)
+
+        # Figures and toolbar
+
+        main_layout = QVBoxLayout()
+
+        main_layout.addWidget(self.toolbar)
+        main_layout.addWidget(self.view)
+
+        self.setLayout(main_layout)
+
+        scene.plot(ax=self.ax, annotate=False, emitters_kwargs=dict(picker=True), receivers_kwargs=dict(picker=True))
+
+        self.view.mpl_connect("pick_event", self.on_pick_event)
+        self.view.mpl_connect("motion_notify_event", self.on_motion_notify_event)
+
+        self.picked = None
+
+    def on_pick_event(self, event):
+        if self.picked:
+            self.picked = None
+        else:
+            artist = event.artist
+            coords = jnp.array(artist.get_xydata())
+            tx, dist_tx = self.scene.get_closest_emitter(coords)
+            rx, dist_rx = self.scene.get_closest_receiver(coords)
+
+            if dist_tx < dist_rx:
+                self.picked = (event.artist, tx)
+            else:
+                self.picked = (event.artist, rx)
+
+    def on_motion_notify_event(self, event):
+        if self.picked:
+            artist, point = self.picked
+            point.point = jnp.array([event.xdata, event.ydata])
+            artist.set_xdata([event.xdata])
+            artist.set_ydata([event.ydata])
+
+            self.view.draw()
+
+    def on_scene_change(self):
+        """
+        The scene has changed, we must update the plot.
+        """
+        pass
 
 
 def main(
-    scene_name: SceneName = SceneName.basic_scene,
+    scene_name: Scene.SceneName = Scene.SceneName.basic_scene,
     file: Optional[Path] = None,
-    resolution: int = 150,
     min_order: int = 0,
     max_order: int = 1,
     approx: bool = True,
     tx_loc: LocEnum = LocEnum.C,
     rx_loc: LocEnum = LocEnum.S,
-    show_paths: bool = True,
-    log_scale: bool = True,
 ):
-    ax = plt.gca()
-
     if file:
         scene = Scene.from_geojson(
             file.read_text(), tx_loc=tx_loc.value, rx_loc=rx_loc.value
         )
     else:
-        scene = dict(
-            basic_scene=Scene.basic_scene,
-            square_scene=Scene.square_scene,
-            square_scene_with_obstacle=Scene.square_scene_with_obstacle,
-        )[scene_name]()
-
-    scene.plot(ax)
-
-    print(max_order)
+        scene = Scene.from_scene_name(scene_name)
 
     with enable_approx(approx):
-        if show_paths:
-            for path in scene.all_paths(min_order=min_order, max_order=max_order):
-                path.plot(ax)
-
-        X, Y = scene.grid(n=resolution)
-
-        Z = scene.accumulate_on_grid(
-            X, Y, function=power, min_order=min_order, max_order=max_order
-        )
-
-        if log_scale:
-            Z = jnp.log1p(Z)
-
-        plt.pcolormesh(X, Y, Z)
-
-    plt.show()
+        app = QApplication(sys.argv)
+        plot_widget = PlotWidget(scene=scene)
+        plot_widget.show()
+        sys.exit(app.exec())
 
 
 if __name__ == "__main__":

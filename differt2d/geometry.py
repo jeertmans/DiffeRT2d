@@ -167,6 +167,21 @@ def normalize(vector: Array) -> Tuple[Array, Array]:
     return vector / length, length
 
 
+@partial(jax.jit, inline=True)
+def closest_point(points: Array, target: Array) -> Tuple[int, Array]:
+    """
+    Returns the index of the closest point to some target,
+    and the actual distance.
+
+    :param points: An array of 2D points, (N, 2).
+    :param target: A target point, (2, ).
+    """
+    distances = jnp.linalg.norm(points - target.reshape(-1, 2), axis=1)
+    i_min = jnp.argmin(distances)
+
+    return i_min, distances[i_min]
+
+
 @dataclass
 class Ray(Plottable):
     """

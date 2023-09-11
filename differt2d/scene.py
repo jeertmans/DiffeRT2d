@@ -24,7 +24,7 @@ import numpy as np
 import rustworkx as rx
 
 from .abc import LOC, Interactable, Plottable
-from .geometry import FermatPath, ImagePath, MinPath, Path, Point, Wall
+from .geometry import FermatPath, ImagePath, MinPath, Path, Point, Wall, closest_point
 from .logic import is_true, less, logical_and, logical_not
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -641,6 +641,30 @@ class Scene(Plottable):
             ]
         )
 
+    def get_closest_emitter(self, coords: Array) -> Tuple[Point, Array]:
+        """
+        Returns the closest emitter to the given coordinates.
+
+        :param coords: The x-y coordinates, (2,).
+        :return: The closet emitter and its distance to the coordinates.
+        """
+        emitters = list(self.emitters.values())
+        points = jnp.row_stack([tx.point for tx in emitters])
+        i_min, distance = closest_point(points, coords)
+        return emitters[i_min], distance
+
+    def get_closest_receiver(self, coords: Array) -> Tuple[Point, Array]:
+        """
+        Returns the closest receivers to the given coordinates.
+
+        :param coords: The x-y coordinates, (2,).
+        :return: The closet receiver and its distance to the coordinates.
+        """
+        receivers = list(self.receivers.values())
+        points = jnp.row_stack([rx.point for rx in receivers])
+        i_min, distance = closest_point(points, coords)
+        return receivers[i_min], distance
+
     def grid(self, n: int = 50) -> Tuple[Array, Array]:
         """
         Returns a (mesh) grid that overlays all objects in the scene.
@@ -707,7 +731,7 @@ class Scene(Plottable):
         tol: float = 1e-2,
         method: Type[Path] = ImagePath,
         **kwargs: Any,
-    ) -> Dict[Tuple[str, str], Path]:
+    ) -> Dict[Tuple[str, str], List[Path]]:
         """
         Returns all valid paths from any of the :attr:`emitters`
         to any of the :attr:`receivers`,
@@ -723,7 +747,7 @@ class Scene(Plottable):
         :return: The list of paths, as a mapping with
             (emitter, receiver) names as entries.
         """
-        paths = {}
+        paths: Dict[Tuple[str, str], List[Path]] = {}
 
         path_candidates = self.all_path_candidates(**kwargs)
 
