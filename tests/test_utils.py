@@ -4,7 +4,7 @@ import pytest
 
 from differt2d.geometry import RIS, Wall
 from differt2d.scene import Scene
-from differt2d.utils import stack_leaves, unstack_leaves
+from differt2d.utils import stack_leaves, unstack_leaves, flatten
 
 
 def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
@@ -32,3 +32,11 @@ def test_stack_and_unstack_different_pytrees(key: jax.random.PRNGKey):
 
     with pytest.raises(ValueError):
         _ = stack_leaves(walls)
+
+
+def test_flatten():
+    nested = [1, [1, [1, 1, 1], 1], [[[1]]], [1], [[1]]]
+    flattened = list(flatten(nested))
+
+    assert len(flattened) == 9
+    assert all(i == 1 for i in flattened)

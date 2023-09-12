@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 from differt2d.abc import LocEnum
 from differt2d.logic import enable_approx
 from differt2d.scene import Scene
+from differt2d.utils import flatten
 
 EPS = jnp.finfo(float).eps
 
@@ -43,17 +44,19 @@ def power(path, path_candidate, objects):
 
 
 class PlotWidget(QWidget):
-    def __init__(self, scene: Scene, parent=None):
+    def __init__(self, scene: Scene, min_order: int, max_order: int, parent=None):
         super().__init__(parent)
 
         self.scene = scene
+        self.min_order = min_order
+        self.max_order = max_order
 
         # -- Create widgets --
 
         # Matplotlib figures
         self.fig = Figure(figsize=(10, 10), tight_layout=True)
         self.view = FigureCanvas(self.fig)
-        self.ax = self.fig.add_subplot() 
+        self.ax = self.fig.add_subplot()
 
         # Toolbar above the figure
         self.toolbar = NavigationToolbar2QT(self.view, self)
@@ -67,12 +70,21 @@ class PlotWidget(QWidget):
 
         self.setLayout(main_layout)
 
-        scene.plot(ax=self.ax, annotate=False, emitters_kwargs=dict(picker=True), receivers_kwargs=dict(picker=True))
+        scene.plot(
+            ax=self.ax,
+            annotate=False,
+            emitters_kwargs=dict(picker=True),
+            receivers_kwargs=dict(picker=True),
+        )
 
         self.view.mpl_connect("pick_event", self.on_pick_event)
         self.view.mpl_connect("motion_notify_event", self.on_motion_notify_event)
 
         self.picked = None
+
+        self.path_artists = []
+
+        self.on_scene_change()
 
     def on_pick_event(self, event):
         if self.picked:
@@ -94,14 +106,24 @@ class PlotWidget(QWidget):
             point.point = jnp.array([event.xdata, event.ydata])
             artist.set_xdata([event.xdata])
             artist.set_ydata([event.ydata])
-
-            self.view.draw()
+            self.on_scene_change()
 
     def on_scene_change(self):
         """
         The scene has changed, we must update the plot.
         """
-        pass
+        for artist in flatten(self.path_artists):
+            artist.remove()
+
+        self.path_artists = []
+
+        for paths in self.scene.all_paths(
+            min_order=self.min_order, max_order=self.max_order
+        ).values():
+            for path in paths:
+                self.path_artists.append(path.plot(self.ax, zorder=-1))
+
+        self.view.draw()
 
 
 def main(
@@ -122,7 +144,7 @@ def main(
 
     with enable_approx(approx):
         app = QApplication(sys.argv)
-        plot_widget = PlotWidget(scene=scene)
+        plot_widget = PlotWidget(scene=scene, min_order=min_order, max_order=max_order)
         plot_widget.show()
         sys.exit(app.exec())
 

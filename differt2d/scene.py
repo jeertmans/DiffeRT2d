@@ -8,7 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Generator,
+    Iterator,
     List,
     Protocol,
     Sequence,
@@ -670,7 +670,6 @@ class Scene(Plottable):
         Returns a (mesh) grid that overlays all objects in the scene.
 
         :param n: The number of sample along one axis.
-        :type n: int
         :return: A tuple of (X, Y) coordinates.
         :rtype: ((n, n), (n, n)), typing.Tuple[jax.Array, jax.Array]
         """
@@ -683,7 +682,7 @@ class Scene(Plottable):
 
     def all_emitter_receiver_pairs(
         self,
-    ) -> Generator[Tuple[Tuple[str, int], Tuple[str, int]]]:
+    ) -> Iterator[Tuple[Tuple[str, int], Tuple[str, int]]]:
         """
         Returns all possible pairs of (emitter, receiver) in the scene.
 
@@ -713,9 +712,7 @@ class Scene(Plottable):
             The minimum order of the path, i.e., the number of interactions.
         :param max_order:
             The maximum order of the path, i.e., the number of interactions.
-        :type order: int
         :return: The list of list of indices.
-        :rtype: typing.List[typing.List[int]]
         """
         n = len(self.objects)
         matrix = np.ones((n + 2, n + 2))
