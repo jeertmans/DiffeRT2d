@@ -1,5 +1,4 @@
 import sys
-
 from functools import partial
 from pathlib import Path
 from typing import Optional
@@ -8,10 +7,8 @@ import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import typer
-
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
-
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
