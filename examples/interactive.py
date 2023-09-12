@@ -1,5 +1,4 @@
 import sys
-
 from functools import partial
 from pathlib import Path
 from typing import Optional
@@ -8,10 +7,8 @@ import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import typer
-
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
-
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -53,7 +50,7 @@ class PlotWidget(QWidget):
         # Matplotlib figures
         self.fig = Figure(figsize=(10, 10), tight_layout=True)
         self.view = FigureCanvas(self.fig)
-        self.ax = self.fig.add_subplot() 
+        self.ax = self.fig.add_subplot()
 
         # Toolbar above the figure
         self.toolbar = NavigationToolbar2QT(self.view, self)
@@ -67,7 +64,12 @@ class PlotWidget(QWidget):
 
         self.setLayout(main_layout)
 
-        scene.plot(ax=self.ax, annotate=False, emitters_kwargs=dict(picker=True), receivers_kwargs=dict(picker=True))
+        scene.plot(
+            ax=self.ax,
+            annotate=False,
+            emitters_kwargs=dict(picker=True),
+            receivers_kwargs=dict(picker=True),
+        )
 
         self.view.mpl_connect("pick_event", self.on_pick_event)
         self.view.mpl_connect("motion_notify_event", self.on_motion_notify_event)
