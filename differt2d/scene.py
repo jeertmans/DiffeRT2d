@@ -728,7 +728,7 @@ class Scene(Plottable):
         tol: float = 1e-2,
         method: Type[Path] = ImagePath,
         **kwargs: Any,
-    ) -> Dict[Tuple[str, str], List[Path]]:
+    ) -> Iterator[Tuple[str, str, Path, Array]]:
         """
         Returns all valid paths from any of the :attr:`emitters`
         to any of the :attr:`receivers`,
@@ -744,8 +744,6 @@ class Scene(Plottable):
         :return: The list of paths, as a mapping with
             (emitter, receiver) names as entries.
         """
-        paths: Dict[Tuple[str, str], List[Path]] = {}
-
         path_candidates = self.all_path_candidates(**kwargs)
 
         for (e_key, emitter), (r_key, receiver) in self.all_emitter_receiver_pairs():
@@ -767,10 +765,28 @@ class Scene(Plottable):
 
                 valid = logical_and(valid, less(path.loss, tol))
 
-                if is_true(valid):
-                    paths.setdefault((e_key, r_key), []).append(path)
+                yield (e_key, r_key, valid, path, path_candidate, self.objects)
 
-        return paths
+    def all_valid_paths(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[str, str, Path]]:
+        """
+        Returns only valid paths as returned by
+        :meth:`all_paths`, by filtering out paths
+        using :func:`is_true<differt2d.logic.is_true>`.
+
+        :param args:
+            Positional arguments to be passed to :meth:`all_paths`.
+        :param kwargs:
+            Keyword arguments to be passed to :meth:`all_paths`.
+        :return: The generator of valid paths, with
+            (emitter, receiver) names as entries.
+        """
+        for (e_key, r_key, path, valid) in self.all_paths(*args, **kwargs):
+            if is_true(valid):
+                yield (e_key, r_key, path)
 
     def accumulate_over_paths(self, function=power, **kwargs: Any) -> Array:
         """

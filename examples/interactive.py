@@ -32,15 +32,13 @@ EPS = jnp.finfo(float).eps
 
 
 @partial(jax.jit, inline=True)
-def power(path, path_candidate, objects):
-    l1 = path.length()
-    l2 = l1 * l1
-    c = 0.5  # Power attenuation from one wall
+def power(path, path_candidate, objects, P0 =1.0, r_coef = 0.5):
+    """
+    Computes the power received from a given path.
+    """
+    r = path.length()
     n = len(path_candidate) - 2  # Number of walls
-    a = c**n
-    p = a / (EPS + l2)
-
-    return (p - 1.0) ** 2
+    return P0 * (r_coef ** n) / (EPS + r * r)
 
 
 class PlotWidget(QWidget):
@@ -84,6 +82,13 @@ class PlotWidget(QWidget):
 
         self.path_artists = []
 
+        def f(rx_coords):
+            if 
+            scene.receivers.
+
+        self.f_and_df(rx_coords):
+            return sum(
+
         self.on_scene_change()
 
     def on_pick_event(self, event):
@@ -117,11 +122,15 @@ class PlotWidget(QWidget):
 
         self.path_artists = []
 
-        for paths in self.scene.all_paths(
+        for _, _, path in self.scene.all_valid_paths(
             min_order=self.min_order, max_order=self.max_order
-        ).values():
-            for path in paths:
-                self.path_artists.append(path.plot(self.ax, zorder=-1))
+        ):
+            self.path_artists.append(path.plot(self.ax, zorder=-1))
+
+        if self.picked:
+            _, point = self.picked
+
+            p, dp = self.f_and_df(point)
 
         self.view.draw()
 
