@@ -80,7 +80,7 @@ class PlotWidget(QWidget):
         self.path_artists = []
 
         def f(rx_coords):
-            if 
+            if
             scene.receivers.
 
         self.f_and_df(rx_coords):

@@ -784,7 +784,7 @@ class Scene(Plottable):
         :return: The generator of valid paths, with
             (emitter, receiver) names as entries.
         """
-        for (e_key, r_key, path, valid) in self.all_paths(*args, **kwargs):
+        for e_key, r_key, path, valid in self.all_paths(*args, **kwargs):
             if is_true(valid):
                 yield (e_key, r_key, path)
 

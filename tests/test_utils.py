@@ -4,7 +4,7 @@ import pytest
 
 from differt2d.geometry import RIS, Wall
 from differt2d.scene import Scene
-from differt2d.utils import stack_leaves, unstack_leaves, flatten
+from differt2d.utils import flatten, stack_leaves, unstack_leaves
 
 
 def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
