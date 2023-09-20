@@ -31,14 +31,16 @@ __all__ = [
     "is_true",
     "less",
     "less_equal",
+    "logical_all",
     "logical_and",
+    "logical_any",
     "logical_not",
     "logical_or",
 ]
 
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -53,6 +55,10 @@ _enable_approx = jax.config.define_bool_state(
 )
 
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+
+
+DEFAULT_ALPHA = 100.0
+DEFAULT_FUNCTION = "hard_sigmoid"
 
 
 @contextmanager
@@ -178,8 +184,8 @@ def disable_approx(disable: bool = True):  # pragma: no cover
 @partial(jax.jit, inline=True, static_argnames=["function"])
 def activation(
     x: Array,
-    alpha: float = 100,
-    function: Literal["sigmoid", "hard_sigmoid"] = "hard_sigmoid",
+    alpha: float = DEFAULT_ALPHA,
+    function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
 ) -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1,
@@ -370,7 +376,10 @@ def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Ar
 
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def less_equal(
-    x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any
+    x: Array,
+    y: Array,
+    approx: Optional[bool] = None,
+    **kwargs: Any,
 ) -> Array:
     """
     Element-wise logical :python:`x <= y`.
@@ -389,6 +398,54 @@ def less_equal(
     if approx is None:  # pragma: no cover
         approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
+
+
+@partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
+def logical_all(
+    *x: Array,
+    axis: Optional[Union[int, Tuple[int, ...]]] = None,
+    approx: Optional[bool] = None,
+) -> Array:
+    """
+    Returns whether all values in ``x`` are true.
+
+    Calls :func:`jax.numpy.min` if approximation is enabled,
+    :func:`jax.numpy.all` otherwise.
+
+    :param x: The input array, or array-like.
+    :param axis: Axis or axes along which to operate.
+        By default, flattened input is used.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array.
+    """
+    if approx is None:  # pragma: no cover
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+    arr = jnp.asarray(x)
+    return jnp.min(arr, axis=axis) if approx else jnp.all(arr, axis=axis)
+
+
+@partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
+def logical_any(
+    *x: Array,
+    axis: Optional[Union[int, Tuple[int, ...]]] = None,
+    approx: Optional[bool] = None,
+) -> Array:
+    """
+    Returns whether any value in ``x`` is true.
+
+    Calls :func:`jax.numpy.max` if approximation is enabled,
+    :func:`jax.numpy.any` otherwise.
+
+    :param x: The input array, or array-like.
+    :param axis: Axis or axes along which to operate.
+        By default, flattened input is used.
+    :param approx: Whether approximation is enabled or not.
+    :return: Output array.
+    """
+    if approx is None:  # pragma: no cover
+        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+    arr = jnp.asarray(x)
+    return jnp.max(arr, axis=axis) if approx else jnp.any(arr, axis=axis)
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx"])

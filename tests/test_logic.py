@@ -15,7 +15,9 @@ from differt2d.logic import (
     is_true,
     less,
     less_equal,
+    logical_all,
     logical_and,
+    logical_any,
     logical_not,
     logical_or,
     true_value,
@@ -262,6 +264,34 @@ def test_logical_not(x, approx):
         expected = jnp.logical_not(x)
 
     got = logical_not(x, approx=approx)
+    chex.assert_trees_all_close(expected, got)
+    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+
+@approx
+def test_logical_all(x, approx):
+    if approx:
+        x = jnp.array([0.8, 0.2, 0.3])
+        expected = jnp.min(x)
+    else:
+        x = jnp.array([True, False, False])
+        expected = jnp.all(x)
+
+    got = logical_all(*x, axis=0, approx=approx)
+    chex.assert_trees_all_close(expected, got)
+    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+
+
+@approx
+def test_logical_any(x, approx):
+    if approx:
+        x = jnp.array([0.8, 0.2, 0.3])
+        expected = jnp.max(x)
+    else:
+        x = jnp.array([True, False, False])
+        expected = jnp.any(x)
+
+    got = logical_any(*x, axis=0, approx=approx)
     chex.assert_trees_all_close(expected, got)
     chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 

@@ -7,6 +7,7 @@ from itertools import product
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -14,6 +15,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypeVar,
     Union,
     runtime_checkable,
 )
@@ -32,47 +34,10 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from jax import Array
     from matplotlib.artist import Artist
+
+    PathFun = Callable[[Point, Point, Path, List[Interactable]], Array]
 else:
     from chex import dataclass
-
-
-@partial(jax.jit, inline=True)
-def power(path, path_candidate, objects):
-    l1 = path.length()
-    l2 = l1 * l1
-    return 1 / (1.0 + l2)
-
-
-# @partial(jax.jit, static_argnames=("objects", "function"))
-def accumulate_at_location(
-    tx: Point, objects, rx: Point, path_candidates, function
-) -> Array:
-    acc = jnp.array(0.0)
-    tol = 1e-3
-
-    for path_candidate in path_candidates:
-        interacting_objects = [objects[i - 1] for i in path_candidate[1:-1]]
-
-        path = ImagePath.from_tx_objects_rx(tx, interacting_objects, rx)
-
-        valid = path.on_objects(interacting_objects)
-        valid = logical_and(
-            valid, logical_not(path.intersects_with_objects(objects, path_candidate))
-        )
-        valid = logical_and(valid, less(path.loss, tol))
-
-        acc += valid * function(path, path_candidate, interacting_objects)
-
-    return acc
-
-
-# @partial(jax.jit, static_argnames=("function"))
-def _accumulate_at_location(
-    tx: Point, objects, rx: Array, path_candidates, function
-) -> Array:
-    return accumulate_at_location(
-        tx, objects, Point(point=rx), path_candidates, function
-    )
 
 
 S = Union[str, bytes, bytearray]
@@ -697,6 +662,44 @@ class Scene(Plottable):
         """
         return product(self.emitters.items(), self.receivers.items())
 
+    def get_visibility_matrix(self) -> np.array:
+        """
+        Returns the visibility matrix between all
+        objects in the scene, plus one arbitrary emitter
+        and one arbitrary receiver.
+
+        Arbitrary because, for scenes with multiple emitters
+        or receivers, the same matrix will be used, so it should
+        not be computed for a specific (emitter, receiver) pair.
+
+        The first row / column is for :attr:`emitters`,
+        and the last row / column for :attr:`receivers`.
+
+        If :python:`V` is the visibility matrix, then
+        :python:`V[i, j]` indicates whether object ``i``
+        can see object ``j``. In general, :python:`V` is
+        expected to be symmetric (but this is not a requirement),
+        and visibility is indicated by a :python:`1` value, whereas
+        obstruction is indicated by a :python:`0` value.
+
+        :Examples:
+
+        >>> from differt2d.scene import Scene
+        >>> scene = Scene.square_scene()
+        >>> scene.get_visibility_matrix()
+        array([[0., 1., 1., 1., 1., 1.],
+               [1., 0., 1., 1., 1., 1.],
+               [1., 1., 0., 1., 1., 1.],
+               [1., 1., 1., 0., 1., 1.],
+               [1., 1., 1., 1., 0., 1.],
+               [1., 1., 1., 1., 1., 0.]])
+
+        :return: The visibility matrix,
+            (:python:`len(self.objects) + 2`, :python:`len(self.objects) + 2`).
+        """
+        n = len(self.objects)
+        return np.ones((n + 2, n + 2)) - np.eye(n + 2, n + 2)
+
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
     ) -> List[List[int]]:
@@ -715,61 +718,70 @@ class Scene(Plottable):
         :return: The list of list of indices.
         """
         n = len(self.objects)
-        matrix = np.ones((n + 2, n + 2))
 
-        graph = rx.PyGraph.from_adjacency_matrix(matrix)
+        graph = rx.PyGraph.from_adjacency_matrix(self.get_visibility_matrix())
 
         return rx.all_simple_paths(
             graph, 0, n + 1, min_depth=min_order + 2, cutoff=max_order + 2
         )
 
+    def get_interacting_objects(self, path_candidate: List[int]) -> List[Interactable]:
+        """
+        Returns the list of interacting objects from a path candidate.
+
+        An `interacting` object is simply an object on which the
+        path should pass.
+
+        :param path_candidates: A path candidate,
+            as returned by :meth:`all_path_candidates`.
+        :return: The list of interacting objects.
+        """
+        return [self.objects[i - 1] for i in path_candidate[1:-1]]  # type: ignore
+
     def all_paths(
         self,
-        tol: float = 1e-2,
         method: Type[Path] = ImagePath,
+        tol: float = 1e-2,
+        min_order: int = 0,
+        max_order: int = 1,
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Path, Array]]:
         """
-        Returns all valid paths from any of the :attr:`emitters`
+        Returns all paths from any of the :attr:`emitters`
         to any of the :attr:`receivers`,
         using the given method,
         see, :class:`differt2d.geometry.ImagePath`
         :class:`differt2d.geometry.FermatPath`
         and :class:`differt2d.geometry.MinPath`.
 
-        :param tol: The threshold tolerance for a path loss to be accepted.
         :param method: Method to be used to find the path coordinates.
+        :param tol: The threshold tolerance for a path loss to be accepted.
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_path_candidates`.
-        :return: The list of paths, as a mapping with
-            (emitter, receiver) names as entries.
+        :return: The generator of paths, as
+            (emitter name, receiver name, valid, path, path_candidate) tuples,
+            where validity path validity can be later evaluated using
+            :python:`is_true(valid)`.
         """
-        path_candidates = self.all_path_candidates(**kwargs)
+        path_candidates = self.all_path_candidates(
+            min_order=min_order, max_order=max_order
+        )
 
         for (e_key, emitter), (r_key, receiver) in self.all_emitter_receiver_pairs():
             for path_candidate in path_candidates:
-                interacting_objects: List[Interactable] = [
-                    self.objects[i - 1] for i in path_candidate[1:-1]  # type: ignore
-                ]
-
-                path = method.from_tx_objects_rx(emitter, interacting_objects, receiver)
-
-                valid = path.on_objects(interacting_objects)
-
-                valid = logical_and(
-                    valid,
-                    logical_not(
-                        path.intersects_with_objects(self.objects, path_candidate)
-                    ),
+                interacting_objects = self.get_interacting_objects(path_candidate)
+                path = method.from_tx_objects_rx(
+                    emitter.point, interacting_objects, receiver.point
+                )
+                valid = path.is_valid(
+                    self.objects, path_candidate, interacting_objects, **kwargs
                 )
 
-                valid = logical_and(valid, less(path.loss, tol))
-
-                yield (e_key, r_key, valid, path, path_candidate, self.objects)
+                yield (e_key, r_key, valid, path, path_candidate)
 
     def all_valid_paths(
         self,
-        *args: Any,
+        approx=None,
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Path]]:
         """
@@ -777,41 +789,79 @@ class Scene(Plottable):
         :meth:`all_paths`, by filtering out paths
         using :func:`is_true<differt2d.logic.is_true>`.
 
-        :param args:
-            Positional arguments to be passed to :meth:`all_paths`.
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_paths`.
-        :return: The generator of valid paths, with
-            (emitter, receiver) names as entries.
+        :return: The generator of valid paths, as
+            (emitter name, receiver name, path, path_candidate) tuples.
         """
-        for (e_key, r_key, path, valid) in self.all_paths(*args, **kwargs):
-            if is_true(valid):
-                yield (e_key, r_key, path)
+        for e_key, r_key, valid, path, path_candidate in self.all_paths(
+            approx=approx, **kwargs
+        ):
+            if is_true(valid, approx=approx):
+                yield (e_key, r_key, path, path_candidate)
 
-    def accumulate_over_paths(self, function=power, **kwargs: Any) -> Array:
+    def accumulate_over_paths(self, fun: PathFun, **kwargs: Any) -> Array:
         """
         Accumulates some function evaluated for each path in the scene.
 
         :param function: The function to accumulate.
         """
-        path_candidates = self.all_path_candidates(**kwargs)
+        acc = 0.0
 
-        return accumulate_at_location(
-            self.tx, self.objects, self.rx, path_candidates, function
-        )
+        for emitter, receiver, valid, path, interacting_objects in self.all_paths(**kwargs):
+            acc = acc + valid * fun(emitter, receiver, path, interacting_objects)
 
-    def accumulate_on_grid(
-        self, X, Y, function=power, min_order: int = 0, max_order: int = 1, **kwargs
+        return acc
+
+    def accumulate_on_receivers_grid_over_paths(
+        self,
+        X: Array,
+        Y: Array,
+        fun: PathFun,
+        path_cls: Type[Path] = ImagePath,
+        receiver_cls: Type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        **kwargs,
     ) -> Array:
+        """
+        TODO
+        """
+        receivers = self.receivers
+        self.receivers = {"rx": Point(point=jnp.array([0.0, 0.0]))}
+
         path_candidates = self.all_path_candidates(
-            min_order=min_order, max_order=max_order
+            min_order=min_order,
+            max_order=max_order,
         )
 
+        pairs = list(self.all_emitter_receiver_pairs())
+
+        def facc(rx_coords):
+            acc = 0.0
+            for (_, emitter), _ in pairs:
+                for path_candidate in path_candidates:
+                    interacting_objects = self.get_interacting_objects(path_candidate)
+                    path = path_cls.from_tx_objects_rx(
+                        emitter.point, interacting_objects, rx_coords
+                    )
+                    valid = path.is_valid(
+                        self.objects, path_candidate, interacting_objects, **kwargs
+                    )
+                    acc = acc + valid * fun(
+                        emitter,
+                        receiver_cls(point=rx_coords),
+                        path,
+                        interacting_objects,
+                    )
+
+            return acc
+
+        vfacc = jax.vmap(
+            jax.vmap(facc, in_axes=(0,)),
+            in_axes=(0,),
+        )
         grid = jnp.dstack((X, Y))
-
-        vacc = jax.vmap(
-            jax.vmap(_accumulate_at_location, in_axes=(None, None, 0, None, None)),
-            in_axes=(None, None, 0, None, None),
-        )
-
-        return vacc(self.tx, self.objects, grid, path_candidates, function, **kwargs)
+        acc = vfacc(grid)
+        self.receivers = receivers
+        return acc

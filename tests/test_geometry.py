@@ -263,7 +263,7 @@ class TestPath:
         wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
-        path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
+        path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[wall])
         chex.assert_trees_all_close(path.length(), 2.0 * jnp.sqrt(2.0))
 
     def test_path_length(self, key: jax.random.PRNGKey):
@@ -277,7 +277,9 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=5)
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx_0"], scene.objects, scene.receivers["rx_0"]
+                scene.emitters["tx_0"].point,
+                scene.objects,
+                scene.receivers["rx_0"].point,
             )
             expected = true_value()
             got = path.on_objects(scene.objects)
@@ -294,7 +296,9 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=10)
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx_0"], scene.objects, scene.receivers["rx_0"]
+                scene.emitters["tx_0"].point,
+                scene.objects,
+                scene.receivers["rx_0"].point,
             )
             path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
             expected = true_value()
@@ -305,7 +309,7 @@ class TestPath:
 
             scene = Scene.square_scene()
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx"], scene.objects, scene.receivers["rx"]
+                scene.emitters["tx"].point, scene.objects, scene.receivers["rx"].point
             )
             path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
             expected = false_value()
@@ -316,7 +320,7 @@ class TestPath:
         wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
-        path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
+        path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[wall])
         _ = path.plot(ax)
 
     def test_bounding_box(self):
@@ -329,7 +333,7 @@ class TestPath:
         wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
-        path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
+        path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[wall])
         got = path.bounding_box()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2, 2))
@@ -339,7 +343,7 @@ class TestImagePath:
     def test_path_loss_is_zero(self):
         scene = Scene.square_scene()
         got = ImagePath.from_tx_objects_rx(
-            scene.emitters["tx"], scene.objects, scene.receivers["rx"]
+            scene.emitters["tx"].point, scene.objects, scene.receivers["rx"].point
         )
         chex.assert_trees_all_close(jnp.array(0.0), got.loss, atol=1e-13)
 
@@ -350,7 +354,9 @@ class TestFermatPath:
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
         expected_points = jnp.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0]])
-        got = FermatPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
+        got = FermatPath.from_tx_objects_rx(
+            tx.point, [wall], rx.point, seed=seed, steps=steps
+        )
         chex.assert_trees_all_close(expected_points, got.points, rtol=1e-2)
         chex.assert_shape(got.points, (3, 2))
 
@@ -362,7 +368,9 @@ class TestMinPath:
         rx = Point(point=jnp.array([2.0, 1.0]))
         expected_loss = jnp.array(0.0)
         expected_points = jnp.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0]])
-        got = MinPath.from_tx_objects_rx(tx, [wall], rx, seed=seed, steps=steps)
+        got = MinPath.from_tx_objects_rx(
+            tx.point, [wall], rx.point, seed=seed, steps=steps
+        )
         chex.assert_trees_all_close(expected_points, got.points, rtol=1e-2)
         chex.assert_shape(got.points, (3, 2))
         chex.assert_trees_all_close(expected_loss, got.loss, atol=1e-4)

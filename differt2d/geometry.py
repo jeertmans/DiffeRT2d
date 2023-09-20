@@ -5,13 +5,25 @@ Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
 
 from .abc import Interactable, Plottable
-from .logic import greater_equal, less_equal, logical_and, logical_or, true_value
+from .logic import (
+    DEFAULT_ALPHA,
+    DEFAULT_FUNCTION,
+    false_value,
+    greater_equal,
+    less,
+    less_equal,
+    logical_all,
+    logical_and,
+    logical_not,
+    logical_or,
+    true_value,
+)
 from .optimize import minimize_many_random_uniform
 from .utils import stack_leaves
 
@@ -23,9 +35,20 @@ else:
     from chex import dataclass
 
 
+DEFAULT_PATCH = 0.0
+"""Default patch value applied to :meth:Wall.`intersects_cartesian`."""
+
+
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def segments_intersect(
-    P1: Array, P2: Array, P3: Array, P4: Array, tol: float = 0.005, **kwargs: Any
+    P1: Array,
+    P2: Array,
+    P3: Array,
+    P4: Array,
+    tol: float = 0.005,
+    approx: Optional[bool] = None,
+    alpha: float = DEFAULT_ALPHA,
+    function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
 ) -> Array:
     r"""
     Checks whether two line segments intersect.
@@ -93,8 +116,6 @@ def segments_intersect(
     a = B[1] * C[0] - B[0] * C[1]  # alpha numerator
     b = A[0] * C[1] - A[1] * C[0]  # beta numerator
     d = A[1] * B[0] - A[0] * B[1]  # both denominator
-    kwargs_no_function = kwargs.copy()
-    kwargs_no_function.pop("function", None)
 
     @jax.jit
     def test(num, den):
@@ -102,12 +123,12 @@ def segments_intersect(
         den = jnp.where(den_is_zero, 1.0, den)
         t = jnp.where(den_is_zero, jnp.inf, num / den)
         return logical_and(
-            greater_equal(t, -tol, **kwargs),
-            less_equal(t, 1.0 + tol, **kwargs),
-            **kwargs_no_function,
+            greater_equal(t, -tol, approx=approx, alpha=alpha, function=function),
+            less_equal(t, 1.0 + tol, approx=approx, alpha=alpha, function=function),
+            approx=approx,
         )
 
-    intersect = logical_and(test(a, d), test(b, d), **kwargs_no_function)
+    intersect = logical_and(test(a, d), test(b, d), approx=approx)
 
     return intersect
 
@@ -340,23 +361,39 @@ class Wall(Ray, Interactable):
         squared_length = jnp.where(squared_length == 0.0, 1.0, squared_length)
         return jnp.dot(self.t(), other) / squared_length
 
-    @jax.jit
-    def contains_parametric(self, param_coords: Array) -> Array:
-        ge = greater_equal(param_coords, 0.0)
-        le = less_equal(param_coords, 1.0)
-        return logical_and(ge, le)
+    @partial(jax.jit, static_argnames=["approx", "function"])
+    def contains_parametric(
+        self,
+        param_coords: Array,
+        approx: Optional[bool] = None,
+        alpha: float = DEFAULT_ALPHA,
+        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+    ) -> Array:
+        ge = greater_equal(
+            param_coords, 0.0, approx=approx, alpha=alpha, function=function
+        )
+        le = less_equal(
+            param_coords, 1.0, approx=approx, alpha=alpha, function=function
+        )
+        return logical_and(ge, le, approx=approx)
 
-    @jax.jit
+    @partial(jax.jit, static_argnames=["approx", "function"])
     def intersects_cartesian(
         self,
         ray: Array,
-        patch: float = 0.0,
+        patch: float = DEFAULT_PATCH,
+        approx: Optional[bool] = None,
+        alpha: float = DEFAULT_ALPHA,
+        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
     ) -> Array:
         return segments_intersect(
             self.origin() - patch * self.t(),
             self.dest() + patch * self.t(),
             ray[0, :],
             ray[1, :],
+            approx=approx,
+            alpha=alpha,
+            function=function,
         )
 
     @jax.jit
@@ -448,9 +485,9 @@ class Path(Plottable):
     @classmethod
     def from_tx_objects_rx(
         cls,
-        tx: Point,
+        tx: Array,
         objects: List[Interactable],
-        rx: Point,
+        rx: Array,
     ) -> "Path":
         """
         Returns a path from TX to RX, traversing each object in the list
@@ -459,10 +496,10 @@ class Path(Plottable):
         The present implementation will sample a point at :python:`t = 0.5`
         on each object.
 
-        :param tx: The emitting node.
+        :param tx: The emitting node, (2,).
         :param objects:
             The list of objects to interact with (order is important).
-        :param rx: The receiving node.
+        :param rx: The receiving node, (2,).
         :return: The resulting path.
 
         :Examples:
@@ -478,12 +515,16 @@ class Path(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = Path.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
+            path = Path.from_tx_objects_rx(
+                scene.emitters["tx"].point,
+                scene.objects,
+                scene.receivers["rx"].point
+            )
             _ = path.plot(ax)
             plt.show()
         """
         points = [obj.parametric_to_cartesian(0.5) for obj in objects]
-        points = jnp.row_stack([tx.point, points, rx.point])
+        points = jnp.row_stack([tx, points, rx])
         return cls(points=points)
 
     @jax.jit
@@ -495,8 +536,14 @@ class Path(Plottable):
         """
         return path_length(self.points)
 
-    @jax.jit
-    def on_objects(self, objects: List[Interactable]) -> Array:
+    @partial(jax.jit, static_argnames=["approx", "function"])
+    def on_objects(
+        self,
+        objects: List[Interactable],
+        approx: Optional[bool] = None,
+        alpha: float = DEFAULT_ALPHA,
+        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+    ) -> Array:
         """
         Returns whether the path correctly passes on the objects.
 
@@ -504,20 +551,31 @@ class Path(Plottable):
         in the path (start and end points are ignored).
 
         :param objects: The list of objects to check against.
+        :param kwargs: TODO
         :return: Whether this path passes on the objects, ().
         """
-        # TODO: allow to pass kwargs
-        contains = true_value()
+        contains = true_value(approx=approx)
         for i, obj in enumerate(objects):
             param_coords = obj.cartesian_to_parametric(self.points[i + 1, :])
-            # jax.debug.print("Contains: {obj}, {coords}", obj=obj, coords=param_coords)
-            contains = logical_and(contains, obj.contains_parametric(param_coords))
+            contains = logical_and(
+                contains,
+                obj.contains_parametric(
+                    param_coords, approx=approx, alpha=alpha, function=function
+                ),
+                approx=approx,
+            )
 
         return contains
 
-    @jax.jit
+    @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
     def intersects_with_objects(
-        self, objects: List[Interactable], path_candidate: List[int]
+        self,
+        objects: List[Interactable],
+        path_candidate: List[int],
+        patch: float = DEFAULT_PATCH,
+        approx: Optional[bool] = None,
+        alpha: float = DEFAULT_ALPHA,
+        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
     ) -> Array:
         """
         Returns whether the path intersects with any of the objects.
@@ -529,9 +587,8 @@ class Path(Plottable):
         :param path_candidate: The object indices on which the path should pass.
         :return: Whether this path intersects any of the objects, ().
         """
-        # TODO: allow to pass kwargs
         interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
-        intersects = jnp.array(False)
+        intersects = false_value(approx=approx)
 
         for i in range(self.points.shape[0] - 1):
             ray_path = self.points[i : i + 2, :]
@@ -543,10 +600,66 @@ class Path(Plottable):
                 intersects = jnp.where(
                     ignore,
                     intersects,
-                    logical_or(intersects, obj.intersects_cartesian(ray_path)),
+                    logical_or(
+                        intersects,
+                        obj.intersects_cartesian(
+                            ray_path,
+                            patch=patch,
+                            approx=approx,
+                            alpha=alpha,
+                            function=function,
+                        ),
+                        approx=approx,
+                    ),
                 )
 
         return intersects
+
+    def is_valid(
+        self,
+        objects: List[Interactable],
+        path_candidate: List[int],
+        interacting_objects: List[Interactable],
+        tol: float = 1e-2,
+        patch: float = DEFAULT_PATCH,
+        approx: Optional[bool] = None,
+        alpha: float = DEFAULT_ALPHA,
+        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+    ) -> Array:
+        """
+        Returns whether the current path is valid, according to
+        three criterions:
+
+        1. the path loss is below some tolerance;
+        2. the coordinate points are correctly placed inside the corresponding
+           interacting objects;
+        3. and the path does not intersect with any of the objects in the scene
+           (except those concerned by 2.).
+
+        :param objects: The objects in the scene.
+        :param path_candidate: ...
+        :param interacting_objects: The list of interacting objects,
+            usually obtained by calling
+            :meth:`get_interacting_objects<differt2d.scene.Scene.get_interacting_objects>`.
+        """
+        return logical_all(
+            self.on_objects(
+                interacting_objects, approx=approx, alpha=alpha, function=function
+            ),
+            logical_not(
+                self.intersects_with_objects(
+                    objects,
+                    path_candidate,
+                    patch=patch,
+                    approx=approx,
+                    alpha=alpha,
+                    function=function,
+                ),
+                approx=approx,
+            ),
+            less(self.loss, tol, approx=approx, alpha=alpha, function=function),
+            approx=approx,
+        )
 
     def plot(self, ax, *args, **kwargs):
         kwargs.setdefault("color", "orange")
@@ -591,18 +704,18 @@ class ImagePath(Path):
     @partial(jax.jit, static_argnames=["cls"])
     def from_tx_objects_rx(
         cls,
-        tx: Point,
+        tx: Array,
         objects: List[Wall],
-        rx: Point,
+        rx: Array,
         **kwargs: Any,
     ) -> "ImagePath":
         """
         Returns a path with minimal length.
 
-        :param tx: The emitting node.
+        :param tx: The emitting node, (2,).
         :param objects:
             The list of objects to interact with (order is important).
-        :param rx: The receiving node.
+        :param rx: The receiving node, (2,).
         :return: The resulting path of the Image method.
 
         :Examples:
@@ -618,14 +731,18 @@ class ImagePath(Path):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = ImagePath.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
+            path = ImagePath.from_tx_objects_rx(
+                scene.emitters["tx"].point,
+                scene.objects,
+                scene.receivers["rx"].point
+            )
             _ = path.plot(ax)
             plt.show()
         """
         n = len(objects)
 
         if n == 0:
-            points = jnp.row_stack([tx.point, rx.point])
+            points = jnp.row_stack([tx, rx])
             return cls(points=points, loss=jnp.array(0.0))
 
         walls = stack_leaves(objects)
@@ -655,12 +772,10 @@ class ImagePath(Path):
             point = point + inc
             return point, point
 
-        _, images = jax.lax.scan(forward, init=tx.point, xs=walls)
-        _, points = jax.lax.scan(
-            backward, init=rx.point, xs=(walls, images), reverse=True
-        )
+        _, images = jax.lax.scan(forward, init=tx, xs=walls)
+        _, points = jax.lax.scan(backward, init=rx, xs=(walls, images), reverse=True)
 
-        points = jnp.row_stack([tx.point, points, rx.point])
+        points = jnp.row_stack([tx, points, rx])
 
         return cls(points=points, loss=path_loss(points))
 
@@ -675,9 +790,9 @@ class FermatPath(Path):
     @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
     def from_tx_objects_rx(
         cls,
-        tx: Point,
+        tx: Array,
         objects: List[Interactable],
-        rx: Point,
+        rx: Array,
         key: Optional[jax.random.PRNGKey] = None,
         seed: int = 1234,
         **kwargs: Any,
@@ -685,10 +800,10 @@ class FermatPath(Path):
         """
         Returns a path with minimal length.
 
-        :param tx: The emitting node.
+        :param tx: The emitting node, (2,).
         :param objects:
             The list of objects to interact with (order is important).
-        :param rx: The receiving node.
+        :param rx: The receiving node, (2,).
         :param key: The random key to generate the initial guess.
         :param seed: The random seed used to generate the start iteration,
             only used if :python:`key is None`.
@@ -710,23 +825,25 @@ class FermatPath(Path):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = FermatPath.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
+            path = FermatPath.from_tx_objects_rx(
+                scene.emitters["tx"].point,
+                scene.objects,
+                scene.receivers["rx"].point
+            )
             _ = path.plot(ax)
             plt.show()
         """
         n = len(objects)
 
         if n == 0:
-            points = jnp.row_stack([tx.point, rx.point])
+            points = jnp.row_stack([tx, rx])
             return cls(points=points, loss=jnp.array(0.0))
 
         n_unknowns = sum([obj.parameters_count() for obj in objects])
 
         @jax.jit
         def loss_fun(theta):
-            cartesian_coords = parametric_to_cartesian(
-                objects, theta, n, tx.point, rx.point
-            )
+            cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)
 
             return path_length(cartesian_coords)
 
@@ -745,7 +862,7 @@ class FermatPath(Path):
             fun=loss_fun, n=n_unknowns, key=key, **kwargs
         )
 
-        points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
+        points = parametric_to_cartesian(objects, theta, n, tx, rx)
 
         return cls(points=points, loss=path_loss(points))
 
@@ -760,9 +877,9 @@ class MinPath(Path):
     @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
     def from_tx_objects_rx(
         cls,
-        tx: Point,
+        tx: Array,
         objects: List[Interactable],
-        rx: Point,
+        rx: Array,
         key: Optional[jax.random.PRNGKey] = None,
         seed: int = 1234,
         **kwargs: Any,
@@ -770,10 +887,10 @@ class MinPath(Path):
         """
         Returns a path that minimizes the sum of interactions.
 
-        :param tx: The emitting node.
+        :param tx: The emitting node, (2,).
         :param objects:
             The list of objects to interact with (order is important).
-        :param rx: The receiving node.
+        :param rx: The receiving node, (2,).
         :param key: The random key to generate the initial guess.
         :param seed: The random seed used to generate the start iteration,
             only used if :python:`key is None`.
@@ -795,23 +912,25 @@ class MinPath(Path):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            path = MinPath.from_tx_objects_rx(scene.emitters["tx"], scene.objects, scene.receivers["rx"])
+            path = MinPath.from_tx_objects_rx(
+                scene.emitters["tx"].point,
+                scene.objects,
+                scene.receivers["rx"].point
+            )
             _ = path.plot(ax)
             plt.show()
         """
         n = len(objects)
 
         if n == 0:
-            points = jnp.row_stack([tx.point, rx.point])
+            points = jnp.row_stack([tx, rx])
             return cls(points=points, loss=jnp.array(0.0))
 
         n_unknowns = sum(obj.parameters_count() for obj in objects)
 
         @jax.jit
         def loss_fun(theta):
-            cartesian_coords = parametric_to_cartesian(
-                objects, theta, n, tx.point, rx.point
-            )
+            cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)
 
             _loss = 0.0
             for i, obj in enumerate(objects):
@@ -826,6 +945,6 @@ class MinPath(Path):
             fun=loss_fun, n=n_unknowns, key=key, **kwargs
         )
 
-        points = parametric_to_cartesian(objects, theta, n, tx.point, rx.point)
+        points = parametric_to_cartesian(objects, theta, n, tx, rx)
 
         return cls(points=points, loss=loss)
