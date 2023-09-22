@@ -17,3 +17,10 @@ reference/index
 
 license
 ```
+
+```{eval-rst}
+.. plot:: ../../examples/power_map.py
+    :include-source:
+
+    Normalized Receiver Power Map for a Static Transmitter (TX).
+```

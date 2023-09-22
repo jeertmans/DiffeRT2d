@@ -1,6 +1,4 @@
-"""
-Abtract classes to be implemented by the user.
-"""
+"""Abtract classes to be implemented by the user."""
 
 from __future__ import annotations
 
@@ -11,7 +9,7 @@ __all__ = [
 
 from abc import abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Any, List, Literal, Protocol, Union
+from typing import TYPE_CHECKING, Any, List, Literal, Protocol, Tuple, Union
 
 import jax.numpy as jnp
 
@@ -36,9 +34,7 @@ class LocEnum(str, Enum):
 
 
 class Plottable(Protocol):  # pragma: no cover
-    """
-    Protocol for any object that can be plotted using matplotlib.
-    """
+    """Protocol for any object that can be plotted using matplotlib."""
 
     @abstractmethod
     def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> Union[Artist, List[Artist]]:
@@ -63,6 +59,21 @@ class Plottable(Protocol):  # pragma: no cover
         """
         pass
 
+    def grid(self, n: int = 50) -> Tuple[Array, Array]:
+        """
+        Returns a (mesh) grid that overlays the current object.
+
+        :param n: The number of sample along one axis.
+        :return: A tuple of (X, Y) coordinates.
+        :rtype: ((n, n), (n, n)), typing.Tuple[jax.Array, jax.Array]
+        """
+        bounding_box = self.bounding_box()
+        x = jnp.linspace(bounding_box[0, 0], bounding_box[1, 0], n)
+        y = jnp.linspace(bounding_box[0, 1], bounding_box[1, 1], n)
+
+        X, Y = jnp.meshgrid(x, y)
+        return X, Y
+
     def center(self) -> Array:
         """
         Returns the center coordinates of this object.
@@ -79,13 +90,11 @@ class Plottable(Protocol):  # pragma: no cover
         """
         Returns the relative location within this object's extents.
 
-        'N', 'E', 'S', 'W', 'C' stand, respectively for North, East,
-        South, West, and center. You can also combine two letters
-        to define one of the four corners.
+        'N', 'E', 'S', 'W', 'C' stand, respectively for North, East, South, West, and
+        center. You can also combine two letters to define one of the four corners.
 
         :param location: A literal denothing the location.
-        :return: The location coordinates within this
-            object's extents.
+        :return: The location coordinates within this object's extents.
         """
         (xmin, ymin), (xmax, ymax) = self.bounding_box()
         xavg = 0.5 * (xmin + xmax)
@@ -111,16 +120,14 @@ class Plottable(Protocol):  # pragma: no cover
 
 
 class Interactable(Protocol):  # pragma: no cover
-    """
-    Protocol for any object that a ray path can interact with.
-    """
+    """Protocol for any object that a ray path can interact with."""
 
     @staticmethod
     @abstractmethod
     def parameters_count() -> int:
         """
-        Returns how many parameters (s, t, ...) are needed to define an
-        interaction point on this object.
+        Returns how many parameters (s, t, ...) are needed to define an interaction
+        point on this object.
 
         Typically, this equals to one for 2D surfaces.
 

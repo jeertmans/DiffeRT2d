@@ -5,6 +5,10 @@ requires = ["poetry-core"]
 [tool.black]
 target-version = ["py39"]
 
+[tool.docformatter]
+black = true
+pre-summary-newline = true
+
 [tool.isort]
 profile = "black"
 py_version = 39
@@ -54,12 +58,8 @@ examples = ["pandas", "pyside6", "typer"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.10.0"
 bump2version = "^1.0.1"
-isort = "^5.12.0"
-mypy = "^0.991"
 pre-commit = "^3.0.2"
-ruff = "^0.0.219"
 
 [tool.poetry.group.docs]
 optional = true
@@ -67,7 +67,7 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 furo = "^2023.5.20"
 myst-parser = ">=2"
-sphinx = ">7,<7.2"
+sphinx = "^7.2.6"
 sphinx-autodoc-typehints = "^1.23.2"
 sphinx-click = "^4.4.0"
 sphinx-copybutton = "^0.5.1"

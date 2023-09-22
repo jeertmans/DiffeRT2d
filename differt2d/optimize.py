@@ -116,8 +116,8 @@ def minimize_random_uniform(
     **kwargs: Any,
 ) -> Tuple[X, Y]:
     """
-    Minimizes a scalar function of one or more variables,
-    with initial guess drawn randomly from a uniform distribution.
+    Minimizes a scalar function of one or more variables, with initial guess drawn
+    randomly from a uniform distribution.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guess.
@@ -152,9 +152,9 @@ def minimize_many_random_uniform(
     **kwargs: Any,
 ) -> Tuple[X, Y]:
     """
-    Minimizes many times a scalar function of one or more variables,
-    with initial guess drawn randomly from a uniform distribution,
-    and returns the best minimum out of the :code:`many` trials.
+    Minimizes many times a scalar function of one or more variables, with initial guess
+    drawn randomly from a uniform distribution, and returns the best minimum out of the
+    :code:`many` trials.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guesses.

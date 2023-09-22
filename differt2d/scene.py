@@ -1,3 +1,5 @@
+"""Scenes for tracing rays between emitters and receivers."""
+
 from __future__ import annotations
 
 import json
@@ -11,6 +13,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Protocol,
     Sequence,
     Tuple,
@@ -51,23 +54,15 @@ class Readable(Protocol):
 
 @dataclass
 class Scene(Plottable):
-    """
-    2D Scene made of objects, one or more emitting node(s),
-    and one or more receiving node(s).
-    """
+    """2D Scene made of objects, one or more emitting node(s), and one or more receiving
+    node(s)."""
 
     emitters: Dict[str, Point]
-    """
-    The emitting nodes.
-    """
+    """The emitting nodes."""
     receivers: Dict[str, Point]
-    """
-    The receiving nodes.
-    """
+    """The receiving nodes."""
     objects: List[Union[Interactable, Plottable]]
-    """
-    The list of objects in the scene.
-    """
+    """The list of objects in the scene."""
 
     @singledispatchmethod
     @classmethod
@@ -75,9 +70,8 @@ class Scene(Plottable):
         cls, s_or_fp: Union[S, Readable], tx_loc: LOC = "NW", rx_loc: LOC = "SE"
     ) -> "Scene":
         r"""
-        Creates a scene from a GEOJSON file, generating one Wall per
-        line segment. TX and RX positions are located on the corner
-        of the bounding box.
+        Creates a scene from a GEOJSON file, generating one Wall per line segment. TX
+        and RX positions are located on the corner of the bounding box.
 
         :param s_or_fp: Source from which to read the GEOJSON object,
             either a string-like or a file-like object.
@@ -311,9 +305,7 @@ class Scene(Plottable):
         return cls.from_geojson(fp.read(), *args, **kwargs)
 
     def add_objects(self, objects: Sequence[Union[Interactable, Plottable]]) -> None:
-        """
-        Add objects to the scene.
-        """
+        """Add objects to the scene."""
         self.objects.extend(objects)
 
     class SceneName(str, Enum):
@@ -329,10 +321,8 @@ class Scene(Plottable):
         Generates a new scene from the given scene name.
 
         :param scene_name: The name of the scene.
-        :param args:
-            Positional arguments to be passed to the constructor.
-        :param kwargs:
-            Keyword arguments to be passed to the constructor.
+        :param args: Positional arguments to be passed to the constructor.
+        :param kwargs: Keyword arguments to be passed to the constructor.
         :return: The scene.
         """
         if isinstance(scene_name, cls.SceneName):
@@ -352,8 +342,7 @@ class Scene(Plottable):
         n_receivers: int = 1,
     ) -> "Scene":
         """
-        Generates a random scene,
-        drawing coordinates from a random distribution.
+        Generates a random scene, drawing coordinates from a random distribution.
 
         :param key: The random key to be used.
         :param n_emitters: The number of emitters.
@@ -390,9 +379,8 @@ class Scene(Plottable):
     @classmethod
     def basic_scene(cls) -> "Scene":
         """
-        Instantiates a basic scene with a main room,
-        and a second inner room in the lower left corner,
-        with a small entrance.
+        Instantiates a basic scene with a main room, and a second inner room in the
+        lower left corner, with a small entrance.
 
         :return: The scene.
 
@@ -479,10 +467,52 @@ class Scene(Plottable):
         return Scene(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
 
     @classmethod
+    def square_scene_with_wall(cls, ratio: float = 0.1) -> "Scene":
+        """
+        Instantiates a square scene with one main room, and vertical wall in the middle.
+
+        :param ratio: The ratio of the obstacle's side length to
+            the room's side length.
+        :return: The scene.
+
+        :Examples:
+
+        >>> from differt2d.scene import Scene
+        >>>
+        >>> scene = Scene.square_scene_with_obstacle()
+        >>> scene.bounding_box()
+        Array([[0., 0.],
+               [1., 1.]], dtype=float32)
+        >>> len(scene.objects)
+        5
+        >>> scene.emitters["tx"]
+        Point(point=Array([0.2, 0.5], dtype=float32))
+
+        .. plot::
+
+            import matplotlib.pyplot as plt
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene_with_wall()
+            _ = scene.plot(ax)
+            plt.show()
+        """
+        scene = Scene.square_scene()
+        scene.emitters["tx"].point = jnp.array([0.2, 0.5])
+        scene.receivers["rx"].point = jnp.array([0.8, 0.5])
+
+        wall = Wall(points=jnp.array([[0.5, 0.2], [0.5, 0.8]]))
+
+        scene.add_objects([wall])
+
+        return scene
+
+    @classmethod
     def square_scene_with_obstacle(cls, ratio: float = 0.1) -> "Scene":
         """
-        Instantiates a square scene with one main room,
-        and one square obstacle in the center.
+        Instantiates a square scene with one main room, and one square obstacle in the
+        center.
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
@@ -630,21 +660,6 @@ class Scene(Plottable):
         i_min, distance = closest_point(points, coords)
         return receivers[i_min], distance
 
-    def grid(self, n: int = 50) -> Tuple[Array, Array]:
-        """
-        Returns a (mesh) grid that overlays all objects in the scene.
-
-        :param n: The number of sample along one axis.
-        :return: A tuple of (X, Y) coordinates.
-        :rtype: ((n, n), (n, n)), typing.Tuple[jax.Array, jax.Array]
-        """
-        bounding_box = self.bounding_box()
-        x = jnp.linspace(bounding_box[0, 0], bounding_box[1, 0], n)
-        y = jnp.linspace(bounding_box[0, 1], bounding_box[1, 1], n)
-
-        X, Y = jnp.meshgrid(x, y)
-        return X, Y
-
     def all_emitter_receiver_pairs(
         self,
     ) -> Iterator[Tuple[Tuple[str, int], Tuple[str, int]]]:
@@ -664,9 +679,8 @@ class Scene(Plottable):
 
     def get_visibility_matrix(self) -> np.array:
         """
-        Returns the visibility matrix between all
-        objects in the scene, plus one arbitrary emitter
-        and one arbitrary receiver.
+        Returns the visibility matrix between all objects in the scene, plus one
+        arbitrary emitter and one arbitrary receiver.
 
         Arbitrary because, for scenes with multiple emitters
         or receivers, the same matrix will be used, so it should
@@ -704,9 +718,8 @@ class Scene(Plottable):
         self, min_order: int = 0, max_order: int = 1
     ) -> List[List[int]]:
         """
-        Returns all path candidates, from any of the :attr:`emitters`
-        to any of the :attr:`receivers`,
-        as a list of list of indices.
+        Returns all path candidates, from any of the :attr:`emitters` to any of the
+        :attr:`receivers`, as a list of list of indices.
 
         Note that index 0 is for :attr:`emitters`,
         and last index is for :attr:`receivers`.
@@ -747,12 +760,10 @@ class Scene(Plottable):
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Path, Array]]:
         """
-        Returns all paths from any of the :attr:`emitters`
-        to any of the :attr:`receivers`,
-        using the given method,
-        see, :class:`differt2d.geometry.ImagePath`
-        :class:`differt2d.geometry.FermatPath`
-        and :class:`differt2d.geometry.MinPath`.
+        Returns all paths from any of the :attr:`emitters` to any of the
+        :attr:`receivers`, using the given method, see,
+        :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and
+        :class:`differt2d.geometry.MinPath`.
 
         :param method: Method to be used to find the path coordinates.
         :param tol: The threshold tolerance for a path loss to be accepted.
@@ -785,9 +796,8 @@ class Scene(Plottable):
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Path]]:
         """
-        Returns only valid paths as returned by
-        :meth:`all_paths`, by filtering out paths
-        using :func:`is_true<differt2d.logic.is_true>`.
+        Returns only valid paths as returned by :meth:`all_paths`, by filtering out
+        paths using :func:`is_true<differt2d.logic.is_true>`.
 
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_paths`.
@@ -800,7 +810,13 @@ class Scene(Plottable):
             if is_true(valid, approx=approx):
                 yield (e_key, r_key, path, path_candidate)
 
-    def accumulate_over_paths(self, fun: PathFun, **kwargs: Any) -> Array:
+    def accumulate_over_paths(
+        self,
+        fun: PathFun,
+        fun_args: Tuple = (),
+        fun_kwargs: Mapping = {},
+        **kwargs: Any,
+    ) -> Array:
         """
         Accumulates some function evaluated for each path in the scene.
 
@@ -808,8 +824,12 @@ class Scene(Plottable):
         """
         acc = 0.0
 
-        for emitter, receiver, valid, path, interacting_objects in self.all_paths(**kwargs):
-            acc = acc + valid * fun(emitter, receiver, path, interacting_objects)
+        for emitter, receiver, valid, path, interacting_objects in self.all_paths(
+            **kwargs
+        ):
+            acc = acc + valid * fun(
+                emitter, receiver, path, interacting_objects, *fun_args, **fun_kwargs
+            )
 
         return acc
 
@@ -818,15 +838,15 @@ class Scene(Plottable):
         X: Array,
         Y: Array,
         fun: PathFun,
+        fun_args: Tuple = (),
+        fun_kwargs: Mapping = {},
         path_cls: Type[Path] = ImagePath,
         receiver_cls: Type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
     ) -> Array:
-        """
-        TODO
-        """
+        """TODO."""
         receivers = self.receivers
         self.receivers = {"rx": Point(point=jnp.array([0.0, 0.0]))}
 
@@ -853,6 +873,8 @@ class Scene(Plottable):
                         receiver_cls(point=rx_coords),
                         path,
                         interacting_objects,
+                        *fun_args,
+                        **fun_kwargs,
                     )
 
             return acc

@@ -1,5 +1,4 @@
 import sys
-from copy import copy
 from functools import partial
 from pathlib import Path
 from typing import Optional
@@ -10,24 +9,23 @@ import typer
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QSlider, QComboBox, QApplication, QGridLayout, QGroupBox, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QGridLayout,
+    QGroupBox,
+    QLabel,
+    QSlider,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from differt2d.abc import LocEnum
 from differt2d.geometry import DEFAULT_PATCH, Point
 from differt2d.logic import DEFAULT_ALPHA, DEFAULT_FUNCTION
 from differt2d.scene import Scene
-from differt2d.utils import flatten
-
-EPS = jnp.finfo(float).eps
-
-@jax.jit
-def power(emitter, receiver, path, interacting_objects, P0=1.0, r_coef=0.5, epsilon=EPS):
-    """
-    Computes the power received from a given path.
-    """
-    r = path.length()
-    n = len(path) - 2  # Number of walls
-    return P0 * (r_coef**n) / (epsilon + r * r)
+from differt2d.utils import P0, flatten, received_power
 
 
 class CustomSlider(QSlider):
@@ -96,6 +94,7 @@ class PlotWidget(QWidget):
         self.approx = approx
         self.alpha = alpha
         self.function = function
+        self.r_coef = 0.5
 
         assert len(scene.emitters) == 1, "This simulation only supports one emitter"
         assert len(scene.receivers) == 1, "This simulation only supports one receiver"
@@ -116,6 +115,7 @@ class PlotWidget(QWidget):
         grid = QGridLayout()
         approx_box.setLayout(grid)
         self.alpha_slider = LogSlider(0, 3)
+        self.alpha_slider.setValue(self.alpha)
         self.alpha_label = QLabel("1.000e+00")
 
         grid.addWidget(QLabel("alpha:"), 1, 1)
@@ -148,8 +148,8 @@ class PlotWidget(QWidget):
 
         grid = QGridLayout()
         settings_box.setLayout(grid)
-        self.patch_slider = LinearSlider(-1., 1.)
-        self.patch_slider.setValue(0.)
+        self.patch_slider = LinearSlider(-1.0, 1.0)
+        self.patch_slider.setValue(0.0)
         self.patch_label = QLabel("+0.00")
 
         grid.addWidget(QLabel("patch:"), 1, 1)
@@ -159,10 +159,52 @@ class PlotWidget(QWidget):
         def set_patch(_):
             patch = self.patch_slider.value()
             self.patch = patch
-            self.patch_label.setText(f"{patch:.2}")
+            self.patch_label.setText(f"{patch:+.2f}")
             self.on_scene_change()
 
         self.patch_slider.valueChanged.connect(set_patch)
+
+        self.min_order_spin_box = QSpinBox()
+        self.min_order_spin_box.setMinimum(0)
+        self.min_order_spin_box.setValue(self.min_order)
+
+        grid.addWidget(QLabel("min. order:"), 2, 1)
+        grid.addWidget(self.min_order_spin_box, 2, 3)
+
+        def set_min_order(min_order):
+            self.min_order = min_order
+            self.on_scene_change()
+
+        self.min_order_spin_box.valueChanged.connect(set_min_order)
+
+        self.max_order_spin_box = QSpinBox()
+        self.max_order_spin_box.setMinimum(0)
+        self.max_order_spin_box.setValue(self.max_order)
+
+        grid.addWidget(QLabel("max. order:"), 3, 1)
+        grid.addWidget(self.max_order_spin_box, 3, 3)
+
+        def set_max_order(max_order):
+            self.max_order = max_order
+            self.on_scene_change()
+
+        self.max_order_spin_box.valueChanged.connect(set_max_order)
+
+        self.r_coef_slider = LinearSlider(0.0, 1.0)
+        self.r_coef_slider.setValue(self.r_coef)
+        self.r_coef_label = QLabel("0.50")
+
+        grid.addWidget(QLabel("refl. coef.:"), 4, 1)
+        grid.addWidget(self.r_coef_label, 4, 2)
+        grid.addWidget(self.r_coef_slider, 4, 3)
+
+        def set_r_coef(_):
+            r_coef = self.r_coef_slider.value()
+            self.r_coef = r_coef
+            self.r_coef_label.setText(f"{r_coef:.2f}")
+            self.on_scene_change()
+
+        self.r_coef_slider.valueChanged.connect(set_r_coef)
 
         # Matplotlib figures
         self.fig = Figure(figsize=(10, 10), tight_layout=True)
@@ -185,9 +227,16 @@ class PlotWidget(QWidget):
 
         self.X, self.Y = self.scene.grid(n=resolution)
 
-        self.coverage_map = self.ax.pcolormesh(
-            self.X, self.Y, self.X + self.Y, zorder=-2
+        cm = self.coverage_map = self.ax.pcolormesh(
+            self.X,
+            self.Y,
+            jnp.zeros_like(self.X),
+            zorder=-2,
+            vmin=-50,
+            vmax=5,
         )
+        cbar = self.fig.colorbar(cm, ax=self.ax)
+        cbar.ax.set_ylabel("Power (dB)")
 
         scene.plot(
             ax=self.ax,
@@ -208,8 +257,10 @@ class PlotWidget(QWidget):
             self.scene.receivers = {"rx": Point(point=rx_coords)}
 
             total_power = self.scene.accumulate_over_paths(
-                fun=power,
-                min_order=self.min_order, max_order=self.max_order
+                fun=received_power,
+                fun_kwargs=dict(r_coef=self.r_coef),
+                min_order=self.min_order,
+                max_order=self.max_order,
             )
 
             self.scene.receivers = receivers
@@ -217,6 +268,9 @@ class PlotWidget(QWidget):
             return total_power
 
         self.f_and_df = jax.value_and_grad(f)
+
+        self.ax.autoscale(False, axis="x")
+        self.ax.autoscale(False, axis="y")
 
         self.on_scene_change()
 
@@ -248,8 +302,11 @@ class PlotWidget(QWidget):
 
         self.path_artists = []
 
-        Z = self.scene.accumulate_on_receivers_grid_over_paths(
-            self.X, self.Y, fun=power,
+        P = self.scene.accumulate_on_receivers_grid_over_paths(
+            self.X,
+            self.Y,
+            fun=received_power,
+            fun_kwargs=dict(r_coef=self.r_coef),
             min_order=self.min_order,
             max_order=self.max_order,
             patch=self.patch,
@@ -258,9 +315,11 @@ class PlotWidget(QWidget):
             function=self.function,
         )
 
-        self.coverage_map.set_array(jnp.log1p(Z))
+        PdB = 10.0 * jnp.log10(P / P0)
 
-        for _, _, path, _ in self.scene.all_valid_paths(
+        self.coverage_map.set_array(PdB)
+
+        for _, _, valid, path, _ in self.scene.all_paths(
             min_order=self.min_order,
             max_order=self.max_order,
             patch=self.patch,
@@ -268,7 +327,7 @@ class PlotWidget(QWidget):
             alpha=self.alpha,
             function=self.function,
         ):
-            self.path_artists.append(path.plot(self.ax, zorder=-1))
+            self.path_artists.append(path.plot(self.ax, zorder=-1, alpha=float(valid)))
 
         if self.picked and False:
             _, point = self.picked
@@ -283,7 +342,6 @@ class PlotWidget(QWidget):
                 dp = dp / ndp
 
             self.path_artists.append(self.ax.quiver([x], [y], [dp[0]], [dp[1]]))
-            print(p, dp)
 
         self.view.draw()
 
@@ -291,7 +349,7 @@ class PlotWidget(QWidget):
 def main(
     scene_name: Scene.SceneName = Scene.SceneName.basic_scene,
     file: Optional[Path] = None,
-    resolution: int = 50,
+    resolution: int = 150,
     min_order: int = 0,
     max_order: int = 1,
     patch: float = DEFAULT_PATCH,

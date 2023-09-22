@@ -64,8 +64,8 @@ DEFAULT_FUNCTION = "hard_sigmoid"
 @contextmanager
 def enable_approx(enable: bool = True):
     """
-    Context manager for enabling or disabling approximation of true/false values
-    with continuous numbers from 0 (false) to 1 (true).
+    Context manager for enabling or disabling approximation of true/false values with
+    continuous numbers from 0 (false) to 1 (true).
 
     By default, approximation is enabled.
 
@@ -164,8 +164,8 @@ def enable_approx(enable: bool = True):
 @contextmanager
 def disable_approx(disable: bool = True):  # pragma: no cover
     """
-    Context manager for disable or enabling approximation of true/false values
-    with continuous numbers from 0 (false) to 1 (true).
+    Context manager for disable or enabling approximation of true/false values with
+    continuous numbers from 0 (false) to 1 (true).
 
     This function is an alias to :python:`enable_approx(not disable)`.
     For more details, refer to :py:func:`enable_approx`.
@@ -188,8 +188,8 @@ def activation(
     function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
 ) -> Array:
     r"""
-    Element-wise function for approximating a discrete transition between 0 and 1,
-    with a smoothed transition centered at :python:`x = 0.0`.
+    Element-wise function for approximating a discrete transition between 0 and 1, with
+    a smoothed transition centered at :python:`x = 0.0`.
 
     Depending on the ``function`` argument, the activation function has the
     following definition:

@@ -1,11 +1,9 @@
-"""
-Geometrical objects to be placed in a :class:`differt2d.scene.Scene`.
-"""
+"""Geometrical objects to be placed in a :class:`differt2d.scene.Scene`."""
 
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Literal, Mapping, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -191,8 +189,7 @@ def normalize(vector: Array) -> Tuple[Array, Array]:
 @partial(jax.jit, inline=True)
 def closest_point(points: Array, target: Array) -> Tuple[int, Array]:
     """
-    Returns the index of the closest point to some target,
-    and the actual distance.
+    Returns the index of the closest point to some target, and the actual distance.
 
     :param points: An array of 2D points, (N, 2).
     :param target: A target point, (2, ).
@@ -285,9 +282,19 @@ class Point(Plottable):
     point: Array
     """Cartesian coordinates."""
 
-    def plot(self, ax, *args, annotate: Optional[str] = None, **kwargs):
+    def plot(
+        self,
+        ax,
+        *args,
+        annotate: Optional[str] = None,
+        annotate_kwargs: Mapping[str, Any] = {},
+        **kwargs,
+    ):
         """
         :param annotate: Text to put next the the point.
+        :param annotate_kwargs:
+            Keyword arguments to be passed to
+            :meth:`matplotlib.axes.Axes.annotate`.
         """
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("color", "red")
@@ -304,7 +311,9 @@ class Point(Plottable):
         ]
 
         if annotate:
-            artists.append(ax.annotate(annotate, xy=(x, y), xytext=(x, y)))
+            artists.append(
+                ax.annotate(annotate, xy=(x, y), xytext=(x, y), **annotate_kwargs)
+            )
 
         return artists
 
@@ -333,8 +342,7 @@ class Wall(Ray, Interactable):
     @jax.jit
     def normal(self) -> Array:
         """
-        Returns the normal to the current wall,
-        expressed in cartesian coordinates and
+        Returns the normal to the current wall, expressed in cartesian coordinates and
         normalized.
 
         :return: The normal, (2,)
@@ -409,8 +417,8 @@ class Wall(Ray, Interactable):
     @jax.jit
     def image_of(self, point: Array) -> Array:
         """
-        Returns the image of a point with respect to
-        this mirror (wall), using specular reflection.
+        Returns the image of a point with respect to this mirror (wall), using specular
+        reflection.
 
         :param point: The starting point, (2,).
         :return: The image of the point.
@@ -432,14 +440,12 @@ class RIS(Wall):
     """
     A very basic Reflective Intelligent Surface (RIS) object.
 
-    Here, we model a RIS such that the angle of reflection is constant
-    with respect to its normal, regardless of the incident vector.
+    Here, we model a RIS such that the angle of reflection is constant with respect to
+    its normal, regardless of the incident vector.
     """
 
     phi: Array = jnp.pi / 4
-    """
-    The constant angle of reflection.
-    """
+    """The constant angle of reflection."""
 
     @jax.jit
     def evaluate_cartesian(self, ray_path: Array) -> Array:
@@ -473,14 +479,10 @@ class Path(Plottable):
     """
 
     points: Array
-    """
-    Array of cartesian coordinates.
-    """
+    """Array of cartesian coordinates."""
 
     loss: float = 0.0
-    """
-    The loss value for the given path.
-    """
+    """The loss value for the given path."""
 
     @classmethod
     def from_tx_objects_rx(
@@ -490,8 +492,8 @@ class Path(Plottable):
         rx: Array,
     ) -> "Path":
         """
-        Returns a path from TX to RX, traversing each object in the list
-        in the provided order.
+        Returns a path from TX to RX, traversing each object in the list in the provided
+        order.
 
         The present implementation will sample a point at :python:`t = 0.5`
         on each object.
@@ -547,8 +549,8 @@ class Path(Plottable):
         """
         Returns whether the path correctly passes on the objects.
 
-        For each object i, it will check whether it contains the ith point
-        in the path (start and end points are ignored).
+        For each object i, it will check whether it contains the ith point in the path
+        (start and end points are ignored).
 
         :param objects: The list of objects to check against.
         :param kwargs: TODO
@@ -696,9 +698,7 @@ def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords)
 
 @dataclass
 class ImagePath(Path):
-    """
-    A path object that was obtain with the Image method.
-    """
+    """A path object that was obtain with the Image method."""
 
     @classmethod
     @partial(jax.jit, static_argnames=["cls"])
@@ -782,9 +782,7 @@ class ImagePath(Path):
 
 @dataclass
 class FermatPath(Path):
-    """
-    A path object that was obtain with the Fermat's Principle Tracing method.
-    """
+    """A path object that was obtain with the Fermat's Principle Tracing method."""
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
@@ -869,9 +867,7 @@ class FermatPath(Path):
 
 @dataclass
 class MinPath(Path):
-    """
-    A path object that was obtain with the Min-Path-Tracing method.
-    """
+    """A path object that was obtain with the Min-Path-Tracing method."""
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
