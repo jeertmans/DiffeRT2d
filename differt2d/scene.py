@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from functools import partial, singledispatchmethod
+from functools import singledispatchmethod
 from itertools import product
 from typing import (
     TYPE_CHECKING,
@@ -18,7 +18,6 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     runtime_checkable,
 )
@@ -29,8 +28,8 @@ import numpy as np
 import rustworkx as rx
 
 from .abc import LOC, Interactable, Plottable
-from .geometry import FermatPath, ImagePath, MinPath, Path, Point, Wall, closest_point
-from .logic import is_true, less, logical_and, logical_not
+from .geometry import ImagePath, Path, Point, Wall, closest_point
+from .logic import is_true
 
 if TYPE_CHECKING:  # pragma: no cover
     from dataclasses import dataclass

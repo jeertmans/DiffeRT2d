@@ -28,10 +28,10 @@ Pytree = Union[list, tuple, dict]
 T = TypeVar("T")
 RecursiveIter = Union[T, Iterable["RecursiveIter"]]
 
-DEFAULT_R_COEF = 0.5
+DEFAULT_R_COEF: float = 0.5
 """Default value for real reflection coefficient."""
 
-DEFAULT_HEIGHT = 0.1
+DEFAULT_HEIGHT: float = 0.1
 """Default TX antenna height, used to avoid division by zero when computing
 :func:`received_power`."""
 

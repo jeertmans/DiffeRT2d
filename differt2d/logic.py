@@ -59,9 +59,9 @@ _enable_approx = jax.config.define_bool_state(
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 
 
-DEFAULT_ALPHA = 100.0
+DEFAULT_ALPHA: float = 100.0
 """Default value for ``alpha`` parameter in :func:`activation`."""
-DEFAULT_FUNCTION = "hard_sigmoid"
+DEFAULT_FUNCTION: Literal["sigmoid", "hard_sigmoid"] = "hard_sigmoid"
 """Default value for ``function`` parameter in :func:`activation`."""
 
 
