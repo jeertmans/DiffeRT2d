@@ -22,10 +22,12 @@ from PySide6.QtWidgets import (
 )
 
 from differt2d.abc import LocEnum
-from differt2d.geometry import DEFAULT_PATCH, Point
+from differt2d.geometry import DEFAULT_PATCH, FermatPath, ImagePath, MinPath, Point
 from differt2d.logic import DEFAULT_ALPHA, DEFAULT_FUNCTION
 from differt2d.scene import Scene
 from differt2d.utils import P0, flatten, received_power
+
+METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
 
 
 class CustomSlider(QSlider):
@@ -95,6 +97,7 @@ class PlotWidget(QWidget):
         self.alpha = alpha
         self.function = function
         self.r_coef = 0.5
+        self.path_cls = METHOD_TO_PATH_CLASS["image"]
 
         assert len(scene.emitters) == 1, "This simulation only supports one emitter"
         assert len(scene.receivers) == 1, "This simulation only supports one receiver"
@@ -206,6 +209,19 @@ class PlotWidget(QWidget):
 
         self.r_coef_slider.valueChanged.connect(set_r_coef)
 
+        self.path_cls_combo_box = QComboBox()
+        self.path_cls_combo_box.addItems(METHOD_TO_PATH_CLASS.keys())
+        self.path_cls_combo_box.setCurrentText(function)
+
+        grid.addWidget(QLabel("method:"), 5, 1)
+        grid.addWidget(self.path_cls_combo_box, 5, 3)
+
+        def set_path_cls(method):
+            self.path_cls = METHOD_TO_PATH_CLASS[method]
+            self.on_scene_change()
+
+        self.path_cls_combo_box.currentTextChanged.connect(set_path_cls)
+
         # Matplotlib figures
         self.fig = Figure(figsize=(10, 10), tight_layout=True)
         self.view = FigureCanvas(self.fig)
@@ -261,6 +277,7 @@ class PlotWidget(QWidget):
                 fun_kwargs=dict(r_coef=self.r_coef),
                 min_order=self.min_order,
                 max_order=self.max_order,
+                path_cls=self.path_cls,
             )
 
             self.scene.receivers = receivers
@@ -313,6 +330,7 @@ class PlotWidget(QWidget):
             approx=self.approx,
             alpha=self.alpha,
             function=self.function,
+            path_cls=self.path_cls,
         )
 
         PdB = 10.0 * jnp.log10(P / P0)
@@ -326,6 +344,7 @@ class PlotWidget(QWidget):
             approx=self.approx,
             alpha=self.alpha,
             function=self.function,
+            path_cls=self.path_cls,
         ):
             self.path_artists.append(path.plot(self.ax, zorder=-1, alpha=float(valid)))
 

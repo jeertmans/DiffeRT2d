@@ -8,18 +8,36 @@ scene = Scene.square_scene_with_wall()
 
 fig, axes = plt.subplots(2, 1, sharex=True)
 
-annotate_kwargs = dict(fontsize=12, fontweight="bold")
+# Scene and power map
 
-x = jnp.linspace(0.2, 0.8, 200)
-y = jnp.array([0.5])
-
-X, Y = jnp.meshgrid(x, y)
+annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
 
 scene.plot(
     axes[0],
     emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
     receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
 )
+
+X, Y = scene.grid(n=300)
+P = scene.accumulate_on_receivers_grid_over_paths(
+    X,
+    Y,
+    fun=received_power,
+    approx=False,
+    min_order=0,
+    max_order=0,
+)
+
+PdB = 10.0 * jnp.log10(P / P0)
+
+axes[0].pcolormesh(X, Y, PdB, vmin=-50, vmax=5, zorder=-1)
+
+# Profiles
+
+x = jnp.linspace(0.2, 0.8, 200)
+y = jnp.array([0.5])
+
+X, Y = jnp.meshgrid(x, y)
 
 P = scene.accumulate_on_receivers_grid_over_paths(
     X, Y, fun=received_power, approx=False, min_order=0, max_order=0
@@ -29,17 +47,18 @@ PdB = 10.0 * jnp.log10(P.reshape(-1) / P0)
 
 axes[1].plot(x, PdB, label="Without")
 
-for alpha in jnp.logspace(-1, 3, 10):
+for alpha in [1.0, 10.0, 100.0, 1000.0]:
     P = scene.accumulate_on_receivers_grid_over_paths(
         X, Y, fun=received_power, approx=True, alpha=alpha, min_order=0, max_order=0
     )
 
     PdB = 10.0 * jnp.log10(P.reshape(-1) / P0)
 
-    axes[1].plot(x, PdB, label="With + alpha = " + str(alpha))
+    axes[1].plot(x, PdB, label=f"With + $\\alpha = {alpha:.0e}$")
 
 axes[1].set_ylabel("Power (dB)")
 axes[1].set_title("With appro")
+axes[1].set_ylim([-20, 0])
 
 axes[-1].set_xlabel("x coordinate")
 plt.legend()

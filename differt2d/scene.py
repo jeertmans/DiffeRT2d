@@ -753,7 +753,7 @@ class Scene(Plottable):
 
     def all_paths(
         self,
-        method: Type[Path] = ImagePath,
+        path_cls: Type[Path] = ImagePath,
         tol: float = 1e-2,
         min_order: int = 0,
         max_order: int = 1,
@@ -765,7 +765,7 @@ class Scene(Plottable):
         :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and
         :class:`differt2d.geometry.MinPath`.
 
-        :param method: Method to be used to find the path coordinates.
+        :param path_cls: Method to be used to find the path coordinates.
         :param tol: The threshold tolerance for a path loss to be accepted.
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_path_candidates`.
@@ -781,7 +781,7 @@ class Scene(Plottable):
         for (e_key, emitter), (r_key, receiver) in self.all_emitter_receiver_pairs():
             for path_candidate in path_candidates:
                 interacting_objects = self.get_interacting_objects(path_candidate)
-                path = method.from_tx_objects_rx(
+                path = path_cls.from_tx_objects_rx(
                     emitter.point, interacting_objects, receiver.point
                 )
                 valid = path.is_valid(
