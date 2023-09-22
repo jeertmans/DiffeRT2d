@@ -24,7 +24,7 @@ Examples
 >>> chex.assert_trees_all_close(y, +0.0, atol=1e-3)
 """
 
-from typing import Any, Callable, Tuple, TypeVar
+from typing import Any, Callable, Mapping, Tuple, TypeVar
 
 import jax
 import jax.numpy as jnp
@@ -69,6 +69,8 @@ def default_optimizer() -> optax.GradientTransformation:
 def minimize(
     fun: Callable[[X], Y],
     x0: Array,
+    fun_args: Tuple = (),
+    fun_kwargs: Mapping[str, Any] = {},
     steps: int = 100,
     optimizer: optax.GradientTransformation = default_optimizer(),
 ) -> Tuple[X, Y]:
@@ -77,6 +79,10 @@ def minimize(
 
     :param fun: The objective function to be minimized.
     :param x0: The initial guess, (n,).
+    :param fun_args:
+        Positional arguments to be passed to ``fun``.
+    :param fun_kwargs:
+        Keyword arguments to be passed to :attr:`fun`.
     :param steps: The number of steps to perform.
     :param optimizer: The optimizer to use.
     :return: The solution array and the corresponding loss.
@@ -86,20 +92,30 @@ def minimize(
     >>> from differt2d.optimize import minimize
     >>> import chex
     >>> import jax.numpy as jnp
-    >>> def f(x):
-    ...     x = x - 1.0
+    >>> def f(x, offset = 1.0):
+    ...     x = x - offset
     ...     return jnp.dot(x, x)
     >>>
     >>> x, y = minimize(f, jnp.zeros(10))
     >>> chex.assert_trees_all_close(x, jnp.ones(10), rtol=1e-2)
     >>> chex.assert_trees_all_close(y, 0.0, atol=1e-4)
+    >>>
+    >>> # It is also possible to pass positional arguments
+    >>> x, y = minimize(f, jnp.zeros(10), fun_args=(2.0,))
+    >>> chex.assert_trees_all_close(x, 2.0 * jnp.ones(10), rtol=1e-2)
+    >>> chex.assert_trees_all_close(y, 0.0, atol=1e-3)
+    >>>
+    >>> # Or even keyword arguments
+    >>> x, y = minimize(f, jnp.zeros(10), fun_kwargs=dict(offset=3.0))
+    >>> chex.assert_trees_all_close(x, 3.0 * jnp.ones(10), rtol=1e-2)
+    >>> chex.assert_trees_all_close(y, 0.0, atol=1e-2)
     """
     f_and_df = jax.value_and_grad(fun)
     opt_state = optimizer.init(x0)
 
     def f(carry, x):
         x, opt_state = carry
-        loss, grads = f_and_df(x)
+        loss, grads = f_and_df(x, *fun_args, **fun_kwargs)
         updates, opt_state = optimizer.update(grads, opt_state)
         x = x + updates
         carry = (x, opt_state)

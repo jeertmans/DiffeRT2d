@@ -34,7 +34,7 @@ else:
 
 
 DEFAULT_PATCH = 0.0
-"""Default patch value applied to :meth:Wall.`intersects_cartesian`."""
+"""Default patch value applied to :meth:`Wall.intersects_cartesian`."""
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
