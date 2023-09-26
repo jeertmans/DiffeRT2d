@@ -764,6 +764,8 @@ class Scene(Plottable):
         :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and
         :class:`differt2d.geometry.MinPath`.
 
+        TODO: fix kwargs, and remove tol.
+
         :param path_cls: Method to be used to find the path coordinates.
         :param tol: The threshold tolerance for a path loss to be accepted.
         :param kwargs:
@@ -830,6 +832,94 @@ class Scene(Plottable):
                 emitter, receiver, path, interacting_objects, *fun_args, **fun_kwargs
             )
 
+        return acc
+
+    def accumulate_on_emitters_grid_over_paths(
+        self,
+        X: Array,
+        Y: Array,
+        fun: PathFun,
+        fun_args: Tuple = (),
+        fun_kwargs: Mapping = {},
+        path_cls: Type[Path] = ImagePath,
+        emitter_cls: Type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        per_receiver: bool = False,
+        **kwargs,
+    ) -> Array:
+        """
+        Repeatedly calls ``fun`` on all paths between the
+        receivers in the scene and every emitter coordinate
+        in :python:`(X, Y)`, and accumulate the results over one array
+        that has the same shape a ``X`` and ``Y``.
+
+        If ``per_receiver`` is :python:`True`, produces one array
+        per receiver location.
+
+        :param X: The grid of x-coordinates.
+        :param Y: The grid of y-coordinates.
+        :param fun: The function to evaluate on each path.
+        :param fun_args:
+            Positional arguments to be passed to ``fun``.
+        :param fun_kwargs:
+            Keyword arguments to be passed to ``fun``.
+        :param path_cls: Method to be used to find the path coordinates.
+        :param emitter_cls: A point constructor called on every emitter,
+            should inherit from :class:`Point<differt2d.geometry.Point>`.
+        :param min_order:
+            The minimum order of the path, i.e., the number of interactions.
+        :param max_order:
+            The maximum order of the path, i.e., the number of interactions.
+        :param per_receiver: Whether to split to output per receiver.
+        :param kwargs:
+            Keyword arguments to be passed to
+            :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
+        """
+        emitters = self.emitters
+        self.emitters = {"tx": Point(point=jnp.array([0.0, 0.0]))}
+
+        path_candidates = self.all_path_candidates(
+            min_order=min_order,
+            max_order=max_order,
+        )
+
+        pairs = list(self.all_emitter_receiver_pairs())
+
+        if per_receiver:
+            for _, (_, receiver) in pairs:
+ 
+
+
+        def facc(tx_coords):
+            acc = 0.0
+            for _, (_, receiver) in pairs:
+                for path_candidate in path_candidates:
+                    interacting_objects = self.get_interacting_objects(path_candidate)
+                    path = path_cls.from_tx_objects_rx(
+                        tx_coords, interacting_objects, receiver.point
+                    )
+                    valid = path.is_valid(
+                        self.objects, path_candidate, interacting_objects, **kwargs
+                    )
+                    acc = acc + valid * fun(
+                        emitter_cls(point=tx_coords),
+                        receiver,
+                        path,
+                        interacting_objects,
+                        *fun_args,
+                        **fun_kwargs,
+                    )
+
+            return acc
+
+        vfacc = jax.vmap(
+            jax.vmap(facc, in_axes=(0,)),
+            in_axes=(0,),
+        )
+        grid = jnp.dstack((X, Y))
+        acc = vfacc(grid)
+        self.emitters = emitters
         return acc
 
     def accumulate_on_receivers_grid_over_paths(

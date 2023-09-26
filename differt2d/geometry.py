@@ -644,7 +644,7 @@ class Path(Plottable):
             usually obtained by calling
             :meth:`get_interacting_objects<differt2d.scene.Scene.get_interacting_objects>`.
         """
-        return logical_all(
+        return jnp.nan_to_num(logical_all(
             self.on_objects(
                 interacting_objects, approx=approx, alpha=alpha, function=function
             ),
@@ -661,7 +661,7 @@ class Path(Plottable):
             ),
             less(self.loss, tol, approx=approx, alpha=alpha, function=function),
             approx=approx,
-        )
+        ))
 
     def plot(self, ax, *args, **kwargs):
         kwargs.setdefault("color", "orange")
