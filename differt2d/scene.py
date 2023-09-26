@@ -360,7 +360,7 @@ class Scene(Plottable):
             ax = plt.gca()
             key = jax.random.PRNGKey(1234)
             scene = Scene.random_uniform_scene(key, n_walls=5)
-            #_ = scene.plot(ax)
+            _ = scene.plot(ax)
             plt.show()
         """
         points = jax.random.uniform(key, (n_emitters + 2 * n_walls + n_receivers, 2))
