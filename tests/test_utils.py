@@ -4,7 +4,8 @@ import pytest
 
 from differt2d.geometry import RIS, Wall
 from differt2d.scene import Scene
-from differt2d.utils import flatten, stack_leaves, unstack_leaves
+from differt2d.utils import flatten, stack_leaves, unstack_leaves, patch
+from differt2d.logic import true_value
 
 
 def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
@@ -40,3 +41,42 @@ def test_flatten():
 
     assert len(flattened) == 9
     assert all(i == 1 for i in flattened)
+
+
+
+def add(a: int, b: int = 0):
+    return a + b
+
+
+def add_plus_one(*args, **kwargs):
+    return add(*args, **kwargs) + 1
+
+
+def test_patch():
+    with patch(add, b=1):
+
+        assert add(1) == 2
+        assert add(1, 2) == 2
+        assert add(1, b=3) == 2
+
+        assert add_plus_one(1) == 3
+        assert add_plus_one(1, 2) == 3
+        assert add_plus_one(1, b=3) == 3
+
+    with patch(add, a=4):
+
+        assert add(1) == 4
+        assert add(1, 2) == 6
+        assert add(1, b=3) == 7
+
+        assert add_plus_one(1) == 5
+        assert add_plus_one(1, 2) == 7
+        assert add_plus_one(1, b=3) == 8
+
+    assert add(1) == 1
+    assert add(1, 2) == 3
+    assert add(1, b=3) == 4
+
+    assert add_plus_one(1) == 2
+    assert add_plus_one(1, 2) == 4
+    assert add_plus_one(1, b=3) == 5

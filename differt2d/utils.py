@@ -17,6 +17,9 @@ from typing import (
 
 import jax
 import jax.numpy as jnp
+import inspect
+from functools import wraps
+from unittest.mock import patch as unittest_patch
 
 if TYPE_CHECKING:  # pragma: no cover
     from jax import Array
@@ -111,3 +114,28 @@ def received_power(
     r = path.length()
     n = path.points.shape[0] - 2  # Number of interactions
     return (r_coef**n) / (height * height + r * r)
+
+
+def patch(fun: Callable, **parameters) -> None:
+    """
+    Patches a function to force some arguments to have a given value.
+
+    Note that the change is permanent. For temporary changes, use the
+    :func:`patched` context manager.
+
+    E.g., you can force to use :python:`approx=True`
+    with ...
+    by calling ...
+    """
+    target = ".".join([fun.__module__, fun.__name__])
+    sig = inspect.Signature.from_callable(fun)
+
+    @wraps(fun)
+    def wrapped(*args, **kwargs):
+        arguments = sig.bind(*args, **kwargs).arguments
+        for (arg_name, arg_value) in parameters.items():
+            arguments[arg_name] = arg_value
+
+        return fun(**arguments)
+
+    return unittest_patch(target, new=wrapped)
