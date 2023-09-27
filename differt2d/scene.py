@@ -888,6 +888,7 @@ class Scene(Plottable):
 
         if per_receiver:
             for _, (_, receiver) in pairs:
+                pass
  
 
 
