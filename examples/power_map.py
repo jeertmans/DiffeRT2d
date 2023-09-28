@@ -20,8 +20,10 @@ for ax, approx in zip(axes, [False, True]):
     )
 
     P = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, approx=approx
+        X, Y, fun=received_power, reduce=True, approx=approx
     )
+
+    print(list(P))
 
     PdB = 10.0 * jnp.log10(P / P0)
 

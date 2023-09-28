@@ -37,7 +37,7 @@ class Plottable(Protocol):  # pragma: no cover
     """Protocol for any object that can be plotted using matplotlib."""
 
     @abstractmethod
-    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> Union[Artist, List[Artist]]:
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> List[Artist]:
         """
         Plot this object on the given axes and returns the results.
 

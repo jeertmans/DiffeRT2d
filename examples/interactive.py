@@ -275,6 +275,7 @@ class PlotWidget(QWidget):
             total_power = self.scene.accumulate_over_paths(
                 fun=received_power,
                 fun_kwargs=dict(r_coef=self.r_coef),
+                reduce=True,
                 min_order=self.min_order,
                 max_order=self.max_order,
                 path_cls=self.path_cls,
@@ -324,6 +325,7 @@ class PlotWidget(QWidget):
             self.Y,
             fun=received_power,
             fun_kwargs=dict(r_coef=self.r_coef),
+            reduce=True,
             min_order=self.min_order,
             max_order=self.max_order,
             patch=self.patch,

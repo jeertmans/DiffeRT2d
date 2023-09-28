@@ -301,14 +301,12 @@ class Point(Plottable):
 
         x, y = self.point
 
-        artists = [
-            ax.plot(
-                [x],
-                [y],
-                *args,
-                **kwargs,
-            )
-        ]
+        artists = ax.plot(
+            [x],
+            [y],
+            *args,
+            **kwargs,
+        )
 
         if annotate:
             artists.append(
@@ -457,7 +455,7 @@ class RIS(Wall):
 
     def plot(self, ax, *args, **kwargs):  # pragma: no cover
         kwargs.setdefault("color", "green")
-        super().plot(ax, *args, **kwargs)
+        return super().plot(ax, *args, **kwargs)
 
 
 @dataclass
@@ -644,24 +642,26 @@ class Path(Plottable):
             usually obtained by calling
             :meth:`get_interacting_objects<differt2d.scene.Scene.get_interacting_objects>`.
         """
-        return jnp.nan_to_num(logical_all(
-            self.on_objects(
-                interacting_objects, approx=approx, alpha=alpha, function=function
-            ),
-            logical_not(
-                self.intersects_with_objects(
-                    objects,
-                    path_candidate,
-                    patch=patch,
-                    approx=approx,
-                    alpha=alpha,
-                    function=function,
+        return jnp.nan_to_num(
+            logical_all(
+                self.on_objects(
+                    interacting_objects, approx=approx, alpha=alpha, function=function
                 ),
+                logical_not(
+                    self.intersects_with_objects(
+                        objects,
+                        path_candidate,
+                        patch=patch,
+                        approx=approx,
+                        alpha=alpha,
+                        function=function,
+                    ),
+                    approx=approx,
+                ),
+                less(self.loss, tol, approx=approx, alpha=alpha, function=function),
                 approx=approx,
-            ),
-            less(self.loss, tol, approx=approx, alpha=alpha, function=function),
-            approx=approx,
-        ))
+            )
+        )
 
     def plot(self, ax, *args, **kwargs):
         kwargs.setdefault("color", "orange")

@@ -24,3 +24,10 @@ license
 
     Normalized Receiver Power Map for a Static Transmitter (TX).
 ```
+
+```{eval-rst}
+.. plot:: ../../examples/power_optimize.py
+    :include-source:
+
+    Optimizing the received power.
+```

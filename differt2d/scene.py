@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from enum import Enum
 from functools import singledispatchmethod
-from itertools import product
+from itertools import groupby, product
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -570,7 +570,7 @@ class Scene(Plottable):
         receivers_kwargs: Dict[str, Any] = {},
         annotate: bool = True,
         **kwargs: Any,
-    ) -> Union[Artist, List[Artist]]:
+    ) -> List[Artist]:
         """
         :param emitters_args:
             Arguments to be passed to each emitter's plot function.
@@ -592,8 +592,10 @@ class Scene(Plottable):
         emitters_kwargs.setdefault("color", "blue")
         receivers_kwargs.setdefault("color", "green")
 
-        return (
-            [
+        artists = []
+
+        for e_key, emitter in self.emitters.items():
+            artists.extend(
                 emitter.plot(
                     ax,
                     *emitters_args,
@@ -602,9 +604,10 @@ class Scene(Plottable):
                     **emitters_kwargs,
                     **kwargs,
                 )
-                for e_key, emitter in self.emitters.items()
-            ]
-            + [
+            )
+
+        for r_key, receiver in self.receivers.items():
+            artists.extend(
                 receiver.plot(
                     ax,
                     *receivers_args,
@@ -613,12 +616,14 @@ class Scene(Plottable):
                     **receivers_kwargs,
                     **kwargs,
                 )
-                for r_key, receiver in self.receivers.items()
-            ]
-            + [
-                obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs) for obj in self.objects  # type: ignore[union-attr]
-            ]
-        )
+            )
+
+        for obj in self.objects:
+            artists.extend(
+                obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs)  # type: ignore[union-attr]
+            )
+
+        return artists
 
     def bounding_box(self) -> Array:
         bounding_boxes_list = (
@@ -817,22 +822,44 @@ class Scene(Plottable):
         fun_args: Tuple = (),
         fun_kwargs: Mapping = {},
         **kwargs: Any,
-    ) -> Array:
+    ) -> Iterator[str, str, Array]:
         """
-        Accumulates some function evaluated for each path in the scene.
+        Repeatedly calls ``fun`` on all paths between each pair of
+        (emitter, receiver) in the scene, and accumulates the results.
 
-        :param function: The function to accumulate.
+        Produces an iterator with each (emitter, receiver) pair.
+
+        :param fun: The function to evaluate on each path.
+        :param fun_args:
+            Positional arguments to be passed to ``fun``.
+        :param fun_kwargs:
+            Keyword arguments to be passed to ``fun``.
+        :param kwargs:
+            Keyword arguments to be passed to
+            :meth:`all_paths`.
+        :return:
+            An iterator of emitter name, receiver name
+            and the corresponding accumulated result.
         """
         acc = 0.0
-
-        for emitter, receiver, valid, path, interacting_objects in self.all_paths(
-            **kwargs
+        for (e_key, r_key), paths_group in groupby(
+            self.all_paths(**kwargs), lambda key: key[:2]
         ):
-            acc = acc + valid * fun(
-                emitter, receiver, path, interacting_objects, *fun_args, **fun_kwargs
-            )
+            acc = 0.0
+            emitter = self.emitters[e_key]
+            receiver = self.receivers[r_key]
 
-        return acc
+            for _, _, valid, path, interacting_objects in paths_group:
+                acc = acc + valid * fun(
+                    emitter,
+                    receiver,
+                    path,
+                    interacting_objects,
+                    *fun_args,
+                    **fun_kwargs,
+                )
+
+            yield e_key, r_key, acc
 
     def accumulate_on_emitters_grid_over_paths(
         self,
@@ -841,29 +868,30 @@ class Scene(Plottable):
         fun: PathFun,
         fun_args: Tuple = (),
         fun_kwargs: Mapping = {},
+        reduce: bool = False,
         path_cls: Type[Path] = ImagePath,
         emitter_cls: Type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
-        per_receiver: bool = False,
         **kwargs,
-    ) -> Array:
+    ) -> Union[Iterator[str, Array], Array]:
         """
-        Repeatedly calls ``fun`` on all paths between the
-        receivers in the scene and every emitter coordinate
-        in :python:`(X, Y)`, and accumulate the results over one array
-        that has the same shape a ``X`` and ``Y``.
+        Repeatedly calls ``fun`` on all paths between the receivers in the scene and
+        every emitter coordinate in :python:`(X, Y)`, and accumulates the results over
+        one array that has the same shape a ``X`` and ``Y``.
 
-        If ``per_receiver`` is :python:`True`, produces one array
-        per receiver location.
+        Produces an iterator with one element for each receiver location.
 
-        :param X: The grid of x-coordinates.
-        :param Y: The grid of y-coordinates.
+        :param X: The grid of x-coordinates, (m, n).
+        :param Y: The grid of y-coordinates, (m, n).
         :param fun: The function to evaluate on each path.
         :param fun_args:
             Positional arguments to be passed to ``fun``.
         :param fun_kwargs:
             Keyword arguments to be passed to ``fun``.
+        :param reduce: Whether to reduce the output by summing
+            all accumulated results. This is especially useful
+            if you only care about the total accumulated results.
         :param path_cls: Method to be used to find the path coordinates.
         :param emitter_cls: A point constructor called on every emitter,
             should inherit from :class:`Point<differt2d.geometry.Point>`.
@@ -871,10 +899,13 @@ class Scene(Plottable):
             The minimum order of the path, i.e., the number of interactions.
         :param max_order:
             The maximum order of the path, i.e., the number of interactions.
-        :param per_receiver: Whether to split to output per receiver.
         :param kwargs:
             Keyword arguments to be passed to
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
+        :return:
+            An iterator of receiver name and the corresponding
+            accumulated result, or the sum of accumulated
+            if :python:`reduce=True`.
         """
         emitters = self.emitters
         self.emitters = {"tx": Point(point=jnp.array([0.0, 0.0]))}
@@ -886,42 +917,45 @@ class Scene(Plottable):
 
         pairs = list(self.all_emitter_receiver_pairs())
 
-        if per_receiver:
-            for _, (_, receiver) in pairs:
-                pass
- 
-
-
-        def facc(tx_coords):
+        def facc(tx_coords: Array, receiver: Point) -> Array:
             acc = 0.0
-            for _, (_, receiver) in pairs:
-                for path_candidate in path_candidates:
-                    interacting_objects = self.get_interacting_objects(path_candidate)
-                    path = path_cls.from_tx_objects_rx(
-                        tx_coords, interacting_objects, receiver.point
-                    )
-                    valid = path.is_valid(
-                        self.objects, path_candidate, interacting_objects, **kwargs
-                    )
-                    acc = acc + valid * fun(
-                        emitter_cls(point=tx_coords),
-                        receiver,
-                        path,
-                        interacting_objects,
-                        *fun_args,
-                        **fun_kwargs,
-                    )
+            for path_candidate in path_candidates:
+                interacting_objects = self.get_interacting_objects(path_candidate)
+                path = path_cls.from_tx_objects_rx(
+                    tx_coords, interacting_objects, receiver.point
+                )
+                valid = path.is_valid(
+                    self.objects, path_candidate, interacting_objects, **kwargs
+                )
+                acc = acc + valid * fun(
+                    emitter_cls(point=tx_coords),
+                    receiver,
+                    path,
+                    interacting_objects,
+                    *fun_args,
+                    **fun_kwargs,
+                )
 
             return acc
 
         vfacc = jax.vmap(
-            jax.vmap(facc, in_axes=(0,)),
-            in_axes=(0,),
+            jax.vmap(facc, in_axes=(0, None)),
+            in_axes=(0, None),
         )
+
         grid = jnp.dstack((X, Y))
-        acc = vfacc(grid)
-        self.emitters = emitters
-        return acc
+
+        def iter() -> Iterator[Array]:
+            for _, (r_key, receiver) in pairs:
+                yield r_key, vfacc(grid, receiver)
+
+        if reduce:
+            result = sum(p for _, p in iter())
+            self.emitters = emitters
+            return result
+        else:
+            yield from iter()
+            self.emitters = emitters
 
     def accumulate_on_receivers_grid_over_paths(
         self,
@@ -930,13 +964,45 @@ class Scene(Plottable):
         fun: PathFun,
         fun_args: Tuple = (),
         fun_kwargs: Mapping = {},
+        reduce: bool = False,
         path_cls: Type[Path] = ImagePath,
         receiver_cls: Type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
-    ) -> Array:
-        """TODO."""
+    ) -> Union[Iterator[str, Array], Array]:
+        """
+        Repeatedly calls ``fun`` on all paths between the emitters in the scene and
+        every receiver coordinate in :python:`(X, Y)`, and accumulates the results over
+        one array that has the same shape a ``X`` and ``Y``.
+
+        Produces an iterator with one element for each emitter location.
+
+        :param X: The grid of x-coordinates, (m, n).
+        :param Y: The grid of y-coordinates, (m, n).
+        :param fun: The function to evaluate on each path.
+        :param fun_args:
+            Positional arguments to be passed to ``fun``.
+        :param fun_kwargs:
+            Keyword arguments to be passed to ``fun``.
+        :param reduce: Whether to reduce the output by summing
+            all accumulated results. This is especially useful
+            if you only care about the total accumulated results.
+        :param path_cls: Method to be used to find the path coordinates.
+        :param receiver_cls: A point constructor called on every receiver,
+            should inherit from :class:`Point<differt2d.geometry.Point>`.
+        :param min_order:
+            The minimum order of the path, i.e., the number of interactions.
+        :param max_order:
+            The maximum order of the path, i.e., the number of interactions.
+        :param kwargs:
+            Keyword arguments to be passed to
+            :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
+        :return:
+            An iterator of emitter name and the corresponding
+            accumulated result, or the sum of accumulated
+            if :python:`reduce=True`.
+        """
         receivers = self.receivers
         self.receivers = {"rx": Point(point=jnp.array([0.0, 0.0]))}
 
@@ -947,33 +1013,49 @@ class Scene(Plottable):
 
         pairs = list(self.all_emitter_receiver_pairs())
 
-        def facc(rx_coords):
+        def facc(emitter: Point, rx_coords: Array) -> Array:
             acc = 0.0
-            for (_, emitter), _ in pairs:
-                for path_candidate in path_candidates:
-                    interacting_objects = self.get_interacting_objects(path_candidate)
-                    path = path_cls.from_tx_objects_rx(
-                        emitter.point, interacting_objects, rx_coords
-                    )
-                    valid = path.is_valid(
-                        self.objects, path_candidate, interacting_objects, **kwargs
-                    )
-                    acc = acc + valid * fun(
-                        emitter,
-                        receiver_cls(point=rx_coords),
-                        path,
-                        interacting_objects,
-                        *fun_args,
-                        **fun_kwargs,
-                    )
+            for path_candidate in path_candidates:
+                interacting_objects = self.get_interacting_objects(path_candidate)
+                path = path_cls.from_tx_objects_rx(
+                    emitter.point, interacting_objects, rx_coords
+                )
+                valid = path.is_valid(
+                    self.objects, path_candidate, interacting_objects, **kwargs
+                )
+                acc = acc + valid * fun(
+                    emitter,
+                    receiver_cls(point=rx_coords),
+                    path,
+                    interacting_objects,
+                    *fun_args,
+                    **fun_kwargs,
+                )
 
             return acc
 
         vfacc = jax.vmap(
-            jax.vmap(facc, in_axes=(0,)),
-            in_axes=(0,),
+            jax.vmap(facc, in_axes=(None, 0)),
+            in_axes=(None, 0),
         )
+
         grid = jnp.dstack((X, Y))
-        acc = vfacc(grid)
-        self.receivers = receivers
-        return acc
+
+        print("PTDR")
+
+        def iter() -> Iterator[Array]:
+            for (e_key, emitter), _ in pairs:
+                yield e_key, vfacc(emitter, grid)
+
+        print("hello", reduce)
+
+        if reduce:
+            print("reducing")
+            result = sum(p for _, p in iter())
+            print("reduce", result)
+            self.receivers = receivers
+            return result
+        else:
+            yield from iter()
+            self.receivers = receivers
+
