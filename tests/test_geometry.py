@@ -2,9 +2,8 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax import disable_jit
-
 from chex import Array
+from jax import disable_jit
 
 from differt2d.geometry import (
     RIS,

@@ -268,9 +268,7 @@ class Ray(Plottable):
         return ax.plot(x, y, *args, **kwargs)  # type: ignore[func-returns-value]
 
     def bounding_box(self) -> Array:
-        return jnp.vstack(
-            [jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)]
-        )
+        return jnp.vstack([jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)])
 
 
 @dataclass
@@ -700,9 +698,7 @@ class Path(Plottable):
         return ax.plot(x, y, *args, **kwargs)
 
     def bounding_box(self) -> Array:
-        return jnp.vstack(
-            [jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)]
-        )
+        return jnp.vstack([jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)])
 
 
 @partial(jax.jit, static_argnames=("size",))

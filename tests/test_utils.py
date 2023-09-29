@@ -3,7 +3,6 @@ from typing import List
 import chex
 import jax
 import pytest
-
 from chex import Array
 
 from differt2d.geometry import RIS, Wall
