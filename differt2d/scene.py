@@ -480,7 +480,7 @@ class Scene(Plottable):
 
         >>> from differt2d.scene import Scene
         >>>
-        >>> scene = Scene.square_scene_with_obstacle()
+        >>> scene = Scene.square_scene_with_wall()
         >>> scene.bounding_box()
         Array([[0., 0.],
                [1., 1.]], dtype=float32)
