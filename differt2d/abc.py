@@ -4,14 +4,17 @@ from __future__ import annotations
 
 __all__ = [
     "Interactable",
+    "Object",
     "Plottable",
 ]
 
 from abc import abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Any, List, Literal, Protocol, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Literal, Optional, Protocol, Tuple
 
 import jax.numpy as jnp
+
+from .defaults import DEFAULT_PATCH
 
 if TYPE_CHECKING:  # pragma: no cover
     from jax import Array
@@ -156,21 +159,45 @@ class Interactable(Protocol):  # pragma: no cover
         pass
 
     @abstractmethod
-    def contains_parametric(self, param_coords: Array) -> Array:
+    def contains_parametric(
+        self,
+        param_coords: Array,
+        approx: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Array:
         """
         Checks if the given coordinates are within the object.
 
         :param param_coords: Parametric coordinates, (:meth:`parameters_count()`,).
+        :param approx: Whether approximation is enabled or not.
+        :param kwargs: Keyword arguments to be passed to
+            :func:`activation<differt2d.logic.activation>`.
         :return: True if object contains these coordinates, (),
         """
         pass
 
     @abstractmethod
-    def intersects_cartesian(self, ray: Array) -> Array:
+    def intersects_cartesian(
+        self,
+        ray: Array,
+        patch: float = DEFAULT_PATCH,
+        approx: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Array:
         """
         Ray intersection test on the current object.
 
         :param ray: Ray coordinates, (2, 2).
+        :param patch: The patch ratio, to virtually resize the object
+            prior to intersection check. A ``patch`` value greater than ``1``
+            indicates that the object is enlarged, and a value between ``0`` and
+            ``1`` indicates that the object is compressed. Patching the object
+            size can be useful when combined with :python:`approx=True`, because
+            smoothing objects can virtually reduce this object's size, so using
+            a ``patch`` value greater than ``1`` can compensate this effect.
+        :param approx: Whether approximation is enabled or not.
+        :param kwargs: Keyword arguments to be passed to
+            :func:`activation<differt2d.logic.activation>`.
         :return: True if it intersects, ().
         """
         pass
@@ -193,3 +220,16 @@ class Interactable(Protocol):  # pragma: no cover
         :return: Interaction score, ().
         """
         pass
+
+
+class Object(Plottable, Interactable, Protocol):
+    """
+    Protocol for any object implementing both :class:`Plottable` and
+    :class:`Interactable`.
+
+    This type is actually needed to please Python type checkers, since using
+    :python:`typing.Union[Plottable, Interactable]` is understood as implementing one of
+    either protocols, not both.
+    """
+
+    pass

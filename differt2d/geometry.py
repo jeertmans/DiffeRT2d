@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Literal, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
 
 from .abc import Interactable, Plottable
+from .defaults import DEFAULT_PATCH
 from .logic import (
-    DEFAULT_ALPHA,
-    DEFAULT_FUNCTION,
     false_value,
     greater_equal,
     less,
@@ -29,12 +28,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from dataclasses import dataclass
 
     from jax import Array
+    from matplotlib.artist import Artist
+    from matplotlib.axes import Axes
 else:
     from chex import dataclass
-
-
-DEFAULT_PATCH = 0.0
-"""Default patch value applied to :meth:`Wall.intersects_cartesian`."""
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
@@ -45,8 +42,7 @@ def segments_intersect(
     P4: Array,
     tol: float = 0.005,
     approx: Optional[bool] = None,
-    alpha: float = DEFAULT_ALPHA,
-    function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+    **kwargs: Any,
 ) -> Array:
     r"""
     Checks whether two line segments intersect.
@@ -79,8 +75,9 @@ def segments_intersect(
         The coordinates of the second point of the second segment, (2,).
     :param tol:
         Relaxes the condition to :math:`[-\texttt{tol};1+\texttt{tol}]`.
+    :param approx: Whether approximation is enabled or not.
     :param kwargs:
-        Keyword arguments to be passed to logical functions.
+        Keyword arguments to be passed to :func:`activation<differt2d.logic.activation>`.
     :return: Whether the two segments intersect, ().
 
     .. warning::
@@ -121,8 +118,8 @@ def segments_intersect(
         den = jnp.where(den_is_zero, 1.0, den)
         t = jnp.where(den_is_zero, jnp.inf, num / den)
         return logical_and(
-            greater_equal(t, -tol, approx=approx, alpha=alpha, function=function),
-            less_equal(t, 1.0 + tol, approx=approx, alpha=alpha, function=function),
+            greater_equal(t, -tol, approx=approx, **kwargs),
+            less_equal(t, 1.0 + tol, approx=approx, **kwargs),
             approx=approx,
         )
 
@@ -187,12 +184,29 @@ def normalize(vector: Array) -> Tuple[Array, Array]:
 
 
 @partial(jax.jit, inline=True)
-def closest_point(points: Array, target: Array) -> Tuple[int, Array]:
+def closest_point(points: Array, target: Array) -> Tuple[Array, Array]:
     """
     Returns the index of the closest point to some target, and the actual distance.
 
     :param points: An array of 2D points, (N, 2).
     :param target: A target point, (2, ).
+    :return: The index of the closest point and the distance to the target.
+
+    :Examples:
+
+    >>> from differt2d.geometry import closest_point
+    >>> import jax.numpy as jnp
+    >>> target = jnp.array([.6, .3])
+    >>> points = jnp.array([
+    ...     [0., 0.],
+    ...     [1., 0.],  # This is the closests point
+    ...     [1., 1.],
+    ...     [0., 1.]
+    ... ])
+    >>> closest_point(points, target)
+    (Array(1, dtype=int32), Array(0.49999997, dtype=float32))
+    >>> points[closest_point(points, target)[0]]
+    Array([1., 0.], dtype=float32)
     """
     distances = jnp.linalg.norm(points - target.reshape(-1, 2), axis=1)
     i_min = jnp.argmin(distances)
@@ -248,10 +262,10 @@ class Ray(Plottable):
         """
         return self.dest() - self.origin()
 
-    def plot(self, ax, *args, **kwargs):
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> List[Artist]:
         kwargs.setdefault("color", "blue")
         x, y = self.points.T
-        return ax.plot(x, y, *args, **kwargs)
+        return ax.plot(x, y, *args, **kwargs)  # type: ignore[func-returns-value]
 
     def bounding_box(self) -> Array:
         return jnp.row_stack(
@@ -284,12 +298,12 @@ class Point(Plottable):
 
     def plot(
         self,
-        ax,
-        *args,
+        ax: Axes,
+        *args: Any,
         annotate: Optional[str] = None,
         annotate_kwargs: Mapping[str, Any] = {},
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> List[Artist]:
         """
         :param annotate: Text to put next the the point.
         :param annotate_kwargs:
@@ -372,14 +386,19 @@ class Wall(Ray, Interactable):
         self,
         param_coords: Array,
         approx: Optional[bool] = None,
-        alpha: float = DEFAULT_ALPHA,
-        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+        **kwargs: Any,
     ) -> Array:
         ge = greater_equal(
-            param_coords, 0.0, approx=approx, alpha=alpha, function=function
+            param_coords,
+            0.0,
+            approx=approx,
+            **kwargs,
         )
         le = less_equal(
-            param_coords, 1.0, approx=approx, alpha=alpha, function=function
+            param_coords,
+            1.0,
+            approx=approx,
+            **kwargs,
         )
         return logical_and(ge, le, approx=approx)
 
@@ -389,8 +408,7 @@ class Wall(Ray, Interactable):
         ray: Array,
         patch: float = DEFAULT_PATCH,
         approx: Optional[bool] = None,
-        alpha: float = DEFAULT_ALPHA,
-        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+        **kwargs: Any,
     ) -> Array:
         return segments_intersect(
             self.origin() - patch * self.t(),
@@ -398,8 +416,7 @@ class Wall(Ray, Interactable):
             ray[0, :],
             ray[1, :],
             approx=approx,
-            alpha=alpha,
-            function=function,
+            **kwargs,
         )
 
     @jax.jit
@@ -453,7 +470,9 @@ class RIS(Wall):
         sina = jnp.linalg.norm(v2) * jnp.sin(self.phi)
         return (sinx - sina) ** 2  # + (cosx - cosa) ** 2
 
-    def plot(self, ax, *args, **kwargs):  # pragma: no cover
+    def plot(
+        self, ax: Axes, *args: Any, **kwargs: Any
+    ) -> List[Artist]:  # pragma: no cover
         kwargs.setdefault("color", "green")
         return super().plot(ax, *args, **kwargs)
 
@@ -541,8 +560,7 @@ class Path(Plottable):
         self,
         objects: List[Interactable],
         approx: Optional[bool] = None,
-        alpha: float = DEFAULT_ALPHA,
-        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+        **kwargs,
     ) -> Array:
         """
         Returns whether the path correctly passes on the objects.
@@ -551,7 +569,9 @@ class Path(Plottable):
         (start and end points are ignored).
 
         :param objects: The list of objects to check against.
-        :param kwargs: TODO
+        :param approx: Whether approximation is enabled or not.
+        :param kwargs: Keyword arguments to be passed to
+            :func:`activation<differt2d.logic.activation>`.
         :return: Whether this path passes on the objects, ().
         """
         contains = true_value(approx=approx)
@@ -560,7 +580,9 @@ class Path(Plottable):
             contains = logical_and(
                 contains,
                 obj.contains_parametric(
-                    param_coords, approx=approx, alpha=alpha, function=function
+                    param_coords,
+                    approx=approx,
+                    **kwargs,
                 ),
                 approx=approx,
             )
@@ -574,8 +596,7 @@ class Path(Plottable):
         path_candidate: List[int],
         patch: float = DEFAULT_PATCH,
         approx: Optional[bool] = None,
-        alpha: float = DEFAULT_ALPHA,
-        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+        **kwargs: Any,
     ) -> Array:
         """
         Returns whether the path intersects with any of the objects.
@@ -585,6 +606,11 @@ class Path(Plottable):
 
         :param objects: The list of objects in the scene.
         :param path_candidate: The object indices on which the path should pass.
+        :param patch: The patch value for intersection check,
+            see :meth:`Interactable.intersects_cartesian<differt2d.abc.Interactable.intersects_cartesian>`.
+        :param approx: Whether approximation is enabled or not.
+        :param kwargs: Keyword arguments to be passed to
+            :func:`activation<differt2d.logic.activation>`.
         :return: Whether this path intersects any of the objects, ().
         """
         interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
@@ -606,8 +632,7 @@ class Path(Plottable):
                             ray_path,
                             patch=patch,
                             approx=approx,
-                            alpha=alpha,
-                            function=function,
+                            **kwargs,
                         ),
                         approx=approx,
                     ),
@@ -623,8 +648,7 @@ class Path(Plottable):
         tol: float = 1e-2,
         patch: float = DEFAULT_PATCH,
         approx: Optional[bool] = None,
-        alpha: float = DEFAULT_ALPHA,
-        function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+        **kwargs: Any,
     ) -> Array:
         """
         Returns whether the current path is valid, according to
@@ -637,33 +661,40 @@ class Path(Plottable):
            (except those concerned by 2.).
 
         :param objects: The objects in the scene.
-        :param path_candidate: ...
+        :param path_candidate: The list of indices of interacting objects,
+            usually generated with
+            :meth:`Scene.all_path_candidates<differt2d.scene.Scene.all_path_candidates>`
         :param interacting_objects: The list of interacting objects,
             usually obtained by calling
-            :meth:`get_interacting_objects<differt2d.scene.Scene.get_interacting_objects>`.
+            :meth:`Scene.get_interacting_objects<differt2d.scene.Scene.get_interacting_objects>`.
+        :param tol: The maximum allowed value for the path loss before it is considered
+            invalid. I.e., a path loss greater than ``tol`` will make this path invalid.
+        :param patch: The patch value for intersection check,
+            see :meth:`Interactable.intersects_cartesian<differt2d.abc.Interactable.intersects_cartesian>`.
+        :param approx: Whether approximation is enabled or not.
+        :param kwargs: Keyword arguments to be passed to
+            :func:`activation<differt2d.logic.activation>`.
+        :return: Whether this path is valid, ().
         """
         return jnp.nan_to_num(
             logical_all(
-                self.on_objects(
-                    interacting_objects, approx=approx, alpha=alpha, function=function
-                ),
+                self.on_objects(interacting_objects, approx=approx, **kwargs),
                 logical_not(
                     self.intersects_with_objects(
                         objects,
                         path_candidate,
                         patch=patch,
                         approx=approx,
-                        alpha=alpha,
-                        function=function,
+                        **kwargs,
                     ),
                     approx=approx,
                 ),
-                less(self.loss, tol, approx=approx, alpha=alpha, function=function),
+                less(self.loss, tol, approx=approx, **kwargs),
                 approx=approx,
             )
         )
 
-    def plot(self, ax, *args, **kwargs):
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> List[Artist]:
         kwargs.setdefault("color", "orange")
         x, y = self.points.T
         return ax.plot(x, y, *args, **kwargs)

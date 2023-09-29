@@ -52,7 +52,14 @@ axes[1].plot(x, PdB, label="Without")
 
 for alpha in [1.0, 10.0, 100.0, 1000.0]:
     P = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, reduce=True, approx=True, alpha=alpha, min_order=0, max_order=0
+        X,
+        Y,
+        fun=received_power,
+        reduce=True,
+        approx=True,
+        alpha=alpha,
+        min_order=0,
+        max_order=0,
     )
 
     PdB = 10.0 * jnp.log10(P.reshape(-1) / P0)

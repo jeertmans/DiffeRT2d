@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__ = ["Scene"]
+
 import json
 from enum import Enum
 from functools import singledispatchmethod
@@ -14,6 +16,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    MutableSequence,
     Protocol,
     Sequence,
     Tuple,
@@ -27,7 +30,7 @@ import jax.numpy as jnp
 import numpy as np
 import rustworkx as rx
 
-from .abc import LOC, Interactable, Plottable
+from .abc import LOC, Interactable, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
 from .logic import is_true
 
@@ -60,7 +63,7 @@ class Scene(Plottable):
     """The emitting nodes."""
     receivers: Dict[str, Point]
     """The receiving nodes."""
-    objects: List[Union[Interactable, Plottable]]
+    objects: MutableSequence[Object]
     """The list of objects in the scene."""
 
     @singledispatchmethod
@@ -303,7 +306,7 @@ class Scene(Plottable):
     def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> "Scene":
         return cls.from_geojson(fp.read(), *args, **kwargs)
 
-    def add_objects(self, objects: Sequence[Union[Interactable, Plottable]]) -> None:
+    def add_objects(self, objects: Sequence[Object]) -> None:
         """Add objects to the scene."""
         self.objects.extend(objects)
 
@@ -666,7 +669,7 @@ class Scene(Plottable):
 
     def all_emitter_receiver_pairs(
         self,
-    ) -> Iterator[Tuple[Tuple[str, int], Tuple[str, int]]]:
+    ) -> Iterator[Tuple[Tuple[str, Point], Tuple[str, Point]]]:
         """
         Returns all possible pairs of (emitter, receiver) in the scene.
 
@@ -753,12 +756,11 @@ class Scene(Plottable):
             as returned by :meth:`all_path_candidates`.
         :return: The list of interacting objects.
         """
-        return [self.objects[i - 1] for i in path_candidate[1:-1]]  # type: ignore
+        return [self.objects[i - 1] for i in path_candidate[1:-1]]
 
     def all_paths(
         self,
         path_cls: Type[Path] = ImagePath,
-        tol: float = 1e-2,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs: Any,
@@ -769,12 +771,14 @@ class Scene(Plottable):
         :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and
         :class:`differt2d.geometry.MinPath`.
 
-        TODO: fix kwargs, and remove tol.
-
         :param path_cls: Method to be used to find the path coordinates.
-        :param tol: The threshold tolerance for a path loss to be accepted.
+        :param min_order:
+            The minimum order of the path, i.e., the number of interactions.
+        :param max_order:
+            The maximum order of the path, i.e., the number of interaction
         :param kwargs:
-            Keyword arguments to be passed to :meth:`all_path_candidates`.
+            Keyword arguments to be passed to
+            :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return: The generator of paths, as
             (emitter name, receiver name, valid, path, path_candidate) tuples,
             where validity path validity can be later evaluated using
@@ -824,8 +828,8 @@ class Scene(Plottable):
         **kwargs: Any,
     ) -> Iterator[str, str, Array]:
         """
-        Repeatedly calls ``fun`` on all paths between each pair of
-        (emitter, receiver) in the scene, and accumulates the results.
+        Repeatedly calls ``fun`` on all paths between each pair of (emitter, receiver)
+        in the scene, and accumulates the results.
 
         Produces an iterator with each (emitter, receiver) pair.
 
@@ -916,6 +920,7 @@ class Scene(Plottable):
         )
 
         pairs = list(self.all_emitter_receiver_pairs())
+        self.emitters = emitters
 
         def facc(tx_coords: Array, receiver: Point) -> Array:
             acc = 0.0
@@ -945,17 +950,13 @@ class Scene(Plottable):
 
         grid = jnp.dstack((X, Y))
 
-        def iter() -> Iterator[Array]:
-            for _, (r_key, receiver) in pairs:
-                yield r_key, vfacc(grid, receiver)
+        def results() -> Iterator[Array]:
+            return ((r_key, vfacc(grid, receiver)) for _, (r_key, receiver) in pairs)
 
         if reduce:
-            result = sum(p for _, p in iter())
-            self.emitters = emitters
-            return result
+            return sum(p for _, p in results())
         else:
-            yield from iter()
-            self.emitters = emitters
+            return results()
 
     def accumulate_on_receivers_grid_over_paths(
         self,
@@ -1012,6 +1013,7 @@ class Scene(Plottable):
         )
 
         pairs = list(self.all_emitter_receiver_pairs())
+        self.receivers = receivers
 
         def facc(emitter: Point, rx_coords: Array) -> Array:
             acc = 0.0
@@ -1041,21 +1043,10 @@ class Scene(Plottable):
 
         grid = jnp.dstack((X, Y))
 
-        print("PTDR")
-
-        def iter() -> Iterator[Array]:
-            for (e_key, emitter), _ in pairs:
-                yield e_key, vfacc(emitter, grid)
-
-        print("hello", reduce)
+        def results() -> Iterator[Array]:
+            return ((e_key, vfacc(emitter, grid)) for (e_key, emitter), _ in pairs)
 
         if reduce:
-            print("reducing")
-            result = sum(p for _, p in iter())
-            print("reduce", result)
-            self.receivers = receivers
-            return result
+            return sum(p for _, p in results())
         else:
-            yield from iter()
-            self.receivers = receivers
-
+            return results()

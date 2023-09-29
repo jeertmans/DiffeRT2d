@@ -23,8 +23,6 @@ for ax, approx in zip(axes, [False, True]):
         X, Y, fun=received_power, reduce=True, approx=approx
     )
 
-    print(list(P))
-
     PdB = 10.0 * jnp.log10(P / P0)
 
     im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, zorder=-1)

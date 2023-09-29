@@ -9,6 +9,7 @@ public functions and classes present in the Differt2D package.
    :titlesonly:
 
    abc <differt2d.abc>
+   defaults <differt2d.defaults>
    geometry <differt2d.geometry>
    logic <differt2d.logic>
    optimize <differt2d.optimize>

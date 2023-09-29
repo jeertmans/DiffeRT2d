@@ -61,4 +61,4 @@ jobs:
 
     - name: Run ByExample
       run: |
-        ff "differt2d/**py" README.md | xargs poetry run byexample -l python +timeout=60
+        ff "differt2d/**py" README.md | xargs poetry run byexample -l python
