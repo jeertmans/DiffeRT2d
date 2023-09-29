@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
+from chex import Array
 
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
@@ -19,8 +20,8 @@ for ax, approx in zip(axes, [False, True]):
         receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
     )
 
-    P = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, approx=approx
+    P: Array = scene.accumulate_on_receivers_grid_over_paths(
+        X, Y, fun=received_power, reduce=True, approx=approx
     )
 
     PdB = 10.0 * jnp.log10(P / P0)

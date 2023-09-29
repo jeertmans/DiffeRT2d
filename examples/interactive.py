@@ -1,11 +1,12 @@
 import sys
 from functools import partial
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import jax
 import jax.numpy as jnp
 import typer
+from matplotlib.artist import Artist
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 from PySide6.QtCore import Qt
@@ -25,7 +26,7 @@ from differt2d.abc import LocEnum
 from differt2d.geometry import DEFAULT_PATCH, FermatPath, ImagePath, MinPath, Point
 from differt2d.logic import DEFAULT_ALPHA, DEFAULT_FUNCTION
 from differt2d.scene import Scene
-from differt2d.utils import P0, flatten, received_power
+from differt2d.utils import P0, received_power
 
 METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
 
@@ -266,7 +267,7 @@ class PlotWidget(QWidget):
 
         self.picked = None
 
-        self.path_artists = []
+        self.path_artists: List[Artist] = []
 
         def f(rx_coords):
             receivers = self.scene.receivers
@@ -275,6 +276,7 @@ class PlotWidget(QWidget):
             total_power = self.scene.accumulate_over_paths(
                 fun=received_power,
                 fun_kwargs=dict(r_coef=self.r_coef),
+                reduce=True,
                 min_order=self.min_order,
                 max_order=self.max_order,
                 path_cls=self.path_cls,
@@ -314,7 +316,7 @@ class PlotWidget(QWidget):
             self.on_scene_change()
 
     def on_scene_change(self):
-        for artist in flatten(self.path_artists):
+        for artist in self.path_artists:
             artist.remove()
 
         self.path_artists = []
@@ -324,6 +326,7 @@ class PlotWidget(QWidget):
             self.Y,
             fun=received_power,
             fun_kwargs=dict(r_coef=self.r_coef),
+            reduce=True,
             min_order=self.min_order,
             max_order=self.max_order,
             patch=self.patch,
@@ -346,7 +349,7 @@ class PlotWidget(QWidget):
             function=self.function,
             path_cls=self.path_cls,
         ):
-            self.path_artists.append(path.plot(self.ax, zorder=-1, alpha=float(valid)))
+            self.path_artists.extend(path.plot(self.ax, zorder=-1, alpha=float(valid)))
 
         if self.picked and False:
             _, point = self.picked
@@ -360,7 +363,7 @@ class PlotWidget(QWidget):
             if ndp > 0:
                 dp = dp / ndp
 
-            self.path_artists.append(self.ax.quiver([x], [y], [dp[0]], [dp[1]]))
+            self.path_artists.extend(self.ax.quiver([x], [y], [dp[0]], [dp[1]]))
 
         self.view.draw()
 

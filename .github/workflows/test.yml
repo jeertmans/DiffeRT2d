@@ -31,7 +31,7 @@ jobs:
 
     - name: Run Pytest
       run: |
-        poetry run pytest -n auto
+        poetry run pytest -Werror -n auto
 
   byexample:
     runs-on: ubuntu-latest
@@ -61,4 +61,4 @@ jobs:
 
     - name: Run ByExample
       run: |
-        ff "differt2d/**py" README.md | xargs poetry run byexample -l python +timeout=60
+        ff "differt2d/**py" README.md | xargs poetry run byexample -l python

@@ -70,7 +70,7 @@ class TestScene:
     def test_bounding_box(self, key):
         scene = Scene.random_uniform_scene(key, n_walls=10)
 
-        points = jnp.row_stack(
+        points = jnp.vstack(
             [scene.emitters["tx_0"].point, scene.receivers["rx_0"].point]
             + [obj.points for obj in scene.objects]
         )

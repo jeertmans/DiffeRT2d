@@ -6,8 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
-    Iterator,
     List,
     Optional,
     Sequence,
@@ -26,7 +24,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 Pytree = Union[list, tuple, dict]
 T = TypeVar("T")
-RecursiveIter = Union[T, Iterable["RecursiveIter"]]
 
 DEFAULT_R_COEF: float = 0.5
 """Default value for real reflection coefficient."""
@@ -68,20 +65,6 @@ def unstack_leaves(pytrees) -> List[Pytree]:
     """
     leaves, treedef = jax.tree_util.tree_flatten(pytrees)
     return [treedef.unflatten(leaf) for leaf in zip(*leaves)]
-
-
-def flatten(recursive_iter: RecursiveIter) -> Iterator[T]:
-    """
-    Flattens an iterator of possibly nested iterators into one generator.
-
-    :param recursive_iter: The list to flatten.
-    :return: The flattened generator.
-    """
-    if isinstance(recursive_iter, Iterable):
-        for t in recursive_iter:
-            yield from flatten(t)
-    else:
-        yield recursive_iter
 
 
 @jax.jit

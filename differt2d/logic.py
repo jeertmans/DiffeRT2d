@@ -22,8 +22,6 @@ when :code:`approx` is set to :python:`False`.
 from __future__ import annotations
 
 __all__ = [
-    "DEFAULT_ALPHA",
-    "DEFAULT_FUNCTION",
     "activation",
     "disable_approx",
     "enable_approx",
@@ -47,6 +45,8 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Tuple, Union
 import jax
 import jax.numpy as jnp
 
+from .defaults import DEFAULT_ALPHA, DEFAULT_FUNCTION
+
 if TYPE_CHECKING:  # pragma: no cover
     from jax import Array
 
@@ -57,12 +57,6 @@ _enable_approx = jax.config.define_bool_state(
 )
 
 jit_approx = partial(jax.jit, inline=True, static_argnames=["approx", "function"])
-
-
-DEFAULT_ALPHA: float = 100.0
-"""Default value for ``alpha`` parameter in :func:`activation`."""
-DEFAULT_FUNCTION: Literal["sigmoid", "hard_sigmoid"] = "hard_sigmoid"
-"""Default value for ``function`` parameter in :func:`activation`."""
 
 
 @contextmanager

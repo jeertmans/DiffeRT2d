@@ -82,7 +82,7 @@ def minimize(
     :param fun_args:
         Positional arguments to be passed to ``fun``.
     :param fun_kwargs:
-        Keyword arguments to be passed to :attr:`fun`.
+        Keyword arguments to be passed to ``fun``.
     :param steps: The number of steps to perform.
     :param optimizer: The optimizer to use.
     :return: The solution array and the corresponding loss.
@@ -127,7 +127,7 @@ def minimize(
 
 def minimize_random_uniform(
     fun: Callable[[X], Y],
-    key: jax.random.KeyArray,
+    key: Array,
     n: int,
     **kwargs: Any,
 ) -> Tuple[X, Y]:
@@ -162,7 +162,7 @@ def minimize_random_uniform(
 
 def minimize_many_random_uniform(
     fun: Callable[[X], Y],
-    key: jax.random.KeyArray,
+    key: Array,
     n: int,
     many: int = 10,
     **kwargs: Any,

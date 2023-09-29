@@ -58,6 +58,8 @@ add_module_names = False
 
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
+plot_basedir = "plots"
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -67,7 +69,7 @@ html_static_path = ["_static"]
 
 html_theme_options = {
     "light_logo": "logo_light_transparent.png",
-    "dark_logo": "logo_dark_transparent.png",
+    "dark_logo": "logo_light_transparent.png",  # We use the same logo
     "footer_icons": [
         {
             "name": "GitHub",

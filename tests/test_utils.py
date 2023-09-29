@@ -1,13 +1,15 @@
+from typing import List
+
 import chex
-import jax
 import pytest
+from chex import Array
 
 from differt2d.geometry import RIS, Wall
 from differt2d.scene import Scene
-from differt2d.utils import flatten, stack_leaves, unstack_leaves
+from differt2d.utils import stack_leaves, unstack_leaves
 
 
-def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
+def test_stack_and_unstack_leaves(key: Array):
     scene = Scene.random_uniform_scene(key, n_walls=10)
     walls = scene.objects
 
@@ -23,20 +25,12 @@ def test_stack_and_unstack_leaves(key: jax.random.PRNGKey):
         chex.assert_trees_all_equal(w1, w2)
 
 
-def test_stack_and_unstack_different_pytrees(key: jax.random.PRNGKey):
+def test_stack_and_unstack_different_pytrees(key: Array):
     scene = Scene.random_uniform_scene(key, n_walls=2)
-    walls = scene.objects
+    walls: List[Wall] = scene.objects  # type: ignore[assignment]
     walls[0] = RIS(points=walls[0].points)
 
     assert all(isinstance(wall, Wall) for wall in walls)
 
     with pytest.raises(ValueError):
         _ = stack_leaves(walls)
-
-
-def test_flatten():
-    nested = [1, [1, [1, 1, 1], 1], [[[1]]], [1], [[1]]]
-    flattened = list(flatten(nested))
-
-    assert len(flattened) == 9
-    assert all(i == 1 for i in flattened)
