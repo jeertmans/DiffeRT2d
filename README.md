@@ -1,13 +1,9 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
-  <img alt="DiffeRT2d Logo" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo.png">
-</picture>
+<img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
+
+# DiffeRT2d
 
 [![Documentation][documentation-badge]][documentation-url]
 [![codecov][codecov-badge]][codecov-url]
-
-# DiffeRT2d
 
 Differentiable Ray Tracing (RT) Python framework for Telecommunications-oriented applications.
 
