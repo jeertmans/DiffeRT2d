@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
+from chex import Array
 
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
@@ -19,7 +20,7 @@ scene.plot(
 )
 
 X, Y = scene.grid(n=300)
-P = scene.accumulate_on_receivers_grid_over_paths(
+P: Array = scene.accumulate_on_receivers_grid_over_paths(
     X,
     Y,
     fun=received_power,

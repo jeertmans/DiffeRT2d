@@ -1,7 +1,6 @@
 from typing import List
 
 import chex
-import jax
 import pytest
 from chex import Array
 
@@ -28,7 +27,7 @@ def test_stack_and_unstack_leaves(key: Array):
 
 def test_stack_and_unstack_different_pytrees(key: Array):
     scene = Scene.random_uniform_scene(key, n_walls=2)
-    walls: List[Wall] = scene.objects  # type: ignore[assigment]
+    walls: List[Wall] = scene.objects  # type: ignore[assignment]
     walls[0] = RIS(points=walls[0].points)
 
     assert all(isinstance(wall, Wall) for wall in walls)

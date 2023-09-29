@@ -31,7 +31,7 @@ jobs:
 
     - name: Run Pytest
       run: |
-        poetry run pytes -Werror -n auto
+        poetry run pytest -Werror -n auto
 
   byexample:
     runs-on: ubuntu-latest

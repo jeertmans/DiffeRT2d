@@ -1,11 +1,12 @@
 import sys
 from functools import partial
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import jax
 import jax.numpy as jnp
 import typer
+from matplotlib.artist import Artist
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 from PySide6.QtCore import Qt
@@ -266,7 +267,7 @@ class PlotWidget(QWidget):
 
         self.picked = None
 
-        self.path_artists = []
+        self.path_artists: List[Artist] = []
 
         def f(rx_coords):
             receivers = self.scene.receivers
