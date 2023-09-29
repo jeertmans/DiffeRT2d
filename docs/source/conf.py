@@ -60,8 +60,8 @@ add_module_names = False
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
 sphinx_gallery_conf = {
-     'examples_dirs': '../../examples',   # path to your example scripts
-     'gallery_dirs': 'source/examples_gallery',  # path to where to save gallery generated output
+    "examples_dirs": "../../examples",  # path to your example scripts
+    "gallery_dirs": "source/examples_gallery",  # path to where to save gallery generated output
 }
 
 # -- Options for HTML output -------------------------------------------------
