@@ -1,3 +1,7 @@
+"""
+Interactive example.
+"""
+
 import sys
 from functools import partial
 from pathlib import Path

@@ -1,3 +1,7 @@
+"""
+Animate received power optimization.
+"""
+
 from copy import deepcopy as copy
 
 import jax

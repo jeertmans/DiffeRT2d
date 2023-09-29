@@ -34,6 +34,7 @@ extensions = [
     "sphinxext.opengraph",
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
+    "sphinx_gallery.gen_gallery",
 ]
 
 rst_prolog = """
@@ -58,8 +59,10 @@ add_module_names = False
 
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
-plot_basedir = "plots"
-
+sphinx_gallery_conf = {
+     'examples_dirs': '../../examples',   # path to your example scripts
+     'gallery_dirs': 'source/examples_gallery',  # path to where to save gallery generated output
+}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

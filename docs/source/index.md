@@ -1,13 +1,15 @@
 ---
 hide-toc: true
-og:description: Manim Slides makes creating slides with Manim super easy!
+og:description: 2D Toolbox for Differentiable Ray Tracing
 ---
 
 # Welcome to DiffeRT2d's documentation
 
 ```{toctree}
 :titlesonly:
+:maxdepth: 1
 
+examples/index
 reference/index
 ```
 

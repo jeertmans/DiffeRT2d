@@ -1,3 +1,7 @@
+"""
+Plot power over a grid.
+"""
+
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from chex import Array
