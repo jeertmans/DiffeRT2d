@@ -4,6 +4,8 @@ import jax.numpy as jnp
 import pytest
 from jax import disable_jit
 
+from chex import Array
+
 from differt2d.geometry import (
     RIS,
     FermatPath,
@@ -266,19 +268,19 @@ class TestPath:
         path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[wall])
         chex.assert_trees_all_close(path.length(), 2.0 * jnp.sqrt(2.0))
 
-    def test_path_length(self, key: jax.random.PRNGKey):
+    def test_path_length(self, key: Array):
         points = jax.random.uniform(key, (200, 2))
         expected = path_length(points)
         got = Path(points=points).length()
         chex.assert_trees_all_equal(expected, got)
 
     @approx
-    def test_on_objects(self, approx: bool, key: jax.random.PRNGKey):
+    def test_on_objects(self, approx: bool, key: Array):
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=5)
             path = Path.from_tx_objects_rx(
                 scene.emitters["tx_0"].point,
-                scene.objects,
+                scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
             expected = true_value()
@@ -292,12 +294,12 @@ class TestPath:
             chex.assert_trees_all_close(expected, got, atol=1e-8)
 
     @approx
-    def test_intersects_with_objects(self, approx: bool, key: jax.random.PRNGKey):
+    def test_intersects_with_objects(self, approx: bool, key: Array):
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=10)
             path = Path.from_tx_objects_rx(
                 scene.emitters["tx_0"].point,
-                scene.objects,
+                scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
             path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
@@ -309,7 +311,9 @@ class TestPath:
 
             scene = Scene.square_scene()
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx"].point, scene.objects, scene.receivers["rx"].point
+                scene.emitters["tx"].point,
+                scene.objects,  # type: ignore[arg-type]
+                scene.receivers["rx"].point,
             )
             path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
             expected = false_value()
@@ -343,7 +347,9 @@ class TestImagePath:
     def test_path_loss_is_zero(self):
         scene = Scene.square_scene()
         got = ImagePath.from_tx_objects_rx(
-            scene.emitters["tx"].point, scene.objects, scene.receivers["rx"].point
+            scene.emitters["tx"].point,
+            scene.objects,  # type: ignore[arg-type]
+            scene.receivers["rx"].point,
         )
         chex.assert_trees_all_close(jnp.array(0.0), got.loss, atol=1e-13)
 

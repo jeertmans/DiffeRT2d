@@ -16,7 +16,6 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    MutableSequence,
     Protocol,
     Sequence,
     Tuple,
@@ -63,7 +62,7 @@ class Scene(Plottable):
     """The emitting nodes."""
     receivers: Dict[str, Point]
     """The receiving nodes."""
-    objects: MutableSequence[Object]
+    objects: List[Object]
     """The list of objects in the scene."""
 
     @singledispatchmethod
@@ -282,7 +281,7 @@ class Scene(Plottable):
 
                 if _type == "Polygon":
                     for i in range(n):
-                        points = jnp.row_stack(
+                        points = jnp.vstack(
                             [coordinates[i - 1], coordinates[i]], dtype=float
                         )
                         wall = Wall(points=points)
@@ -296,7 +295,7 @@ class Scene(Plottable):
             tx = Point(point=jnp.array([0.0, 0.0]))
             rx = Point(point=jnp.array([1.0, 1.0]))
 
-        scene = cls(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
+        scene = cls(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)  # type: ignore[arg-type]
         scene.emitters["tx"] = Point(point=scene.get_location(tx_loc))
         scene.receivers["rx"] = Point(point=scene.get_location(rx_loc))
         return scene
@@ -337,7 +336,7 @@ class Scene(Plottable):
     @classmethod
     def random_uniform_scene(
         cls,
-        key: jax.random.KeyArray,
+        key: Array,
         *,
         n_emitters: int = 1,
         n_walls: int = 1,
@@ -372,7 +371,7 @@ class Scene(Plottable):
             f"rx_{i}": Point(point=points[-(i + 1), :]) for i in range(n_receivers)
         }
 
-        walls = [
+        walls: List[Object] = [
             Wall(points=points[2 * i + n_emitters : 2 * i + 2 + n_emitters, :])
             for i in range(n_walls)
         ]
@@ -412,7 +411,7 @@ class Scene(Plottable):
         tx = Point(point=jnp.array([0.1, 0.1]))
         rx = Point(point=jnp.array([0.302, 0.2147]))
 
-        walls = [
+        walls: List[Object] = [
             # Outer walls
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
             Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
@@ -459,7 +458,7 @@ class Scene(Plottable):
         tx = Point(point=jnp.array([0.2, 0.2]))
         rx = Point(point=jnp.array([0.5, 0.6]))
 
-        walls = [
+        walls: List[Object] = [
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
             Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
             Wall(points=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
@@ -504,7 +503,7 @@ class Scene(Plottable):
         scene.emitters["tx"].point = jnp.array([0.2, 0.5])
         scene.receivers["rx"].point = jnp.array([0.8, 0.5])
 
-        wall = Wall(points=jnp.array([[0.5, 0.2], [0.5, 0.8]]))
+        wall: Object = Wall(points=jnp.array([[0.5, 0.2], [0.5, 0.8]]))
 
         scene.add_objects([wall])
 
@@ -550,7 +549,7 @@ class Scene(Plottable):
         x0, x1 = 0.5 - hl, 0.5 + hl
         y0, y1 = 0.5 - hl, 0.5 + hl
 
-        walls = [
+        walls: List[Object] = [
             Wall(points=jnp.array([[x0, y0], [x1, y0]])),
             Wall(points=jnp.array([[x1, y0], [x1, y1]])),
             Wall(points=jnp.array([[x1, y1], [x0, y1]])),
@@ -636,7 +635,7 @@ class Scene(Plottable):
         )
         bounding_boxes = jnp.dstack(bounding_boxes_list)
 
-        return jnp.row_stack(
+        return jnp.vstack(
             [
                 jnp.min(bounding_boxes[0, :, :], axis=1),
                 jnp.max(bounding_boxes[1, :, :], axis=1),
@@ -651,7 +650,7 @@ class Scene(Plottable):
         :return: The closet emitter and its distance to the coordinates.
         """
         emitters = list(self.emitters.values())
-        points = jnp.row_stack([tx.point for tx in emitters])
+        points = jnp.vstack([tx.point for tx in emitters])
         i_min, distance = closest_point(points, coords)
         return emitters[i_min], distance
 
@@ -663,7 +662,7 @@ class Scene(Plottable):
         :return: The closet receiver and its distance to the coordinates.
         """
         receivers = list(self.receivers.values())
-        points = jnp.row_stack([rx.point for rx in receivers])
+        points = jnp.vstack([rx.point for rx in receivers])
         i_min, distance = closest_point(points, coords)
         return receivers[i_min], distance
 
@@ -764,7 +763,7 @@ class Scene(Plottable):
         min_order: int = 0,
         max_order: int = 1,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Path, Array]]:
+    ) -> Iterator[Tuple[str, str, Array, Path, List[int]]]:
         """
         Returns all paths from any of the :attr:`emitters` to any of the
         :attr:`receivers`, using the given method, see,
@@ -795,7 +794,10 @@ class Scene(Plottable):
                     emitter.point, interacting_objects, receiver.point
                 )
                 valid = path.is_valid(
-                    self.objects, path_candidate, interacting_objects, **kwargs
+                    self.objects,  # type: ignore[arg-type]
+                    path_candidate,
+                    interacting_objects,  # type: ignore[arg-type]
+                    **kwargs,
                 )
 
                 yield (e_key, r_key, valid, path, path_candidate)
@@ -804,7 +806,7 @@ class Scene(Plottable):
         self,
         approx=None,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Path]]:
+    ) -> Iterator[Tuple[str, str, Path, List[int]]]:
         """
         Returns only valid paths as returned by :meth:`all_paths`, by filtering out
         paths using :func:`is_true<differt2d.logic.is_true>`.
@@ -826,7 +828,7 @@ class Scene(Plottable):
         fun_args: Tuple = (),
         fun_kwargs: Mapping = {},
         **kwargs: Any,
-    ) -> Iterator[str, str, Array]:
+    ) -> Iterator[Tuple[str, str, Array]]:
         """
         Repeatedly calls ``fun`` on all paths between each pair of (emitter, receiver)
         in the scene, and accumulates the results.
@@ -853,12 +855,13 @@ class Scene(Plottable):
             emitter = self.emitters[e_key]
             receiver = self.receivers[r_key]
 
-            for _, _, valid, path, interacting_objects in paths_group:
+            for _, _, valid, path, path_candidate in paths_group:
+                interacting_objects = self.get_interacting_objects(path_candidate)
                 acc = acc + valid * fun(
                     emitter,
                     receiver,
                     path,
-                    interacting_objects,
+                    interacting_objects,  # type: ignore[arg-type]
                     *fun_args,
                     **fun_kwargs,
                 )
@@ -878,7 +881,7 @@ class Scene(Plottable):
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
-    ) -> Union[Iterator[str, Array], Array]:
+    ) -> Union[Iterator[Tuple[str, Array]], Array]:
         """
         Repeatedly calls ``fun`` on all paths between the receivers in the scene and
         every emitter coordinate in :python:`(X, Y)`, and accumulates the results over
@@ -930,7 +933,10 @@ class Scene(Plottable):
                     tx_coords, interacting_objects, receiver.point
                 )
                 valid = path.is_valid(
-                    self.objects, path_candidate, interacting_objects, **kwargs
+                    self.objects,  # type: ignore[arg-type]
+                    path_candidate,
+                    interacting_objects,  # type: ignore[arg-type]
+                    **kwargs,
                 )
                 acc = acc + valid * fun(
                     emitter_cls(point=tx_coords),
@@ -971,7 +977,7 @@ class Scene(Plottable):
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
-    ) -> Union[Iterator[str, Array], Array]:
+    ) -> Union[Iterator[Tuple[str, Array]], Array]:
         """
         Repeatedly calls ``fun`` on all paths between the emitters in the scene and
         every receiver coordinate in :python:`(X, Y)`, and accumulates the results over
@@ -1023,7 +1029,10 @@ class Scene(Plottable):
                     emitter.point, interacting_objects, rx_coords
                 )
                 valid = path.is_valid(
-                    self.objects, path_candidate, interacting_objects, **kwargs
+                    self.objects,  # type: ignore[arg-type]
+                    path_candidate,
+                    interacting_objects,  # type: ignore[arg-type]
+                    **kwargs,
                 )
                 acc = acc + valid * fun(
                     emitter,

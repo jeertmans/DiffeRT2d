@@ -268,7 +268,7 @@ class Ray(Plottable):
         return ax.plot(x, y, *args, **kwargs)  # type: ignore[func-returns-value]
 
     def bounding_box(self) -> Array:
-        return jnp.row_stack(
+        return jnp.vstack(
             [jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)]
         )
 
@@ -330,7 +330,7 @@ class Point(Plottable):
         return artists
 
     def bounding_box(self) -> Array:
-        return jnp.row_stack([self.point, self.point])
+        return jnp.vstack([self.point, self.point])
 
 
 @dataclass
@@ -543,7 +543,7 @@ class Path(Plottable):
             plt.show()
         """
         points = [obj.parametric_to_cartesian(0.5) for obj in objects]
-        points = jnp.row_stack([tx, points, rx])
+        points = jnp.vstack([tx, points, rx])
         return cls(points=points)
 
     @jax.jit
@@ -700,7 +700,7 @@ class Path(Plottable):
         return ax.plot(x, y, *args, **kwargs)
 
     def bounding_box(self) -> Array:
-        return jnp.row_stack(
+        return jnp.vstack(
             [jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)]
         )
 
@@ -773,7 +773,7 @@ class ImagePath(Path):
         n = len(objects)
 
         if n == 0:
-            points = jnp.row_stack([tx, rx])
+            points = jnp.vstack([tx, rx])
             return cls(points=points, loss=jnp.array(0.0))
 
         walls = stack_leaves(objects)
@@ -806,7 +806,7 @@ class ImagePath(Path):
         _, images = jax.lax.scan(forward, init=tx, xs=walls)
         _, points = jax.lax.scan(backward, init=rx, xs=(walls, images), reverse=True)
 
-        points = jnp.row_stack([tx, points, rx])
+        points = jnp.vstack([tx, points, rx])
 
         return cls(points=points, loss=path_loss(points))
 
@@ -822,7 +822,7 @@ class FermatPath(Path):
         tx: Array,
         objects: List[Interactable],
         rx: Array,
-        key: Optional[jax.random.PRNGKey] = None,
+        key: Optional[Array] = None,
         seed: int = 1234,
         **kwargs: Any,
     ) -> "FermatPath":
@@ -865,7 +865,7 @@ class FermatPath(Path):
         n = len(objects)
 
         if n == 0:
-            points = jnp.row_stack([tx, rx])
+            points = jnp.vstack([tx, rx])
             return cls(points=points, loss=jnp.array(0.0))
 
         n_unknowns = sum([obj.parameters_count() for obj in objects])
@@ -907,7 +907,7 @@ class MinPath(Path):
         tx: Array,
         objects: List[Interactable],
         rx: Array,
-        key: Optional[jax.random.PRNGKey] = None,
+        key: Optional[Array] = None,
         seed: int = 1234,
         **kwargs: Any,
     ) -> "MinPath":
@@ -950,7 +950,7 @@ class MinPath(Path):
         n = len(objects)
 
         if n == 0:
-            points = jnp.row_stack([tx, rx])
+            points = jnp.vstack([tx, rx])
             return cls(points=points, loss=jnp.array(0.0))
 
         n_unknowns = sum(obj.parameters_count() for obj in objects)
