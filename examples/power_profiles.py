@@ -1,6 +1,4 @@
-"""
-Plot power profiles.
-"""
+"""Plot power profiles."""
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt

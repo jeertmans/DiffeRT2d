@@ -1,6 +1,4 @@
-"""
-Animate received power optimization.
-"""
+"""Animate received power optimization."""
 
 from copy import deepcopy as copy
 

@@ -1,6 +1,4 @@
-"""
-Interactive example.
-"""
+"""Interactive example."""
 
 import sys
 from functools import partial

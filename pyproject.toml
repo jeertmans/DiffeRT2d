@@ -70,8 +70,8 @@ sphinx = "^7.2.6"
 sphinx-autodoc-typehints = "^1.23.2"
 sphinx-click = "^4.4.0"
 sphinx-copybutton = "^0.5.1"
-sphinxext-opengraph = "^0.7.5"
 sphinx-gallery = "^0.14.0"
+sphinxext-opengraph = "^0.7.5"
 
 [tool.poetry.group.github-action]
 optional = true
