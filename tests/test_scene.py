@@ -1,11 +1,20 @@
+from typing import get_args
+
 import chex
 import jax.numpy as jnp
 import pytest
 
-from differt2d.scene import Scene
+from differt2d.scene import Scene, SceneName
 
 
 class TestScene:
+    @pytest.mark.parametrize(
+        ("scene_name",),
+        [(scene_name,) for scene_name in get_args(SceneName)],
+    )
+    def test_from_scene_name(self, scene_name):
+        _ = Scene.from_scene_name(scene_name)
+
     @pytest.mark.parametrize(
         ("n",),
         [
@@ -49,6 +58,12 @@ class TestScene:
         assert len(scene.objects) == 4
 
     def test_square_scene_with_obstacle(self):
+        scene = Scene.square_scene_with_obstacle()
+
+        assert isinstance(scene, Scene)
+        assert len(scene.objects) == 8
+
+    def test_square_scene_with_wall(self):
         scene = Scene.square_scene_with_obstacle()
 
         assert isinstance(scene, Scene)

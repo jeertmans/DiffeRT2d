@@ -20,19 +20,17 @@ However, you can specify a variety of parameters directly when
 calling the CLI. See ``python examples/interactive.py --help``.
 """
 
-import sys
+from argparse import ArgumentParser, FileType
 from functools import partial
-from pathlib import Path
-from typing import List, Optional
+from typing import List, get_args
 
 import jax
 import jax.numpy as jnp
-import typer
 from matplotlib.artist import Artist
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
     QGridLayout,
@@ -44,10 +42,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from differt2d.abc import LocEnum
+from differt2d.abc import LOC
 from differt2d.geometry import DEFAULT_PATCH, FermatPath, ImagePath, MinPath, Point
 from differt2d.logic import DEFAULT_ALPHA, DEFAULT_FUNCTION
-from differt2d.scene import Scene
+from differt2d.scene import Scene, SceneName
 from differt2d.utils import P0, received_power
 
 METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
@@ -102,23 +100,17 @@ class PlotWidget(QWidget):
         self,
         scene: Scene,
         resolution: int,
-        min_order: int,
-        max_order: int,
-        patch: float,
-        approx: bool,
-        alpha: float,
-        function: str,
         parent=None,
     ):
         super().__init__(parent)
 
         self.scene = scene
-        self.min_order = min_order
-        self.max_order = max_order
-        self.patch = patch
-        self.approx = approx
-        self.alpha = alpha
-        self.function = function
+        self.min_order = 0
+        self.max_order = 1
+        self.patch = DEFAULT_PATCH
+        self.approx = True
+        self.alpha = DEFAULT_ALPHA
+        self.function = DEFAULT_FUNCTION
         self.r_coef = 0.5
         self.path_cls = METHOD_TO_PATH_CLASS["image"]
 
@@ -130,7 +122,7 @@ class PlotWidget(QWidget):
         # Approx. parameters
         approx_box = QGroupBox("Enable approx.")
         approx_box.setCheckable(True)
-        approx_box.setChecked(approx)
+        approx_box.setChecked(True)
 
         def set_approx(approx):
             self.approx = approx
@@ -158,7 +150,7 @@ class PlotWidget(QWidget):
 
         self.function_combo_box = QComboBox()
         self.function_combo_box.addItems(["sigmoid", "hard_sigmoid"])
-        self.function_combo_box.setCurrentText(function)
+        self.function_combo_box.setCurrentText(self.function)
 
         grid.addWidget(QLabel("activation function:"), 2, 1)
         grid.addWidget(self.function_combo_box, 2, 3)
@@ -234,7 +226,7 @@ class PlotWidget(QWidget):
 
         self.path_cls_combo_box = QComboBox()
         self.path_cls_combo_box.addItems(METHOD_TO_PATH_CLASS.keys())
-        self.path_cls_combo_box.setCurrentText(function)
+        self.path_cls_combo_box.setCurrentText("image")
 
         grid.addWidget(QLabel("method:"), 5, 1)
         grid.addWidget(self.path_cls_combo_box, 5, 3)
@@ -310,6 +302,9 @@ class PlotWidget(QWidget):
 
         self.f_and_df = jax.value_and_grad(f)
 
+        xlim, ylim = self.scene.bounding_box().T
+        self.ax.set_xlim(*xlim)
+        self.ax.set_ylim(*ylim)
         self.ax.autoscale(False, axis="x")
         self.ax.autoscale(False, axis="y")
 
@@ -390,40 +385,62 @@ class PlotWidget(QWidget):
         self.view.draw()
 
 
-def main(
-    scene_name: Scene.SceneName = Scene.SceneName.basic_scene,
-    file: Optional[Path] = None,
-    resolution: int = 150,
-    min_order: int = 0,
-    max_order: int = 1,
-    patch: float = DEFAULT_PATCH,
-    approx: bool = True,
-    alpha: float = DEFAULT_ALPHA,
-    function: str = DEFAULT_FUNCTION,
-    tx_loc: LocEnum = LocEnum.C,
-    rx_loc: LocEnum = LocEnum.S,
-):
-    if file:
+if __name__ == "__main__":
+    parser = ArgumentParser(
+        prog="interactive-example",
+        description="DiffeRT2d's interactive example.",
+        epilog="This example shows most of the features available in this Python module. Feel free to modify the various parameters using the sliders and other widgets.",
+    )
+    parser.add_argument(
+        "--scene",
+        metavar="NAME",
+        default="basic_scene",
+        choices=get_args(SceneName),
+        help=f"select scene by name (default: basic_scene, allowed: {', '.join(get_args(SceneName))})",
+        dest="scene_name",
+    )
+    parser.add_argument(
+        "--resolution",
+        metavar="INT",
+        type=int,
+        default=150,
+        choices=range(0, 999999),
+        help="set the grid resolution (default: 0, allowed: 0 to 999999 excl.)",
+    )
+    parser.add_argument(
+        "--file",
+        metavar="PATH",
+        type=FileType("r"),
+        default=None,
+        help="if present, read the scene from the specified file path",
+    )
+    parser.add_argument(
+        "--tx-loc",
+        metavar="LOC",
+        default="NW",
+        choices=get_args(LOC),
+        help=f"when file is set, set the emitter location (default: NW, allowed: {', '.join(get_args(LOC))})",
+    )
+    parser.add_argument(
+        "--rx-loc",
+        metavar="LOC",
+        default="SE",
+        choices=get_args(LOC),
+        help=f"when file is set, set the receiver location (default: SE, allowed: {', '.join(get_args(LOC))})",
+    )
+    args = parser.parse_args()
+
+    if args.file:
         scene = Scene.from_geojson(
-            file.read_text(), tx_loc=tx_loc.value, rx_loc=rx_loc.value
+            args.file.read(), tx_loc=args.tx_loc, rx_loc=args.rx_loc
         )
     else:
-        scene = Scene.from_scene_name(scene_name)
+        scene = Scene.from_scene_name(args.scene_name)
 
-    app = QApplication(sys.argv)
+    app = QApplication([])
     plot_widget = PlotWidget(
         scene=scene,
-        resolution=resolution,
-        min_order=min_order,
-        max_order=max_order,
-        patch=patch,
-        approx=approx,
-        alpha=alpha,
-        function=function,
+        resolution=args.resolution,
     )
     plot_widget.show()
     app.exec()
-
-
-if __name__ == "__main__":
-    typer.run(main)

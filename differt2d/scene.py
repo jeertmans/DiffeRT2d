@@ -5,7 +5,6 @@ from __future__ import annotations
 __all__ = ["Scene"]
 
 import json
-from enum import Enum
 from functools import singledispatchmethod
 from itertools import groupby, product
 from typing import (
@@ -15,6 +14,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Protocol,
     Sequence,
@@ -45,6 +45,13 @@ else:
 
 
 S = Union[str, bytes, bytearray]
+SceneName = Literal[
+    "basic_scene",
+    "square_scene",
+    "square_scene_with_obstacle",
+    "square_scene_with_wall",
+]
+"""Literal type for all valid scene names."""
 
 
 @runtime_checkable
@@ -309,14 +316,9 @@ class Scene(Plottable):
         """Add objects to the scene."""
         self.objects.extend(objects)
 
-    class SceneName(str, Enum):
-        basic_scene = "basic_scene"
-        square_scene = "square_scene"
-        square_scene_with_obstacle = "square_scene_with_obstacle"
-
     @classmethod
     def from_scene_name(
-        cls, scene_name: Union["Scene.SceneName", str], *args: Any, **kwargs: Any
+        cls, scene_name: SceneName, *args: Any, **kwargs: Any
     ) -> "Scene":
         """
         Generates a new scene from the given scene name.
@@ -326,12 +328,7 @@ class Scene(Plottable):
         :param kwargs: Keyword arguments to be passed to the constructor.
         :return: The scene.
         """
-        if isinstance(scene_name, cls.SceneName):
-            scene_name_str = scene_name.value
-        else:
-            scene_name_str = scene_name
-
-        return getattr(cls, scene_name_str)(*args, **kwargs)
+        return getattr(cls, scene_name)(*args, **kwargs)
 
     @classmethod
     def random_uniform_scene(
