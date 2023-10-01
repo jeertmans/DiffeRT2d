@@ -725,7 +725,7 @@ def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords)
 
 @dataclass
 class ImagePath(Path):
-    """A path object that was obtain with the Image method."""
+    """A path object that was obtained with the Image method."""
 
     @classmethod
     @partial(jax.jit, static_argnames=["cls"])
@@ -809,7 +809,7 @@ class ImagePath(Path):
 
 @dataclass
 class FermatPath(Path):
-    """A path object that was obtain with the Fermat's Principle Tracing method."""
+    """A path object that was obtained with the Fermat's Principle Tracing method."""
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
@@ -894,7 +894,7 @@ class FermatPath(Path):
 
 @dataclass
 class MinPath(Path):
-    """A path object that was obtain with the Min-Path-Tracing method."""
+    """A path object that was obtained with the Min-Path-Tracing method."""
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
