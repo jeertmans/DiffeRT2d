@@ -30,9 +30,17 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
+      DISPLAY: :99
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Install xvfb on Ubuntu
+      run: |
+        sudo apt-get install xvfb
+        nohup Xvfb $DISPLAY &
 
     - name: Install Poetry
       run: pipx install poetry
