@@ -107,6 +107,7 @@ html_theme_options = {
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "jax": ("https://jax.readthedocs.io/en/latest", None),
     "optax": ("https://optax.readthedocs.io/en/latest", None),

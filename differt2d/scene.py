@@ -375,11 +375,13 @@ class Scene(Plottable):
         return cls(emitters=emitters, receivers=receivers, objects=walls)
 
     @classmethod
-    def basic_scene(cls) -> "Scene":
+    def basic_scene(cls, *, tx_coords: Array = jnp.array([0.1, 0.1]), rx_coords: Array = jnp.array([0.302, 0.2147])) -> "Scene":
         """
         Instantiates a basic scene with a main room, and a second inner room in the
         lower left corner, with a small entrance.
 
+        :param tx_coords: The emitter's coordinates, array-like, (2,).
+        :param rx_coords: The receiver's coordinates, array-like, (2,).
         :return: The scene.
 
         :Examples:
@@ -405,8 +407,8 @@ class Scene(Plottable):
             _ = scene.plot(ax)
             plt.show()
         """
-        tx = Point(point=jnp.array([0.1, 0.1]))
-        rx = Point(point=jnp.array([0.302, 0.2147]))
+        tx = Point(point=jnp.asarray(tx_coords, dtype=float))
+        rx = Point(point=jnp.asarray(rx_coords, dtype=float))
 
         walls: List[Object] = [
             # Outer walls
@@ -423,10 +425,12 @@ class Scene(Plottable):
         return cls(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
 
     @classmethod
-    def square_scene(cls) -> "Scene":
+    def square_scene(cls, *, tx_coords: Array = jnp.array([0.2, 0.2]), rx_coords: Array = jnp.array([0.5, 0.6])) -> "Scene":
         """
         Instantiates a square scene with one main room.
 
+        :param tx_coords: The emitter's coordinates, array-like, (2,).
+        :param rx_coords: The receiver's coordinates, array-like, (2,).
         :return: The scene.
 
         :Examples:
@@ -452,8 +456,8 @@ class Scene(Plottable):
             _ = scene.plot(ax)
             plt.show()
         """
-        tx = Point(point=jnp.array([0.2, 0.2]))
-        rx = Point(point=jnp.array([0.5, 0.6]))
+        tx = Point(point=jnp.asarray(tx_coords, dtype=float))
+        rx = Point(point=jnp.asarray(rx_coords, dtype=float))
 
         walls: List[Object] = [
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
@@ -465,12 +469,14 @@ class Scene(Plottable):
         return Scene(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
 
     @classmethod
-    def square_scene_with_wall(cls, ratio: float = 0.1) -> "Scene":
+    def square_scene_with_wall(cls, ratio: float = 0.1, *, tx_coords: Array = jnp.array([0.2, 0.5]), rx_coords: Array = jnp.array([0.8, 0.5])) -> "Scene":
         """
         Instantiates a square scene with one main room, and vertical wall in the middle.
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
+        :param tx_coords: The emitter's coordinates, array-like, (2,).
+        :param rx_coords: The receiver's coordinates, array-like, (2,).
         :return: The scene.
 
         :Examples:
@@ -496,9 +502,7 @@ class Scene(Plottable):
             _ = scene.plot(ax)
             plt.show()
         """
-        scene = Scene.square_scene()
-        scene.emitters["tx"].point = jnp.array([0.2, 0.5])
-        scene.receivers["rx"].point = jnp.array([0.8, 0.5])
+        scene = Scene.square_scene(tx_coords=tx_coords, rx_coords=rx_coords)
 
         wall: Object = Wall(points=jnp.array([[0.5, 0.2], [0.5, 0.8]]))
 
@@ -507,13 +511,15 @@ class Scene(Plottable):
         return scene
 
     @classmethod
-    def square_scene_with_obstacle(cls, ratio: float = 0.1) -> "Scene":
+    def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> "Scene":
         """
         Instantiates a square scene with one main room, and one square obstacle in the
         center.
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
+        :param kwargs:
+            Keyword arguments to be passed to :meth:`square_scene`.
         :return: The scene.
 
         :Examples:
@@ -539,7 +545,7 @@ class Scene(Plottable):
             _ = scene.plot(ax)
             plt.show()
         """
-        scene = Scene.square_scene()
+        scene = Scene.square_scene(**kwargs)
 
         hl = 0.5 * ratio
 
