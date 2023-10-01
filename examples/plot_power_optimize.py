@@ -2,7 +2,7 @@
 Animate power optimization using approximation
 ==============================================
 
-This example shows how one can use the approximation to perform
+This example shows how one can use approximation to perform
 power optimization on a given network configuration.
 
 Here, to goal is to find the emitter location that
@@ -12,6 +12,12 @@ and the :func:`optax.adam` optimizer.
 To reach a realistic optimum, approximation's ``alpha`` value is increased
 step after step, using a geometric progression.
 """
+
+# %%
+# Imports
+# -------
+#
+# First, we need to import the necessary modules.
 
 from copy import deepcopy as copy
 
@@ -25,7 +31,29 @@ from differt2d.geometry import Point
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
+# %%
+# Scene
+# -----
+#
+# The following code will work with any scene, but be aware that large scenes
+# may introduces a long computation time.
+#
+# You can easily change the scene by modifying the following line:
+
 scene = Scene.square_scene_with_obstacle()
+
+# %%
+# Defining an objective function
+# ------------------------------
+#
+# In an optimization problem, one must first define an objective function.
+# Ideally, in a telecommunications scenario, we would like to serve all users,
+# i.e., receivers, with a good power. Because antennas are often designed to work
+# with power expressed in a logarithmic scale, our objective function will
+# reflect that and sum the received power by each user separately, in dB.
+#
+# Finally, we define a loss function that will take the opposite of the
+# objective function, because most optimizer minimize functions.
 
 
 def objective_function(received_power_per_receiver):
@@ -47,7 +75,20 @@ def loss(tx_coords, scene, *args, **kwargs):
     )
 
 
-f_and_df = jax.value_and_grad(loss)
+f_and_df = jax.value_and_grad(
+    loss
+)  # Generates a function that evaluates f and its gradient
+
+# %%
+# Plot setup
+# ----------
+#
+# Below, we setup the plot for animation.
+#
+# .. note::
+#
+#    The emitter is intentionnally placed in a zero-gradient zone, to showcase
+#    the problem of non-convergence when not using approximation.
 
 fig, axes = plt.subplots(2, 1, sharex=True)
 
@@ -87,17 +128,44 @@ for ax, approx, scene in zip(axes, [False, True], scenes):
 
 axes[-1].set_xlabel("x coordinate")
 
-steps = 100
+steps = 100  # In how many steps we hope to converge
 
-alphas = jnp.logspace(0, 2, steps)
+# sphinx_gallery_defer_figures
+
+# %%
+# Choosing the right alpha values
+# -------------------------------
+#
+# Theoritically, one should choose an infinitely big ``alpha`` value
+# to reduce the approximation to zero.
+#
+# However, it can be observed that values above 100.0 are already high enough
+# to damp any approximation effect.
+#
+# A basic optimizer is used, but your are encouraged to test various
+# ``alpha`` progressions and optimizers.
+
+alphas = jnp.logspace(0, 2, steps)  # Values between 1.0 and 100.0
 
 optimizers = [
     optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans()) for _ in scenes
-]
+]  # 2 optimizers, one for each case
 carries = [
     (scene.emitters["tx"].point, opt.init(scene.emitters["tx"].point))
     for opt, scene in zip(optimizers, scenes)
-]
+]  # Carry values between each optimization step
+
+# sphinx_gallery_defer_figures
+
+# %%
+# Animation function
+# ------------------
+#
+# As required by :class:`maplotlib.animations.FuncAnimation`, we must
+# define a function that will be called on every animation frame.
+#
+# Here, we choose to play one optimization step per frame, and the pass
+# the corresponding ``alpha`` values directly as an argument.
 
 
 def func(alpha):
@@ -133,3 +201,4 @@ def func(alpha):
 
 
 anim = FuncAnimation(fig, func=func, frames=alphas, interval=100)
+anim.save("optimize.gif")

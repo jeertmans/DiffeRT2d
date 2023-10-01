@@ -29,7 +29,7 @@ import jax.numpy as jnp
 import numpy as np
 import rustworkx as rx
 
-from .abc import Loc, Interactable, Object, Plottable
+from .abc import Interactable, Loc, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
 from .logic import is_true
 

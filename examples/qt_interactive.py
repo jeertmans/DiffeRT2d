@@ -18,7 +18,23 @@ Running this example is as simple as ``python examples/interactive.py``.
 
 However, you can specify a variety of parameters directly when
 calling the CLI. See ``python examples/interactive.py --help``.
+
+Getting help
+------------
+
+Using the graphical interface should be straightforward.
+
+On top of that, a lot of widgets display contextual information
+if you hover over them.
 """
+
+# %%
+# Imports
+# -------
+#
+# First, we need to import the necessary modules.
+# Note that most imports are only required to create the
+# graphical interface, not actually doing the ray tracing.
 
 from argparse import ArgumentParser, FileType
 from functools import partial
@@ -49,6 +65,13 @@ from differt2d.scene import Scene, SceneName
 from differt2d.utils import P0, received_power
 
 METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
+
+# %%
+# GUI classes
+# -----------
+#
+# The following defines all GUI-related classes and methods,
+# needed to display the application.
 
 
 class CustomSlider(QSlider):
@@ -119,10 +142,23 @@ class PlotWidget(QWidget):
 
         # -- Create widgets --
 
+        # Fix ToolTip with dark theme issue
+
+        self.setStyleSheet(
+            """
+            QToolTip {
+                background-color: #ea5626;
+            }"""
+        )
+
         # Approx. parameters
         approx_box = QGroupBox("Enable approx.")
         approx_box.setCheckable(True)
         approx_box.setChecked(True)
+        approx_box.setToolTip(
+            "Click to enable/disable approximation. "
+            "When enabled, you can specify further parameters below."
+        )
 
         def set_approx(approx):
             self.approx = approx
@@ -134,6 +170,9 @@ class PlotWidget(QWidget):
         approx_box.setLayout(grid)
         self.alpha_slider = LogSlider(0, 3)
         self.alpha_slider.setValue(self.alpha)
+        self.alpha_slider.setToolTip(
+            "The alpha value, as used by the activation function"
+        )
         self.alpha_label = QLabel("1.000e+00")
 
         grid.addWidget(QLabel("alpha:"), 1, 1)
@@ -150,6 +189,7 @@ class PlotWidget(QWidget):
 
         self.function_combo_box = QComboBox()
         self.function_combo_box.addItems(["sigmoid", "hard_sigmoid"])
+        self.function_combo_box.setToolTip(" The activation function")
         self.function_combo_box.setCurrentText(self.function)
 
         grid.addWidget(QLabel("activation function:"), 2, 1)
@@ -168,6 +208,10 @@ class PlotWidget(QWidget):
         settings_box.setLayout(grid)
         self.patch_slider = LinearSlider(-1.0, 1.0)
         self.patch_slider.setValue(0.0)
+        self.patch_slider.setToolTip(
+            "The patch value used to virtually increase/decrease objects' "
+            "size when checking for intersection"
+        )
         self.patch_label = QLabel("+0.00")
 
         grid.addWidget(QLabel("patch:"), 1, 1)
@@ -184,6 +228,9 @@ class PlotWidget(QWidget):
 
         self.min_order_spin_box = QSpinBox()
         self.min_order_spin_box.setMinimum(0)
+        self.min_order_spin_box.setToolTip(
+            "The minimum interaction order, 0 is line of sight."
+        )
         self.min_order_spin_box.setValue(self.min_order)
 
         grid.addWidget(QLabel("min. order:"), 2, 1)
@@ -197,6 +244,9 @@ class PlotWidget(QWidget):
 
         self.max_order_spin_box = QSpinBox()
         self.max_order_spin_box.setMinimum(0)
+        self.max_order_spin_box.setToolTip(
+            "The maximum interaction order, 1 is one reflection max."
+        )
         self.max_order_spin_box.setValue(self.max_order)
 
         grid.addWidget(QLabel("max. order:"), 3, 1)
@@ -210,6 +260,9 @@ class PlotWidget(QWidget):
 
         self.r_coef_slider = LinearSlider(0.0, 1.0)
         self.r_coef_slider.setValue(self.r_coef)
+        self.r_coef_slider.setToolTip(
+            "The reflection coefficient, expressed as a real value between 0 and 1."
+        )
         self.r_coef_label = QLabel("0.50")
 
         grid.addWidget(QLabel("refl. coef.:"), 4, 1)
@@ -226,6 +279,12 @@ class PlotWidget(QWidget):
 
         self.path_cls_combo_box = QComboBox()
         self.path_cls_combo_box.addItems(METHOD_TO_PATH_CLASS.keys())
+        self.path_cls_combo_box.setToolTip(
+            "The path method that is used to determine each ray path. "
+            "Note that each next method is much slower than the previous, "
+            "but can simulate more complex interaction types, "
+            "like diffraction, not implemented at the moment."
+        )
         self.path_cls_combo_box.setCurrentText("image")
 
         grid.addWidget(QLabel("method:"), 5, 1)
@@ -385,18 +444,29 @@ class PlotWidget(QWidget):
         self.view.draw()
 
 
+# %%
+# CLI options
+# -----------
+#
+# This part is not very intersting, and uses the builtin :mod:`argparse`
+# module to create a set of command-line options and parse them.
+
+
 if __name__ == "__main__":
     parser = ArgumentParser(
         prog="interactive-example",
         description="DiffeRT2d's interactive example.",
-        epilog="This example shows most of the features available in this Python module. Feel free to modify the various parameters using the sliders and other widgets.",
+        epilog="This example shows most of the features available in this "
+        "Python module. Feel free to modify the various parameters using "
+        "the sliders and other widgets.",
     )
     parser.add_argument(
         "--scene",
         metavar="NAME",
         default="basic_scene",
         choices=get_args(SceneName),
-        help=f"select scene by name (default: basic_scene, allowed: {', '.join(get_args(SceneName))})",
+        help="select scene by name (default: basic_scene, "
+        f"allowed: {', '.join(get_args(SceneName))})",
         dest="scene_name",
     )
     parser.add_argument(
@@ -405,7 +475,7 @@ if __name__ == "__main__":
         type=int,
         default=150,
         choices=range(0, 999999),
-        help="set the grid resolution (default: 0, allowed: 0 to 999999 excl.)",
+        help="set the grid resolution (default: 0, " "allowed: 0 to 999999 excl.)",
     )
     parser.add_argument(
         "--file",
@@ -419,14 +489,16 @@ if __name__ == "__main__":
         metavar="Loc",
         default="NW",
         choices=get_args(Loc),
-        help=f"when file is set, set the emitter location (default: NW, allowed: {', '.join(get_args(Loc))})",
+        help="when file is set, set the emitter location (default: NW, "
+        f"allowed: {', '.join(get_args(Loc))})",
     )
     parser.add_argument(
         "--rx-loc",
         metavar="Loc",
         default="SE",
         choices=get_args(Loc),
-        help=f"when file is set, set the receiver location (default: SE, allowed: {', '.join(get_args(Loc))})",
+        help="when file is set, set the receiver location (default: SE, "
+        f"allowed: {', '.join(get_args(Loc))})",
     )
     args = parser.parse_args()
 
@@ -437,7 +509,11 @@ if __name__ == "__main__":
     else:
         scene = Scene.from_scene_name(args.scene_name)
 
-    app = QApplication([])
+    if not QApplication.instance():
+        app = QApplication([])
+    else:
+        app = QApplication.instance()
+
     plot_widget = PlotWidget(
         scene=scene,
         resolution=args.resolution,

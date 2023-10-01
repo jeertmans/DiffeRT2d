@@ -14,6 +14,12 @@ second shows the power map, but when approximation is enabled (with default para
 see :mod:`defaults<differt2d.defaults>`).
 """
 
+# %%
+# Imports
+# -------
+#
+# First, we need to import the necessary modules.
+
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from chex import Array
@@ -22,6 +28,22 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
+
+# %%
+# Scene
+# -----
+#
+# The following code will work with any scene, but be aware that large scenes
+# may introduces a long computation time.
+#
+# You can easily change the scene by modifying the following line:
+
+# %%
+# Plot setup
+# ----------
+#
+# Below, we setup the plot to contain two axes: one showing the power map
+# without approximation, and one showing the power map using approximation.
 
 fig, axes = plt.subplots(2, 1, sharex=True)
 
