@@ -147,25 +147,30 @@ steps = 100  # In how many steps we hope to converge
 
 alphas = jnp.logspace(0, 2, steps)  # Values between 1.0 and 100.0
 
-optimizers = [
-    optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans()) for _ in scenes
-]  # 2 optimizers, one for each case
-carries = [
-    (scene.emitters["tx"].point, opt.init(scene.emitters["tx"].point))
-    for opt, scene in zip(optimizers, scenes)
-]  # Carry values between each optimization step
+# Dummy values, to be filled by ``init_func``.
+optimizers = [None, None]
+carries = [(None, None), (None, None)]
+
 
 # sphinx_gallery_defer_figures
 
 # %%
-# Animation function
-# ------------------
+# Animation functions
+# -------------------
 #
 # As required by :class:`maplotlib.animations.FuncAnimation`, we must
 # define a function that will be called on every animation frame.
 #
 # Here, we choose to play one optimization step per frame, and the pass
 # the corresponding ``alpha`` values directly as an argument.
+
+
+def init_func():
+    tx_coords = jnp.array([0.5, 0.7])
+    for i, scene in enumerate(scenes):
+        scene.emitters["tx"].point = tx_coords
+        optimizers[i] = optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
+        carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
 
 def func(alpha):
@@ -200,5 +205,5 @@ def func(alpha):
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 
 
-anim = FuncAnimation(fig, func=func, frames=alphas, interval=100)
-anim.save("optimize.gif")
+anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
+plt.show()

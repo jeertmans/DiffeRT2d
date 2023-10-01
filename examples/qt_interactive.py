@@ -8,16 +8,17 @@ proposed by this module.
 Requirements
 ------------
 
-This examples requires additional Python modules, that can be installed with
-``pip install differt2d[examples]``.
+This example requires additional Python modules, namely ``qtpy`` and
+Qt5 bindings (we recommend using Pyside6).
+You can install the necessary modules with ``pip install qtpy pyside6``.
 
 Usage
 -----
 
-Running this example is as simple as ``python examples/interactive.py``.
+Running this example is as simple as ``python examples/qt-interactive.py``.
 
 However, you can specify a variety of parameters directly when
-calling the CLI. See ``python examples/interactive.py --help``.
+calling the CLI. See ``python examples/qt-interactive.py --help``.
 
 Getting help
 ------------
@@ -27,15 +28,6 @@ Using the graphical interface should be straightforward.
 On top of that, a lot of widgets display contextual information
 if you hover over them.
 """
-
-# %%
-# Imports
-# -------
-#
-# First, we need to import the necessary modules.
-# Note that most imports are only required to create the
-# graphical interface, not actually doing the ray tracing.
-
 from argparse import ArgumentParser, FileType
 from functools import partial
 from typing import List, get_args
@@ -65,13 +57,6 @@ from differt2d.scene import Scene, SceneName
 from differt2d.utils import P0, received_power
 
 METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
-
-# %%
-# GUI classes
-# -----------
-#
-# The following defines all GUI-related classes and methods,
-# needed to display the application.
 
 
 class CustomSlider(QSlider):
@@ -442,14 +427,6 @@ class PlotWidget(QWidget):
             self.path_artists.extend(self.ax.quiver([x], [y], [dp[0]], [dp[1]]))
 
         self.view.draw()
-
-
-# %%
-# CLI options
-# -----------
-#
-# This part is not very intersting, and uses the builtin :mod:`argparse`
-# module to create a set of command-line options and parse them.
 
 
 if __name__ == "__main__":

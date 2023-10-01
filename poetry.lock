@@ -1348,7 +1348,7 @@ diagrams = ["jinja2", "railroad-diagrams"]
 name = "pyside6"
 version = "6.5.2"
 description = "Python bindings for the Qt cross-platform application and UI framework"
-optional = true
+optional = false
 python-versions = "<3.12,>=3.7"
 files = [
     {file = "PySide6-6.5.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:b509e4d3ffde4a594d70000f881452643c9aaed800bad2959882075c01f72428"},
@@ -1368,7 +1368,7 @@ shiboken6 = "6.5.2"
 name = "pyside6-addons"
 version = "6.5.2"
 description = "Python bindings for the Qt cross-platform application and UI framework (Addons)"
-optional = true
+optional = false
 python-versions = "<3.12,>=3.7"
 files = [
     {file = "PySide6_Addons-6.5.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:a31cb7eca2e8cd80332e131124ed9ad197610a2a80eac4f2bd58e9124e38060a"},
@@ -1387,7 +1387,7 @@ shiboken6 = "6.5.2"
 name = "pyside6-essentials"
 version = "6.5.2"
 description = "Python bindings for the Qt cross-platform application and UI framework (Essentials)"
-optional = true
+optional = false
 python-versions = "<3.12,>=3.7"
 files = [
     {file = "PySide6_Essentials-6.5.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:c9606de7afaee57f2c0861cc4b973bd630556dd38ec0d1542560cba81c27ab81"},
@@ -1782,7 +1782,7 @@ test = ["pytest", "rich", "virtualenv (>20)"]
 name = "shiboken6"
 version = "6.5.2"
 description = "Python/C++ bindings helper module"
-optional = true
+optional = false
 python-versions = "<3.12,>=3.7"
 files = [
     {file = "shiboken6-6.5.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:ba7af130d34ea03e329baebd80982d2635aee7e58dbb07a07085509a501ed03f"},
@@ -2212,10 +2212,7 @@ files = [
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (<7.2.5)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
 
-[extras]
-examples = ["pyside6", "qtpy"]
-
 [metadata]
 lock-version = "2.0"
 python-versions = "<3.12,>=3.9"
-content-hash = "52252d2fb30bd636e97a840cfebf190b0e3ae14e28c92a1f57015e4870008a73"
+content-hash = "db593d079235af2ad0d7664772cb063642e0bd56558dfceeafababe9079b9f73"
