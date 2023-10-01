@@ -1,4 +1,18 @@
-"""Plot power over a grid."""
+"""
+Plot received power over a grid
+===============================
+
+This examples shows how one can plot the received power map, i.e.,
+the power received at each (x, y) coordinate as the sum of the power from
+each emitter.
+
+The receivers shown on the plot is just indicative, but are not actually used
+in the process of computing the power map.
+
+The first plot shows the power map when no approximation is used, and the
+second shows the power map, but when approximation is enabled (with default parameters,
+see :mod:`defaults<differt2d.defaults>`).
+"""
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt

@@ -1,9 +1,7 @@
-differt2d/__pycache__/
+# Python artifacts
+__pycache__/
 
-tests/__pycache__/
-
+# Docs build artifacts
 docs/build/
-
 docs/source/apidocs/
-
-*.pyc
+docs/source/examples_gallery/

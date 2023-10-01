@@ -1,4 +1,17 @@
-"""Animate received power optimization."""
+"""
+Animate power optimization using approximation
+==============================================
+
+This example shows how one can use the approximation to perform
+power optimization on a given network configuration.
+
+Here, to goal is to find the emitter location that
+maximizes some ``objective_function``, using the approximation framework
+and the :func:`optax.adam` optimizer.
+
+To reach a realistic optimum, approximation's ``alpha`` value is increased
+step after step, using a geometric progression.
+"""
 
 from copy import deepcopy as copy
 
@@ -119,6 +132,5 @@ def func(alpha):
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 
 
-anim = FuncAnimation(fig, func=func, frames=alphas)
-# anim.save("anim.gif")
+anim = FuncAnimation(fig, func=func, frames=alphas, interval=100)
 plt.show()

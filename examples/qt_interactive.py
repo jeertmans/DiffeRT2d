@@ -1,4 +1,24 @@
-"""Interactive example."""
+"""
+Interactive example with Qt interface
+=====================================
+
+This example provides an interactive experience to most of the features
+proposed by this module.
+
+Requirements
+------------
+
+This examples requires additional Python modules, that can be installed with
+``pip install differt2d[examples]``.
+
+Usage
+-----
+
+Running this example is as simple as ``python examples/interactive.py``.
+
+However, you can specify a variety of parameters directly when
+calling the CLI. See ``python examples/interactive.py --help``.
+"""
 
 import sys
 from functools import partial
@@ -402,7 +422,7 @@ def main(
         function=function,
     )
     plot_widget.show()
-    sys.exit(app.exec())
+    app.exec()
 
 
 if __name__ == "__main__":

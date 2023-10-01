@@ -11,6 +11,8 @@ import functools
 import inspect
 from textwrap import dedent
 
+import qtgallery
+
 from sphinx.ext.autodoc import between
 from sphinx.util.inspect import isclassmethod
 
@@ -35,6 +37,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
     "sphinx_gallery.gen_gallery",
+    "qtgallery",
 ]
 
 rst_prolog = """
@@ -60,8 +63,12 @@ add_module_names = False
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
 sphinx_gallery_conf = {
+    "filename_pattern": r"/(plot)|(qt)_",
     "examples_dirs": "../../examples",  # path to your example scripts
-    "gallery_dirs": "source/examples_gallery",  # path to where to save gallery generated output
+    "gallery_dirs": "examples_gallery",  # path to where to save gallery generated output
+    "image_scrapers": ("matplotlib", qtgallery.qtscraper),
+    "reset_modules": (qtgallery.reset_qapp,),
+    "matplotlib_animations": True,
 }
 
 # -- Options for HTML output -------------------------------------------------

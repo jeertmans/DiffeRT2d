@@ -1,4 +1,20 @@
-"""Plot power profiles."""
+"""
+Plot power profiles for various parameters
+==========================================
+
+This examples shows how one can plot the received power profiles, i.e.,
+the power received along a line as the sum of the power from
+each emitter, for a variety of approximation parameters.
+
+The receiver shown on the plot is just indicative, but are not actually used
+in the process of computing the power profiles.
+
+Various lines shows how the ``alpha`` parameter
+in :func:`activation<differt2d.logic.activation>` impacts the power computation.
+
+
+As shown, the higher ``alpha``, the closer it gets to the `Without approx.` case.
+"""
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt

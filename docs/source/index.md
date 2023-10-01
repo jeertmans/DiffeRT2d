@@ -9,7 +9,7 @@ og:description: 2D Toolbox for Differentiable Ray Tracing
 :titlesonly:
 :maxdepth: 1
 
-examples/index
+examples_gallery/index
 reference/index
 ```
 
@@ -18,18 +18,4 @@ reference/index
 :hidden:
 
 license
-```
-
-```{eval-rst}
-.. plot:: ../../examples/power_map.py
-    :include-source:
-
-    Normalized Receiver Power Map for a Static Transmitter (TX).
-```
-
-```{eval-rst}
-.. plot:: ../../examples/power_optimize.py
-    :include-source:
-
-    Optimizing the received power.
 ```
