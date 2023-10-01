@@ -9,7 +9,7 @@ Requirements
 ------------
 
 This example requires additional Python modules, namely ``qtpy`` and
-Qt5 bindings (we recommend using Pyside6).
+Qt5 bindings (we recommend using PySide6).
 You can install the necessary modules with ``pip install qtpy pyside6``.
 
 Usage
