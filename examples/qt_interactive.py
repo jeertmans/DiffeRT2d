@@ -443,4 +443,4 @@ if __name__ == "__main__":
         resolution=args.resolution,
     )
     plot_widget.show()
-    app.exec()
+    app.exec_()
