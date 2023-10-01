@@ -133,4 +133,3 @@ def func(alpha):
 
 
 anim = FuncAnimation(fig, func=func, frames=alphas, interval=100)
-plt.show()

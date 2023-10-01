@@ -45,7 +45,7 @@ jobs:
 
     - name: Install Differt2D
       run: |
-        poetry install --with docs,github-action
+        poetry install --all-extras --with docs,github-action
 
     - name: Build docs
       run: cd docs && poetry run make html
