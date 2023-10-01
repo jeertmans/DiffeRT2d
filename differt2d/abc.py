@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __all__ = [
     "Interactable",
+    "Loc",
     "Object",
     "Plottable",
 ]
@@ -20,7 +21,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
-LOC = Literal["N", "E", "S", "W", "C", "NE", "NW", "SE", "SW"]
+Loc = Literal["N", "E", "S", "W", "C", "NE", "NW", "SE", "SW"]
 """Literal type for all valid locations."""
 
 
@@ -77,7 +78,7 @@ class Plottable(Protocol):  # pragma: no cover
 
         return 0.5 * (bounding_box[0, :] + bounding_box[1, :])
 
-    def get_location(self, location: LOC) -> Array:
+    def get_location(self, location: Loc) -> Array:
         """
         Returns the relative location within this object's extents.
 

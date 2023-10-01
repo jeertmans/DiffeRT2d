@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = ["Scene"]
+__all__ = ["Scene", "SceneName"]
 
 import json
 from functools import singledispatchmethod
@@ -29,7 +29,7 @@ import jax.numpy as jnp
 import numpy as np
 import rustworkx as rx
 
-from .abc import LOC, Interactable, Object, Plottable
+from .abc import Loc, Interactable, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
 from .logic import is_true
 
@@ -75,7 +75,7 @@ class Scene(Plottable):
     @singledispatchmethod
     @classmethod
     def from_geojson(
-        cls, s_or_fp: Union[S, Readable], tx_loc: LOC = "NW", rx_loc: LOC = "SE"
+        cls, s_or_fp: Union[S, Readable], tx_loc: Loc = "NW", rx_loc: Loc = "SE"
     ) -> "Scene":
         r"""
         Creates a scene from a GEOJSON file, generating one Wall per line segment. TX
@@ -273,7 +273,7 @@ class Scene(Plottable):
     @from_geojson.register(bytes)
     @from_geojson.register(bytearray)
     @classmethod
-    def _(cls, s: S, tx_loc: LOC = "NW", rx_loc: LOC = "SE") -> "Scene":
+    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> "Scene":
         dictionary = json.loads(s)
 
         features = dictionary.get("features", [])

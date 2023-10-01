@@ -42,7 +42,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from differt2d.abc import LOC
+from differt2d.abc import Loc
 from differt2d.geometry import DEFAULT_PATCH, FermatPath, ImagePath, MinPath, Point
 from differt2d.logic import DEFAULT_ALPHA, DEFAULT_FUNCTION
 from differt2d.scene import Scene, SceneName
@@ -416,17 +416,17 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--tx-loc",
-        metavar="LOC",
+        metavar="Loc",
         default="NW",
-        choices=get_args(LOC),
-        help=f"when file is set, set the emitter location (default: NW, allowed: {', '.join(get_args(LOC))})",
+        choices=get_args(Loc),
+        help=f"when file is set, set the emitter location (default: NW, allowed: {', '.join(get_args(Loc))})",
     )
     parser.add_argument(
         "--rx-loc",
-        metavar="LOC",
+        metavar="Loc",
         default="SE",
-        choices=get_args(LOC),
-        help=f"when file is set, set the receiver location (default: SE, allowed: {', '.join(get_args(LOC))})",
+        choices=get_args(Loc),
+        help=f"when file is set, set the receiver location (default: SE, allowed: {', '.join(get_args(Loc))})",
     )
     args = parser.parse_args()
 

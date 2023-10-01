@@ -70,6 +70,13 @@ sphinx_gallery_conf = {
     "matplotlib_animations": True,
 }
 
+qtgallery_conf = {
+    "xvfb_size": (640, 775),
+    "xvfb_color_depth": 24,
+    "xfvb_use_xauth": False,
+    "xfvb_extra_args": [],
+}
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
