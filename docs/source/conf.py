@@ -12,7 +12,6 @@ import inspect
 from textwrap import dedent
 
 import qtgallery
-
 from sphinx.ext.autodoc import between
 from sphinx.util.inspect import isclassmethod
 
