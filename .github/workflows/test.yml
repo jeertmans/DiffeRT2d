@@ -62,3 +62,63 @@ jobs:
     - name: Run ByExample
       run: |
         ff "differt2d/**py" README.md | xargs poetry run byexample -l python
+
+  benchmark:
+    runs-on: ubuntu-latest
+    env:
+      JAX_PLATFORM_NAME: cpu
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Poetry
+      run: pipx install poetry
+
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: poetry
+
+    - name: Install Differt2D
+      run: |
+        poetry install --with test,github-action
+
+    - name: Run Benchmarks on changes
+      run: poetry run python benchmark.py -o changes.json
+
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.base.sha }}
+        clean: false
+
+    - name: Run Benchmarks before changes
+      run: poetry run python benchmark.py -o before.json
+
+    - name: Compare benchmarks
+      run: |
+        echo 'results<<EOF' >> $GITHUB_OUTPUT
+        poetry run python -m pyperf compare_to --table before.json changes.json >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
+      id: compare
+
+    - name: Comment PR with benchmarks
+      uses: thollander/actions-comment-pull-request@v2
+      continue-on-error: true
+      with:
+        message: |
+          Benchmark results:
+          ```
+          ${{ steps.compare.outputs.results }}
+          ```
+        comment_tag: benchmarks
+
+      id: comment
+
+    - name: If PR comment failed, write to PR summary
+      if: steps.comment.outcome != 'success'
+      run: |
+        echo '### Benchmark results' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo '${{ steps.compare.outputs.results }}' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY

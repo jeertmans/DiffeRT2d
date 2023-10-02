@@ -82,6 +82,7 @@ optional = true
 
 [tool.poetry.group.test.dependencies]
 byexample = "^10.5.6"
+pyperf = "^2.6.1"
 pytest = "^7.3.1"
 pytest-cov = "^4.1.0"
 pytest-env = "^0.8.1"
