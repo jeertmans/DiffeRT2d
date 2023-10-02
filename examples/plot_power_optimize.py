@@ -98,8 +98,8 @@ scene.emitters = dict(
     tx=Point(point=jnp.array([0.5, 0.7])),
 )
 scene.receivers = {
-    r"rx\_0": Point(point=jnp.array([0.3, 0.1])),
-    r"rx\_1": Point(point=jnp.array([0.5, 0.1])),
+    r"rx_0": Point(point=jnp.array([0.3, 0.1])),
+    r"rx_1": Point(point=jnp.array([0.5, 0.1])),
 }
 
 X, Y = scene.grid(n=300)
@@ -119,7 +119,7 @@ for ax, approx, scene in zip(axes, [False, True], scenes):
     annotate_artists.append(scene_artists[1])
 
     im = ax.pcolormesh(
-        X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1, rasterized=True
+        X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1
     )
     im_artists.append(im)
 
@@ -152,7 +152,6 @@ alphas = jnp.logspace(0, 2, steps)  # Values between 1.0 and 100.0
 # Dummy values, to be filled by ``init_func``.
 optimizers = [None, None]
 carries = [(None, None), (None, None)]
-
 
 # sphinx_gallery_defer_figures
 
@@ -213,15 +212,8 @@ def func(frame_alpha):
             base, expo = alpha_str.split("e")
             expo = str(int(expo))  # Remove trailing zeros and +
             axes[i].set_title(
-                r"With approximation - $\alpha="
-                + base[:-1]
-                + r"\times 10^{"
-                + expo
-                + "}$"
+                f"With approximation - $\\alpha={alpha:.2e}$"
             )
-
-    if frame % 20 == 0:
-        fig.savefig(f"opt_alpha_{alpha:.2f}.pgf", dpi=300)
 
 
 anim = FuncAnimation(
