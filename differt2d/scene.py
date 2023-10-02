@@ -375,7 +375,12 @@ class Scene(Plottable):
         return cls(emitters=emitters, receivers=receivers, objects=walls)
 
     @classmethod
-    def basic_scene(cls, *, tx_coords: Array = jnp.array([0.1, 0.1]), rx_coords: Array = jnp.array([0.302, 0.2147])) -> "Scene":
+    def basic_scene(
+        cls,
+        *,
+        tx_coords: Array = jnp.array([0.1, 0.1]),
+        rx_coords: Array = jnp.array([0.302, 0.2147]),
+    ) -> "Scene":
         """
         Instantiates a basic scene with a main room, and a second inner room in the
         lower left corner, with a small entrance.
@@ -425,7 +430,12 @@ class Scene(Plottable):
         return cls(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
 
     @classmethod
-    def square_scene(cls, *, tx_coords: Array = jnp.array([0.2, 0.2]), rx_coords: Array = jnp.array([0.5, 0.6])) -> "Scene":
+    def square_scene(
+        cls,
+        *,
+        tx_coords: Array = jnp.array([0.2, 0.2]),
+        rx_coords: Array = jnp.array([0.5, 0.6]),
+    ) -> "Scene":
         """
         Instantiates a square scene with one main room.
 
@@ -469,7 +479,13 @@ class Scene(Plottable):
         return Scene(emitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
 
     @classmethod
-    def square_scene_with_wall(cls, ratio: float = 0.1, *, tx_coords: Array = jnp.array([0.2, 0.5]), rx_coords: Array = jnp.array([0.8, 0.5])) -> "Scene":
+    def square_scene_with_wall(
+        cls,
+        ratio: float = 0.1,
+        *,
+        tx_coords: Array = jnp.array([0.2, 0.5]),
+        rx_coords: Array = jnp.array([0.8, 0.5]),
+    ) -> "Scene":
         """
         Instantiates a square scene with one main room, and vertical wall in the middle.
 

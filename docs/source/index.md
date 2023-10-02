@@ -41,7 +41,7 @@ If you are intersted in contributing to this tool, please checkout the
     ax = plt.gca()
     scene = Scene.basic_scene()
     X, Y = scene.grid(n=300)
-    
+
     Z = scene.accumulate_on_receivers_grid_over_paths(
         X,
         Y,
