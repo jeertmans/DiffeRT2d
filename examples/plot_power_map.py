@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from chex import Array
 
 from differt2d.scene import Scene
-from differt2d.utils import P0, received_power, setup_fig_for_paper
+from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
 
@@ -43,11 +43,10 @@ scene = Scene.square_scene_with_wall()
 # without approximation, and one showing the power map using approximation.
 
 fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
-setup_fig_for_paper(fig)
 
 annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
 
-X, Y = scene.grid(n=600)
+X, Y = scene.grid(n=300)
 
 for ax, approx in zip(axes, [False, True]):
     scene.plot(
@@ -62,7 +61,7 @@ for ax, approx in zip(axes, [False, True]):
 
     PdB = 10.0 * jnp.log10(P / P0)
 
-    im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, rasterized=True, zorder=-1)
+    im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, zorder=-1)
     cbar = fig.colorbar(im, ax=ax)
     cbar.ax.set_ylabel("Power (dB)")
 
@@ -70,5 +69,4 @@ for ax, approx in zip(axes, [False, True]):
     ax.set_title("With approximation" if approx else "Without approximation")
 
 axes[-1].set_xlabel("x coordinate")
-fig.savefig("power_map.pgf", dpi=300)
-# plt.show()
+plt.show()

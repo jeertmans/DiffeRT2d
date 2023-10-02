@@ -13,6 +13,7 @@ from differt2d.utils import P0, received_power, setup_fig_for_paper
 
 scene = Scene.square_scene_with_obstacle()
 
+
 def objective_function(received_power_per_receiver):
     acc = 0.0
     for p in received_power_per_receiver:
@@ -29,9 +30,7 @@ def loss(tx_coords, scene, *args, **kwargs):
     )
 
 
-f_and_df = jax.value_and_grad(
-    loss
-)
+f_and_df = jax.value_and_grad(loss)
 
 fig1, axes1 = plt.subplots(2, 1, sharex=True, tight_layout=True)
 fig2, axes2 = plt.subplots(1, 4, sharex=True, sharey=True, tight_layout=True)
@@ -107,7 +106,9 @@ for frame, alpha in enumerate(alphas):
             if frame == 0:
                 cbar = fig1.colorbar(im, ax=ax)
                 cbar.ax.set_ylabel("Objective function")
-                ax.set_title("With approximation" if approx else "Without approximation")
+                ax.set_title(
+                    "With approximation" if approx else "Without approximation"
+                )
 
         loss, grads = f_and_df(
             tx_coords,

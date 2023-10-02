@@ -118,9 +118,7 @@ for ax, approx, scene in zip(axes, [False, True], scenes):
     emitter_artists.append(scene_artists[0])
     annotate_artists.append(scene_artists[1])
 
-    im = ax.pcolormesh(
-        X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1
-    )
+    im = ax.pcolormesh(X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1)
     im_artists.append(im)
 
     cbar = fig.colorbar(im, ax=ax)
@@ -174,9 +172,7 @@ def init_func():
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
 
-def func(frame_alpha):
-    frame, alpha = frame_alpha
-
+def func(alpha):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
 
@@ -211,12 +207,8 @@ def func(frame_alpha):
             alpha_str = f"{alpha:.2e}"
             base, expo = alpha_str.split("e")
             expo = str(int(expo))  # Remove trailing zeros and +
-            axes[i].set_title(
-                f"With approximation - $\\alpha={alpha:.2e}$"
-            )
+            axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 
 
-anim = FuncAnimation(
-    fig, func=func, init_func=init_func, frames=enumerate(alphas), interval=100
-)
+anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
 plt.show()
