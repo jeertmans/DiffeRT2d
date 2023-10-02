@@ -65,6 +65,8 @@ jobs:
 
   benchmark:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     env:
       JAX_PLATFORM_NAME: cpu
     steps:

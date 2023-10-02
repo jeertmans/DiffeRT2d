@@ -131,4 +131,5 @@ axes[1].set_ylim([-20, 0])
 
 axes[-1].set_xlabel("x coordinate")
 plt.legend()
+plt.tight_layout()
 plt.show()
