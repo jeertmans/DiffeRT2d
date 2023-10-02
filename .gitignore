@@ -5,3 +5,5 @@ __pycache__/
 docs/build/
 docs/source/apidocs/
 docs/source/examples_gallery/
+
+paper/pgf/

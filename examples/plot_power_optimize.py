@@ -29,7 +29,7 @@ from matplotlib.animation import FuncAnimation
 
 from differt2d.geometry import Point
 from differt2d.scene import Scene
-from differt2d.utils import P0, received_power, setup_fig_for_paper
+from differt2d.utils import P0, received_power
 
 # %%
 # Scene
@@ -91,7 +91,6 @@ f_and_df = jax.value_and_grad(
 #    the problem of non-convergence when not using approximation.
 
 fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
-setup_fig_for_paper(fig)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
@@ -228,5 +227,4 @@ def func(frame_alpha):
 anim = FuncAnimation(
     fig, func=func, init_func=init_func, frames=enumerate(alphas), interval=100
 )
-anim.save("test.gif")
-# plt.show()
+plt.show()

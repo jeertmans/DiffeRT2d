@@ -105,14 +105,15 @@ def setup_fig_for_paper(
     column_width: float = 252.0,
     height_to_width_ratio: Optional[float] = None,
 ) -> None:
-    """Setup a figure to be nicely embedded in the IEEE paper.
+    """
+    Setup a figure to be nicely embedded in the IEEE paper.
 
     :param fig: The figure to setup.
     :param columns: The number of columns on which the figure should span.
-    :param column_width: The width of one column (in pixels), defaults to the
-        column width specified by the IEEE template.
-    :param height_to_width_ratio: If set, the figure's height will be set
-        accordingly, proportional to its width.
+    :param column_width: The width of one column (in pixels), defaults to the column
+        width specified by the IEEE template.
+    :param height_to_width_ratio: If set, the figure's height will be set accordingly,
+        proportional to its width.
     """
     mpl.use("pgf")
     plt.rcParams.update(
