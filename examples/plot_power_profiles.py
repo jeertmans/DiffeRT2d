@@ -46,7 +46,7 @@ scene = Scene.square_scene_with_wall()
 #
 # Below, we setup the plot with two axes.
 
-fig, axes = plt.subplots(2, 1, sharex=True)
+fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
@@ -131,5 +131,4 @@ axes[1].set_ylim([-20, 0])
 
 axes[-1].set_xlabel("x coordinate")
 plt.legend()
-plt.tight_layout()
 plt.show()

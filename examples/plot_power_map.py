@@ -42,7 +42,7 @@ scene = Scene.square_scene_with_wall()
 # Below, we setup the plot to contain two axes: one showing the power map
 # without approximation, and one showing the power map using approximation.
 
-fig, axes = plt.subplots(2, 1, sharex=True)
+fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
 
@@ -69,5 +69,5 @@ for ax, approx in zip(axes, [False, True]):
     ax.set_title("With approximation" if approx else "Without approximation")
 
 axes[-1].set_xlabel("x coordinate")
-plt.tight_layout()
+fig.savefig("power_map.pgf", dpi=300)
 plt.show()

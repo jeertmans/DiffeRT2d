@@ -90,17 +90,18 @@ f_and_df = jax.value_and_grad(
 #    The emitter is intentionnally placed in a zero-gradient zone, to showcase
 #    the problem of non-convergence when not using approximation.
 
-fig, axes = plt.subplots(2, 1, sharex=True)
+fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
+setup_fig_for_paper(fig)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
 scene.emitters = dict(
     tx=Point(point=jnp.array([0.5, 0.7])),
 )
-scene.receivers = dict(
-    tx_0=Point(point=jnp.array([0.3, 0.1])),
-    tx_1=Point(point=jnp.array([0.5, 0.1])),
-)
+scene.receivers = {
+    r"rx\_0": Point(point=jnp.array([0.3, 0.1])),
+    r"rx\_1": Point(point=jnp.array([0.5, 0.1])),
+}
 
 X, Y = scene.grid(n=300)
 
@@ -128,7 +129,7 @@ for ax, approx, scene in zip(axes, [False, True], scenes):
 
 axes[-1].set_xlabel("x coordinate")
 
-steps = 100  # In how many steps we hope to converge
+steps = 101  # In how many steps we hope to converge
 
 # sphinx_gallery_defer_figures
 
@@ -173,21 +174,13 @@ def init_func():
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
 
-def func(alpha):
+def func(frame_alpha):
+    frame, alpha = frame_alpha
+
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
-        loss, grads = f_and_df(
-            tx_coords,
-            scenes[i],
-            fun=received_power,
-            max_order=0,
-            approx=approx,
-            alpha=alpha,
-        )
-        updates, opt_state = optimizers[i].update(grads, opt_state)
-        tx_coords = tx_coords + updates
 
-        carries[i] = tx_coords, opt_state
+        # Plotting prior to updating
         scenes[i].emitters["tx"].point = tx_coords
         emitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
         annotate_artists[i].set_x(tx_coords[0])
@@ -201,10 +194,37 @@ def func(alpha):
         )
         im_artists[i].set_array(F)
 
+        loss, grads = f_and_df(
+            tx_coords,
+            scenes[i],
+            fun=received_power,
+            max_order=0,
+            approx=approx,
+            alpha=alpha,
+        )
+        updates, opt_state = optimizers[i].update(grads, opt_state)
+        tx_coords = tx_coords + updates
+
+        carries[i] = tx_coords, opt_state
+
+        if approx:
+            alpha_str = f"{alpha:.2e}"
+            base, expo = alpha_str.split("e")
+            expo = str(int(expo))  # Remove trailing zeros and +
+            axes[i].set_title(
+                r"With approximation - $\alpha="
+                + base[:-1]
+                + r"\times 10^{"
+                + expo
+                + "}$"
+            )
+
         if approx:
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 
 
-anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
-plt.tight_layout()
-plt.show()
+anim = FuncAnimation(
+    fig, func=func, init_func=init_func, frames=enumerate(alphas), interval=100
+)
+anim.save("test.gif")
+# plt.show()
