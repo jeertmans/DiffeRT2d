@@ -206,4 +206,5 @@ def func(alpha):
 
 
 anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
+plt.tight_layout()
 plt.show()

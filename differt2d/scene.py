@@ -583,27 +583,36 @@ class Scene(Plottable):
         self,
         ax,
         *args: Any,
+        emitters: bool = True,
         emitters_args: Sequence = (),
         emitters_kwargs: Dict[str, Any] = {},
+        objects: bool = True,
         objects_args: Sequence = (),
         objects_kwargs: Dict[str, Any] = {},
+        receivers: bool = True,
         receivers_args: Sequence = (),
         receivers_kwargs: Dict[str, Any] = {},
         annotate: bool = True,
         **kwargs: Any,
     ) -> List[Artist]:
         """
+        :param emitters:
+            If set, includes emitters in the plot.
         :param emitters_args:
             Arguments to be passed to each emitter's plot function.
-        :param tx_kwargs:
+        :param emitters_kwargs:
             Keyword arguments to be passed to each emitter's plot function.
+        :param objects:
+            If set, includes objects in the plot.
         :param objects_args:
             Arguments to be passed to the each object' plot function.
         :param objects_kwargs:
             Keyword arguments to be passed to each object' plot function.
-        :param receiver_args:
+        :param receivers:
+            If set, includes receivers in the plot.
+        :param receivers_args:
             Arguments to be passed to each receiver's plot function.
-        :param receiver_kwargs:
+        :param receivers_kwargs:
             Keyword arguments to be passed to each receiver's plot function.
         :param annotate:
             If set, will annotate all emitters and receivers with their name,
@@ -615,34 +624,37 @@ class Scene(Plottable):
 
         artists = []
 
-        for e_key, emitter in self.emitters.items():
-            artists.extend(
-                emitter.plot(
-                    ax,
-                    *emitters_args,
-                    *args,
-                    annotate=e_key if annotate else None,
-                    **emitters_kwargs,
-                    **kwargs,
+        if emitters:
+            for e_key, emitter in self.emitters.items():
+                artists.extend(
+                    emitter.plot(
+                        ax,
+                        *emitters_args,
+                        *args,
+                        annotate=e_key if annotate else None,
+                        **emitters_kwargs,
+                        **kwargs,
+                    )
                 )
-            )
 
-        for r_key, receiver in self.receivers.items():
-            artists.extend(
-                receiver.plot(
-                    ax,
-                    *receivers_args,
-                    *args,
-                    annotate=r_key if annotate else None,
-                    **receivers_kwargs,
-                    **kwargs,
+        if objects:
+            for obj in self.objects:
+                artists.extend(
+                    obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs)  # type: ignore[union-attr]
                 )
-            )
 
-        for obj in self.objects:
-            artists.extend(
-                obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs)  # type: ignore[union-attr]
-            )
+        if receivers:
+            for r_key, receiver in self.receivers.items():
+                artists.extend(
+                    receiver.plot(
+                        ax,
+                        *receivers_args,
+                        *args,
+                        annotate=r_key if annotate else None,
+                        **receivers_kwargs,
+                        **kwargs,
+                    )
+                )
 
         return artists
 

@@ -6,9 +6,6 @@ This examples shows how one can plot the received power map, i.e.,
 the power received at each (x, y) coordinate as the sum of the power from
 each emitter.
 
-The receivers shown on the plot is just indicative, but are not actually used
-in the process of computing the power map.
-
 The first plot shows the power map when no approximation is used, and the
 second shows the power map, but when approximation is enabled (with default parameters,
 see :mod:`defaults<differt2d.defaults>`).
@@ -55,7 +52,7 @@ for ax, approx in zip(axes, [False, True]):
     scene.plot(
         ax,
         emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
-        receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
+        receivers=False,
     )
 
     P: Array = scene.accumulate_on_receivers_grid_over_paths(
@@ -72,4 +69,5 @@ for ax, approx in zip(axes, [False, True]):
     ax.set_title("With approximation" if approx else "Without approximation")
 
 axes[-1].set_xlabel("x coordinate")
+plt.tight_layout()
 plt.show()
