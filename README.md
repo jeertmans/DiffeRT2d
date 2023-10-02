@@ -2,6 +2,8 @@
 
 # DiffeRT2d
 
+[![Latest Release][pypi-version-badge]][pypi-version-url]
+[![Python version][pypi-python-version-badge]][pypi-version-url]
 [![Documentation][documentation-badge]][documentation-url]
 [![codecov][codecov-badge]][codecov-url]
 
@@ -123,6 +125,9 @@ you can do so at: [jeertmans@icloud.com](mailto:jeertmans@icloud.com).
 
 <!-- end contact -->
 
+[pypi-version-badge]: https://img.shields.io/pypi/v/DiffeRT2d?label=DiffeRT2d
+[pypi-version-url]: https://pypi.org/project/DiffeRT2d/
+[pypi-python-version-badge]: https://img.shields.io/pypi/pyversions/DiffeRT2d
 [documentation-badge]: https://img.shields.io/website?down_color=lightgrey&down_message=offline&label=documentation&up_color=green&up_message=online&url=https%3A%2F%2Feertmans.be%2FDiffeRT2d%2F
 [documentation-url]: https://eertmans.be/DiffeRT2d/
 [codecov-badge]: https://codecov.io/gh/jeertmans/DiffeRT2d/branch/main/graph/badge.svg?token=1dJ1AKWMR5
