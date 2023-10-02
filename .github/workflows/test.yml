@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Poetry
       run: pipx install poetry
@@ -39,7 +39,7 @@ jobs:
       JAX_PLATFORM_NAME: cpu
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Poetry
       run: pipx install poetry
@@ -69,7 +69,7 @@ jobs:
       JAX_PLATFORM_NAME: cpu
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Poetry
       run: pipx install poetry
@@ -87,7 +87,7 @@ jobs:
     - name: Run Benchmarks on changes
       run: poetry run python benchmark.py -o changes.json
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.base.sha }}
         clean: false
