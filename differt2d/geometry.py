@@ -701,13 +701,13 @@ class Path(Plottable):
         return jnp.vstack([jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)])
 
 
-@partial(jax.jit, static_argnames=("size",))
+@partial(jax.jit, inline=True, static_argnames=["size"])
 def parametric_to_cartesian_from_slice(obj, parametric_coords, start, size):
     parametric_coords = jax.lax.dynamic_slice(parametric_coords, (start,), (size,))
     return obj.parametric_to_cartesian(parametric_coords)
 
 
-@partial(jax.jit, static_argnames=("n",))
+@partial(jax.jit, inline=True, static_argnames=["n"])
 def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords):
     cartesian_coords = jnp.empty((n + 2, 2))
     cartesian_coords = cartesian_coords.at[0].set(tx_coords)
@@ -741,7 +741,7 @@ class ImagePath(Path):
 
         :param tx: The emitting node, (2,).
         :param objects:
-            The list of objects to interact with (order is important).
+            The list of walls to interact with (order is important).
         :param rx: The receiving node, (2,).
         :return: The resulting path of the Image method.
 
@@ -897,7 +897,7 @@ class MinPath(Path):
     """A path object that was obtained with the Min-Path-Tracing method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
+    @partial(jax.jit, static_argnames=["cls", "steps", "optimizer"])
     def from_tx_objects_rx(
         cls,
         tx: Array,
