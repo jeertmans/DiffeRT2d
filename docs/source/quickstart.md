@@ -124,7 +124,7 @@ like the received power, on a grid and plot it:
     scene = Scene.square_scene()
     wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
     scene.add_objects([wall])
-    scene.plot(ax)
+    scene.plot(ax, receivers=True)
 
     X, Y = scene.grid(n=300)
     Z = scene.accumulate_on_receivers_grid_over_paths(
@@ -133,7 +133,7 @@ like the received power, on a grid and plot it:
         fun=received_power,
         reduce=True
     )
-    ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z))
+    ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z), zorder=-1)
     plt.show()
 
 The above plot shows, for every possible receiver position in the scene,
@@ -156,7 +156,7 @@ if we were to simulate a higher order of interacion, e.g.:
     scene = Scene.square_scene()
     wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
     scene.add_objects([wall])
-    scene.plot(ax)
+    scene.plot(ax, receivers=True)
 
     X, Y = scene.grid(n=300)
     Z = scene.accumulate_on_receivers_grid_over_paths(
@@ -166,7 +166,7 @@ if we were to simulate a higher order of interacion, e.g.:
         reduce=True,
         max_order=2  # The default value was 1
     )
-    ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z))
+    ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z), zorder=-1)
     plt.show()
 
 ```
