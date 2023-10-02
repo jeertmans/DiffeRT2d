@@ -23,7 +23,7 @@ from differt2d.logic import (
     true_value,
 )
 
-approx = pytest.mark.parametrize(("approx",), [(True,), (False,)])
+approx = pytest.mark.parametrize(("approx",), [(True,), (False,), (None,)])
 alpha = pytest.mark.parametrize(
     ("alpha",), [(1e-3,), (1e-2,), (1e-1,), (1e-0,), (1e1,)]
 )
@@ -233,7 +233,7 @@ def test_invalid_activation(function):
 @approx
 def test_logical_or(xy, approx):
     x, y = xy
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = jnp.maximum(x, y)
     else:
         expected = jnp.logical_or(x, y)
@@ -246,7 +246,7 @@ def test_logical_or(xy, approx):
 @approx
 def test_logical_and(xy, approx):
     x, y = xy
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = jnp.minimum(x, y)
     else:
         expected = jnp.logical_and(x, y)
@@ -258,7 +258,7 @@ def test_logical_and(xy, approx):
 
 @approx
 def test_logical_not(x, approx):
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = jnp.subtract(1.0, x)
     else:
         expected = jnp.logical_not(x)
@@ -270,7 +270,7 @@ def test_logical_not(x, approx):
 
 @approx
 def test_logical_all(x, approx):
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         x = jnp.array([0.8, 0.2, 0.3])
         expected = jnp.min(x)
     else:
@@ -284,7 +284,7 @@ def test_logical_all(x, approx):
 
 @approx
 def test_logical_any(x, approx):
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         x = jnp.array([0.8, 0.2, 0.3])
         expected = jnp.max(x)
     else:
@@ -301,7 +301,7 @@ def test_logical_any(x, approx):
 @function
 def test_greater(xy, approx, alpha, function):
     x, y = xy
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = activation(x - y, alpha=alpha, function=function)
     else:
         expected = jnp.greater(x, y)
@@ -316,7 +316,7 @@ def test_greater(xy, approx, alpha, function):
 @function
 def test_greater_equal(xy, approx, alpha, function):
     x, y = xy
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = activation(x - y, alpha=alpha, function=function)
     else:
         expected = jnp.greater_equal(x, y)
@@ -331,7 +331,7 @@ def test_greater_equal(xy, approx, alpha, function):
 @function
 def test_less(xy, approx, alpha, function):
     x, y = xy
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = activation(y - x, alpha=alpha, function=function)
     else:
         expected = jnp.less(x, y)
@@ -346,7 +346,7 @@ def test_less(xy, approx, alpha, function):
 @function
 def test_less_equal(xy, approx, alpha, function):
     x, y = xy
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = activation(y - x, alpha=alpha, function=function)
     else:
         expected = jnp.less_equal(x, y)
@@ -359,7 +359,7 @@ def test_less_equal(xy, approx, alpha, function):
 @approx
 @tol
 def test_is_true(x, approx, tol):
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = jnp.greater(x, 1.0 - tol)
     else:
         x = jnp.greater(x, 1.0 - tol)
@@ -373,7 +373,7 @@ def test_is_true(x, approx, tol):
 @approx
 @tol
 def test_is_false(x, approx, tol):
-    if approx:
+    if approx or (approx is None and jax.config.jax_enable_approx):
         expected = jnp.less(x, tol)
     else:
         x = jnp.greater(x, tol)
@@ -394,5 +394,6 @@ def test_true_value(approx, tol):
 @approx
 @tol
 def test_false_value(approx, tol):
+    print("approx", approx, jax.config.jax_enable_approx)
     x = false_value(approx=approx)
     assert is_false(x, tol=tol, approx=approx)

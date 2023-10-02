@@ -45,7 +45,7 @@ pretty useful for optimization problems.
 
     from differt2d.geometry import Wall
 
-    wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
+    wall = Wall(points=jnp.array([[0.8, 0.2], [0.8, 0.8]]))
     scene.add_objects([wall])
 
 Plotting utils
@@ -96,7 +96,7 @@ The easiest way to trace all paths from every emitter to every receiver is to us
     wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
     scene.add_objects([wall])
     scene.plot(ax)
-    
+
     for _, _, path, _ in scene.all_valid_paths():
         path.plot(ax, zorder=-1)  # -1 to draw below the scene objects
 
@@ -125,7 +125,7 @@ like the received power, on a grid and plot it:
     wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
     scene.add_objects([wall])
     scene.plot(ax)
-    
+
     X, Y = scene.grid(n=300)
     Z = scene.accumulate_on_receivers_grid_over_paths(
         X,
@@ -157,7 +157,7 @@ if we were to simulate a higher order of interacion, e.g.:
     wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
     scene.add_objects([wall])
     scene.plot(ax)
-    
+
     X, Y = scene.grid(n=300)
     Z = scene.accumulate_on_receivers_grid_over_paths(
         X,
