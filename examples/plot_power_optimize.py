@@ -29,7 +29,7 @@ from matplotlib.animation import FuncAnimation
 
 from differt2d.geometry import Point
 from differt2d.scene import Scene
-from differt2d.utils import P0, received_power
+from differt2d.utils import P0, received_power, setup_fig_for_paper
 
 # %%
 # Scene
@@ -119,7 +119,9 @@ for ax, approx, scene in zip(axes, [False, True], scenes):
     emitter_artists.append(scene_artists[0])
     annotate_artists.append(scene_artists[1])
 
-    im = ax.pcolormesh(X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1)
+    im = ax.pcolormesh(
+        X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1, rasterized=True
+    )
     im_artists.append(im)
 
     cbar = fig.colorbar(im, ax=ax)
@@ -219,8 +221,8 @@ def func(frame_alpha):
                 + "}$"
             )
 
-        if approx:
-            axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
+    if frame % 20 == 0:
+        fig.savefig(f"opt_alpha_{alpha:.2f}.pgf", dpi=300)
 
 
 anim = FuncAnimation(
