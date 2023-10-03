@@ -100,7 +100,7 @@ jobs:
     - name: Compare benchmarks
       run: |
         echo 'results<<EOF' >> $GITHUB_OUTPUT
-        poetry run python -m pyperf compare_to --table before.json changes.json >> $GITHUB_OUTPUT
+        poetry run python -m pyperf compare_to --table --table-format md before.json changes.json >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
       id: compare
 
@@ -110,9 +110,7 @@ jobs:
       with:
         message: |
           Benchmark results:
-          ```
           ${{ steps.compare.outputs.results }}
-          ```
         comment_tag: benchmarks
 
       id: comment
@@ -121,6 +119,4 @@ jobs:
       if: steps.comment.outcome != 'success'
       run: |
         echo '### Benchmark results' >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
         echo '${{ steps.compare.outputs.results }}' >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
