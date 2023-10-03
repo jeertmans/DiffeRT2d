@@ -34,7 +34,7 @@ X, Y = scene.grid(n=100)
 
 
 def make_benchmark_name(*args):
-    caller_name = inspect.stack()[1][3]
+    caller_name = inspect.stack()[1].function
 
     if caller_name.startswith("bench_"):
         caller_name = caller_name[6:]
