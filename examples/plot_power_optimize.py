@@ -20,6 +20,7 @@ step after step, using a geometric progression.
 # First, we need to import the necessary modules.
 
 from copy import deepcopy as copy
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -172,7 +173,7 @@ def init_func():
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
 
-def func(alpha):
+def func(alpha, max_order):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
 
@@ -185,7 +186,12 @@ def func(alpha):
         F = objective_function(
             power
             for _, power in scenes[i].accumulate_on_emitters_grid_over_paths(
-                X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
+                X,
+                Y,
+                fun=received_power,
+                max_order=max_order,
+                approx=approx,
+                alpha=alpha,
             )
         )
         im_artists[i].set_array(F)
@@ -194,7 +200,7 @@ def func(alpha):
             tx_coords,
             scenes[i],
             fun=received_power,
-            max_order=0,
+            max_order=max_order,
             approx=approx,
             alpha=alpha,
         )
@@ -210,5 +216,29 @@ def func(alpha):
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 
 
-anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
+anim = FuncAnimation(
+    fig,
+    func=partial(func, max_order=0),
+    init_func=init_func,
+    frames=alphas,
+    interval=100,
+)
+plt.show()
+
+
+# %%
+# Allowing one reflection
+# -----------------------
+#
+# Of course, the zero-gradient region is only present because we did not account
+# for any reflection. We can run the simulation again, but with up to one order
+# reflection, and see that both cases now converge.
+
+anim = FuncAnimation(
+    fig,
+    func=partial(func, max_order=1),
+    init_func=init_func,
+    frames=alphas,
+    interval=100,
+)
 plt.show()

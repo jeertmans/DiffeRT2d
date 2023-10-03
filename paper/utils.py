@@ -2,7 +2,6 @@ from typing import Optional
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
 from matplotlib.figure import Figure
 
 
