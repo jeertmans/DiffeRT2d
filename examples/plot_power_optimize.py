@@ -20,7 +20,6 @@ step after step, using a geometric progression.
 # First, we need to import the necessary modules.
 
 from copy import deepcopy as copy
-from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -42,10 +41,6 @@ from differt2d.utils import P0, received_power
 # You can easily change the scene by modifying the following line:
 
 scene = Scene.square_scene_with_obstacle()
-scene.receivers = {
-    r"rx_0": Point(point=jnp.array([0.3, 0.1])),
-    r"rx_1": Point(point=jnp.array([0.5, 0.1])),
-}
 
 # %%
 # Defining an objective function
@@ -85,6 +80,62 @@ f_and_df = jax.value_and_grad(
 )  # Generates a function that evaluates f and its gradient
 
 # %%
+# Plot setup
+# ----------
+#
+# Below, we setup the plot for animation.
+#
+# .. note::
+#
+#    The emitter is intentionnally placed in a zero-gradient zone, to showcase
+#    the problem of non-convergence when not using approximation. Note that
+#    the zero gradient region can be avoided if one simulates a ``max_order``
+#    greater than ``0`` (e.g., ``1`` is sufficient here). This, of course,
+#    depends on the scene.
+
+fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
+
+annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
+
+scene.emitters = dict(
+    tx=Point(point=jnp.array([0.5, 0.7])),
+)
+scene.receivers = {
+    r"rx_0": Point(point=jnp.array([0.3, 0.1])),
+    r"rx_1": Point(point=jnp.array([0.5, 0.1])),
+}
+
+X, Y = scene.grid(n=300)
+
+im_artists = []
+emitter_artists = []
+annotate_artists = []
+scenes = [scene, copy(scene)]  # Need a copy, because scenes will diverge
+
+for ax, approx, scene in zip(axes, [False, True], scenes):
+    scene_artists = scene.plot(
+        ax,
+        emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+        receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
+    )
+    emitter_artists.append(scene_artists[0])
+    annotate_artists.append(scene_artists[1])
+
+    im = ax.pcolormesh(X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1)
+    im_artists.append(im)
+
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.ax.set_ylabel("Objective function")
+    ax.set_ylabel("y coordinate")
+    ax.set_title("With approximation" if approx else "Without approximation")
+
+axes[-1].set_xlabel("x coordinate")
+
+steps = 101  # In how many steps we hope to converge
+
+# sphinx_gallery_defer_figures
+
+# %%
 # Choosing the right alpha values
 # -------------------------------
 #
@@ -97,35 +148,11 @@ f_and_df = jax.value_and_grad(
 # A basic optimizer is used, but your are encouraged to test various
 # ``alpha`` progressions and optimizers.
 
-steps = 101  # In how many steps we hope to converge
 alphas = jnp.logspace(0, 2, steps)  # Values between 1.0 and 100.0
-x0 = jnp.array([0.5, 0.7])  # Starting point for tx coordinates
 
-
-def new_optimizer():
-    return optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
-
-
-def init_carry(optimizer, tx_coords):
-    return x0, optimizer.init(x0)
-
-# %%
-# Plot setup
-# ----------
-#
-# Below, we setup the plot for animation.
-#
-# .. note::
-#
-#    The emitter is intentionnally placed in a zero-gradient zone, to showcase
-#    the problem of non-convergence when not using approximation.
-
-
-fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
-
-annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
-
-X, Y = scene.grid(n=300)
+# Dummy values, to be filled by ``init_func``.
+optimizers = [None, None]
+carries = [(None, None), (None, None)]
 
 # sphinx_gallery_defer_figures
 
@@ -139,42 +166,16 @@ X, Y = scene.grid(n=300)
 # Here, we choose to play one optimization step per frame, and the pass
 # the corresponding ``alpha`` values directly as an argument.
 
-# Dummy values, to be filled by ``init_func``.
-optimizers = [None, None]
-carries = [(None, None), (None, None)]
 
-im_artists = [None, None]
-emitter_artists = [None, None]
-annotate_artists = [None, None]
-scenes = [None, None]
-
-
-def init_func(fig, axes):
-    fig.clf()
-    for i, approx in enumerate([False, True]):
-        ax = axes[i]
-        scenes[i] = copy(scene)
-        scenes[i].emitters = {"tx": Point(point=x0)}
-        scene_artists = scenes[i].plot(
-            ax,
-            emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
-            receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
-        )
-        emitter_artists[i] = scene_artists[0]
-        annotate_artists[i] = scene_artists[1]
-        im = ax.pcolormesh(X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1)
-        im_artists[i] = im
-        cbar = fig.colorbar(im, ax=ax)
-        cbar.ax.set_ylabel("Objective function")
-        ax.set_ylabel("y coordinate")
-        ax.set_title("With approximation" if approx else "Without approximation")
-        optimizers[i] = new_optimizer()
-        carries[i] = init_carry(optimizers[i], x0)
-
-    axes[-1].set_xlabel("x coordinate")
+def init_func():
+    tx_coords = jnp.array([0.5, 0.7])
+    for i, scene in enumerate(scenes):
+        scene.emitters["tx"].point = tx_coords
+        optimizers[i] = optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
+        carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
 
-def func(alpha, max_order):
+def func(alpha):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
 
@@ -187,12 +188,7 @@ def func(alpha, max_order):
         F = objective_function(
             power
             for _, power in scenes[i].accumulate_on_emitters_grid_over_paths(
-                X,
-                Y,
-                fun=received_power,
-                max_order=max_order,
-                approx=approx,
-                alpha=alpha,
+                X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
             )
         )
         im_artists[i].set_array(F)
@@ -201,7 +197,7 @@ def func(alpha, max_order):
             tx_coords,
             scenes[i],
             fun=received_power,
-            max_order=max_order,
+            max_order=0,
             approx=approx,
             alpha=alpha,
         )
@@ -217,30 +213,5 @@ def func(alpha, max_order):
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 
 
-anim = FuncAnimation(
-    fig,
-    func=partial(func, max_order=0),
-    init_func=partial(init_func, fig=fig, axes=axes),
-    frames=alphas,
-    interval=100,
-)
-plt.show()
-
-
-# %%
-# Allowing one reflection
-# -----------------------
-#
-# Of course, the zero-gradient region is only present because we did not account
-# for any reflection. We can run the simulation again, but with up to one order
-# reflection, and see that both cases now converge.
-
-fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
-anim = FuncAnimation(
-    fig,
-    func=partial(func, max_order=1),
-    init_func=partial(init_func, fig=fig, axes=axes),
-    frames=alphas,
-    interval=100,
-)
+anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
 plt.show()
