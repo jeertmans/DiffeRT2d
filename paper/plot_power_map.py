@@ -1,12 +1,12 @@
-# type: ignore
 from pathlib import Path
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from chex import Array
+from utils import setup_fig_for_paper
 
 from differt2d.scene import Scene
-from differt2d.utils import P0, received_power, setup_fig_for_paper
+from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
 

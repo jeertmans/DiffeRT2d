@@ -1,4 +1,3 @@
-# type: ignore
 from copy import deepcopy as copy
 from pathlib import Path
 
@@ -6,10 +5,11 @@ import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import optax
+from utils import setup_fig_for_paper
 
 from differt2d.geometry import Point
 from differt2d.scene import Scene
-from differt2d.utils import P0, received_power, setup_fig_for_paper
+from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_obstacle()
 
