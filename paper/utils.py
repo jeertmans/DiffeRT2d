@@ -1,18 +1,30 @@
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
+mpl.use("pgf")
+plt.rcParams.update(
+    {
+        "pgf.texsystem": "pdflatex",
+        "font.family": "serif",
+        "font.size": 10,
+        "text.usetex": False,
+        "pgf.rcfonts": False,
+    }
+)
 
-def setup_fig_for_paper(
-    fig: Figure,
+
+def create_fig_for_paper(
+    *args: Any,
     columns: int = 1,
     column_width: float = 252.0,
     height_to_width_ratio: Optional[float] = None,
-) -> None:
+    **kwargs,
+) -> Tuple[Figure, Any]:
     """
-    Setup a figure to be nicely embedded in the IEEE paper.
+    Creates a new figure (and subplots), with a nice setup for IEEE papers.
 
     :param fig: The figure to setup.
     :param columns: The number of columns on which the figure should span.
@@ -21,21 +33,7 @@ def setup_fig_for_paper(
     :param height_to_width_ratio: If set, the figure's height will be set accordingly,
         proportional to its width.
     """
-    mpl.use("pgf")
-    plt.rcParams.update(
-        {
-            "font.family": "serif",  # use serif/main font for text elements
-            "pgf.texsystem": "pdflatex",
-            "pgf.rcfonts": False,
-            "pgf.preamble": "\n".join(
-                [
-                    r"\usepackage[utf8x]{inputenc}",
-                    r"\usepackage[T1]{fontenc}",
-                    r"\usepackage{cmbright}",
-                ]
-            ),
-        }
-    )
+    fig, axes = plt.subplots(*args, **kwargs)
 
     px_to_inches = 0.0138889
     figwidth = px_to_inches * column_width * columns
@@ -43,3 +41,5 @@ def setup_fig_for_paper(
 
     if height_to_width_ratio:
         fig.set_figheight(height_to_width_ratio * figwidth)
+
+    return fig, axes

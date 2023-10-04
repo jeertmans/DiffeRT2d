@@ -1,17 +1,15 @@
 from pathlib import Path
 
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
 from chex import Array
-from utils import setup_fig_for_paper
+from utils import create_fig_for_paper
 
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
 
-fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
-setup_fig_for_paper(fig)
+fig, axes = create_fig_for_paper(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
 

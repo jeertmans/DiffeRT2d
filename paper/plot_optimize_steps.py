@@ -3,9 +3,8 @@ from pathlib import Path
 
 import jax
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
 import optax
-from utils import setup_fig_for_paper
+from utils import create_fig_for_paper
 
 from differt2d.geometry import Point
 from differt2d.scene import Scene
@@ -32,10 +31,16 @@ def loss(tx_coords, scene, *args, **kwargs):
 
 f_and_df = jax.value_and_grad(loss)
 
-fig1, axes1 = plt.subplots(2, 1, sharex=True, tight_layout=True)
-fig2, axes2 = plt.subplots(1, 4, sharex=True, sharey=True, tight_layout=True)
-setup_fig_for_paper(fig1)
-setup_fig_for_paper(fig2, columns=2, height_to_width_ratio=1.0 / 3.0)
+fig1, axes1 = create_fig_for_paper(2, 1, sharex=True, tight_layout=True)
+fig2, axes2 = create_fig_for_paper(
+    1,
+    4,
+    sharex=True,
+    sharey=True,
+    tight_layout=True,
+    columns=2,
+    height_to_width_ratio=1.0 / 3.0,
+)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
