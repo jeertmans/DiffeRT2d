@@ -12,6 +12,7 @@ plt.rcParams.update(
         "font.size": 10,
         "text.usetex": False,
         "pgf.rcfonts": False,
+        "image.cmap": "plasma",
     }
 )
 

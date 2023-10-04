@@ -299,6 +299,7 @@ class Point(Plottable):
         ax: Axes,
         *args: Any,
         annotate: Optional[str] = None,
+        annotate_offset: Array = jnp.array([0.0, 0.0]),
         annotate_kwargs: Mapping[str, Any] = {},
         **kwargs: Any,
     ) -> List[Artist]:
@@ -321,8 +322,9 @@ class Point(Plottable):
         )
 
         if annotate:
+            xytext = self.point + jnp.asarray(annotate_offset, dtype=float)
             artists.append(
-                ax.annotate(annotate, xy=(x, y), xytext=(x, y), **annotate_kwargs)
+                ax.annotate(annotate, xy=(x, y), xytext=xytext, **annotate_kwargs)
             )
 
         return artists

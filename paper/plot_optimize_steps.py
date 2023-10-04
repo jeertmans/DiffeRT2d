@@ -42,7 +42,11 @@ fig2, axes2 = create_fig_for_paper(
     height_to_width_ratio=1.0 / 3.0,
 )
 
-annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
+
+annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
+point_kwargs = dict(
+    markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
+)
 
 scene.emitters = dict(
     tx=Point(point=jnp.array([0.5, 0.7])),
@@ -96,8 +100,8 @@ for frame, alpha in enumerate(alphas):
 
             scenes[i].plot(
                 ax,
-                emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
-                receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
+                emitters_kwargs=point_kwargs,
+                receivers_kwargs=point_kwargs,
             )
 
             F = objective_function(

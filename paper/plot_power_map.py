@@ -11,14 +11,17 @@ scene = Scene.square_scene_with_wall()
 
 fig, axes = create_fig_for_paper(2, 1, sharex=True, tight_layout=True)
 
-annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
+annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
+point_kwargs = dict(
+    markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
+)
 
 X, Y = scene.grid(n=600)
 
 for ax, approx in zip(axes, [False, True]):
     scene.plot(
         ax,
-        emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+        emitters_kwargs=point_kwargs,
         receivers=False,
     )
 
