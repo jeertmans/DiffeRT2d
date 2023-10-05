@@ -178,7 +178,7 @@ becomes straighforward, with :func:`jax.grad` or :func:`jax.value_and_grad`.
 To make it easy, we also provide ``grad`` and ``value_and_grad`` options in
 both
 :meth:`Scene.accumulate_on_emitters_grid_over_paths<differt.scene.Scene.accumulate_on_emitters_grid_over_paths>`
-and 
+and
 both
 :meth:`Scene.accumulate_on_receivers_grid_over_paths<differt.scene.Scene.accumulate_on_receivers_grid_over_paths>`.
 

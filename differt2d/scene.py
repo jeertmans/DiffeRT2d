@@ -914,7 +914,10 @@ class Scene(Plottable):
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
-    ) -> Union[Iterator[Tuple[str, Array]], Array]:
+    ) -> Union[
+        Iterator[Tuple[str, Union[Array, Tuple[Array, Array]]]],
+        Union[Array, Tuple[Array, Array]],
+    ]:
         """
         Repeatedly calls ``fun`` on all paths between the receivers in the scene and
         every emitter coordinate in :python:`(X, Y)`, and accumulates the results over
@@ -1003,7 +1006,16 @@ class Scene(Plottable):
             return ((r_key, vfacc(grid, receiver)) for _, (r_key, receiver) in pairs)
 
         if reduce_all:
-            return sum(p for _, p in results())
+            if value_and_grad:
+                Z = 0.0
+                dZ = 0.0
+                for _, (p, dp) in results():
+                    Z = Z + p
+                    dZ = dZ + dp
+
+                return Z, dZ
+            else:
+                return sum(p for _, p in results())
         else:
             return results()
 
@@ -1022,7 +1034,10 @@ class Scene(Plottable):
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
-    ) -> Union[Iterator[Tuple[str, Array]], Array]:
+    ) -> Union[
+        Iterator[Tuple[str, Union[Array, Tuple[Array, Array]]]],
+        Union[Array, Tuple[Array, Array]],
+    ]:
         """
         Repeatedly calls ``fun`` on all paths between the emitters in the scene and
         every receiver coordinate in :python:`(X, Y)`, and accumulates the results over
@@ -1111,6 +1126,15 @@ class Scene(Plottable):
             return ((e_key, vfacc(emitter, grid)) for (e_key, emitter), _ in pairs)
 
         if reduce_all:
-            return sum(p for _, p in results())
+            if value_and_grad:
+                Z = 0.0
+                dZ = 0.0
+                for _, (p, dp) in results():
+                    Z = Z + p
+                    dZ = dZ + dp
+
+                return Z, dZ
+            else:
+                return sum(p for _, p in results())
         else:
             return results()
