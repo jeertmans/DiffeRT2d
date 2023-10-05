@@ -187,6 +187,7 @@ both
 
     import jax.numpy as jnp
     import matplotlib.pyplot as plt
+    from matplotlib.colors import LogNorm
 
     from differt2d.geometry import Wall
     from differt2d.scene import Scene
@@ -206,7 +207,14 @@ both
         reduce_all=True,
         grad=True,
     )
-    ax.pcolormesh(X, Y, jnp.linalg.norm(dZ, axis=-1), zorder=-1)
+    ndZ = jnp.linalg.norm(dZ, axis=-1)  # Norm of gradient
+    ax.pcolormesh(
+        X,
+        Y,
+        ndZ,
+        norm=LogNorm(vmin=ndZ.min(), vmax=ndZ.max()),  # Log scale
+        zorder=-1
+    )
     plt.show()
 
 ```
