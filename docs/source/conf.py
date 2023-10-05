@@ -9,7 +9,7 @@
 
 import functools
 import inspect
-from pathlib import Path
+from datetime import date
 from textwrap import dedent
 
 import qtgallery
@@ -17,7 +17,7 @@ from sphinx.ext.autodoc import between
 from sphinx.util.inspect import isclassmethod
 
 project = "DiffeRT2d"
-copyright = "2023, Jérome Eertmans"
+copyright = f"{date.today().year}, Jérome Eertmans"
 author = "Jérome Eertmans"
 
 # -- General configuration ---------------------------------------------------
@@ -69,7 +69,10 @@ sphinx_gallery_conf = {
     "image_scrapers": ("matplotlib", qtgallery.qtscraper),
     "reset_modules": (qtgallery.reset_qapp,),
     "matplotlib_animations": True,
-    "backreferences_dir": Path("reference"),
+    "backreferences_dir": "gen_modules/backreferences",
+    "doc_module": ("differt2d", "numpy", "jax", "optax", "matplotlib"),
+    "image_srcset": ["2x"],
+    "show_api_usage": True,
 }
 
 qtgallery_conf = {
