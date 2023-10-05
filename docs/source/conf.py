@@ -71,6 +71,9 @@ sphinx_gallery_conf = {
     "matplotlib_animations": True,
     "backreferences_dir": "gen_modules/backreferences",
     "doc_module": ("differt2d", "numpy", "jax", "optax", "matplotlib"),
+    "reference_url": {
+        "differt2d": None,
+    },
     "image_srcset": ["2x"],
     "show_api_usage": True,
 }
