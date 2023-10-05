@@ -137,5 +137,5 @@ for frame, alpha in enumerate(alphas):
 folder = Path(__file__).parent / "pgf"
 folder.mkdir(exist_ok=True)
 
-fig1.savefig(folder / "optimize_start.pdf", dpi=300)
-fig2.savefig(folder / "optimize_steps.pdf", dpi=300)
+fig1.savefig(folder / "optimize_start.pgf", dpi=300)
+fig2.savefig(folder / "optimize_steps.pgf", dpi=300)

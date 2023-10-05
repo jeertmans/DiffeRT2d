@@ -2,7 +2,7 @@ from pathlib import Path
 
 import jax.numpy as jnp
 from chex import Array
-from matplotlib.colors import SymLogNorm
+from matplotlib.colors import LogNorm
 from utils import create_fig_for_paper
 
 from differt2d.scene import Scene
@@ -38,7 +38,7 @@ for grad in [False, True]:
                 X,
                 Y,
                 dP,
-                norm=SymLogNorm(0.5, vmin=0.0, vmax=1000.0),
+                norm=LogNorm(vmin=1e-1, vmax=1e3),
                 rasterized=True,
                 zorder=-1,
             )
@@ -62,6 +62,6 @@ for grad in [False, True]:
     folder.mkdir(exist_ok=True)
 
     if grad:
-        fig.savefig(folder / "power_gradient.pdf", dpi=300)
+        fig.savefig(folder / "power_gradient.pgf", dpi=300)
     else:
-        fig.savefig(folder / "power_map.pdf", dpi=300)
+        fig.savefig(folder / "power_map.pgf", dpi=300)
