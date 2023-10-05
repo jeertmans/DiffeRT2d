@@ -177,25 +177,25 @@ becomes straighforward, with :func:`jax.grad` or :func:`jax.value_and_grad`.
 
 To make it easy, we also provide ``grad`` and ``value_and_grad`` options in
 both
-:meth:`Scene.accumulate_on_emitters_grid_over_paths<differt.scene.Scene.accumulate_on_emitters_grid_over_paths>`
+:meth:`Scene.accumulate_on_emitters_grid_over_paths<differt2d.scene.Scene.accumulate_on_emitters_grid_over_paths>`
 and
 both
-:meth:`Scene.accumulate_on_receivers_grid_over_paths<differt.scene.Scene.accumulate_on_receivers_grid_over_paths>`.
+:meth:`Scene.accumulate_on_receivers_grid_over_paths<differt2d.scene.Scene.accumulate_on_receivers_grid_over_paths>`.
 
 .. plot::
     :include-source:
 
     import jax.numpy as jnp
     import matplotlib.pyplot as plt
-    from matplotlib.colors import LogNorm
+    from matplotlib.colors import SymLogNorm
 
     from differt2d.geometry import Wall
     from differt2d.scene import Scene
     from differt2d.utils import received_power
 
-    ax = plt.gca()
+    fig, ax = plt.subplots()
     scene = Scene.square_scene()
-    wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
+    wall = Wall(points=jnp.array([[0.8, 0.2], [0.8, 0.8]]))
     scene.add_objects([wall])
     scene.plot(ax, receivers=True)
 
@@ -208,13 +208,15 @@ both
         grad=True,
     )
     ndZ = jnp.linalg.norm(dZ, axis=-1)  # Norm of gradient
-    ax.pcolormesh(
+    ndZ = jnp.nan_to_num(ndZ)  # NaN can arise from grad
+    im = ax.pcolormesh(
         X,
         Y,
         ndZ,
-        norm=LogNorm(vmin=ndZ.min(), vmax=ndZ.max()),  # Log scale
-        zorder=-1
+        norm=SymLogNorm(0.5, vmin=ndZ.min(), vmax=ndZ.max()),
+        zorder=-1,
     )
+    fig.colorbar(im, ax=ax) # Useful because non-linear scale
     plt.show()
 
 ```
