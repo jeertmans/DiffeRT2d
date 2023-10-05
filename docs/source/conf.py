@@ -9,6 +9,7 @@
 
 import functools
 import inspect
+from pathlib import Path
 from textwrap import dedent
 
 import qtgallery
@@ -68,6 +69,7 @@ sphinx_gallery_conf = {
     "image_scrapers": ("matplotlib", qtgallery.qtscraper),
     "reset_modules": (qtgallery.reset_qapp,),
     "matplotlib_animations": True,
+    "backreferences_dir": Path("reference"),
 }
 
 qtgallery_conf = {

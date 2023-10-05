@@ -2,6 +2,7 @@ from pathlib import Path
 
 import jax.numpy as jnp
 from chex import Array
+from matplotlib.colors import SymLogNorm
 from utils import create_fig_for_paper
 
 from differt2d.scene import Scene
@@ -9,7 +10,6 @@ from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
 
-fig, axes = create_fig_for_paper(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
 point_kwargs = dict(
@@ -18,28 +18,50 @@ point_kwargs = dict(
 
 X, Y = scene.grid(n=600)
 
-for ax, approx in zip(axes, [False, True]):
-    scene.plot(
-        ax,
-        emitters_kwargs=point_kwargs,
-        receivers=False,
-    )
+for grad in [False, True]:
+    fig, axes = create_fig_for_paper(2, 1, sharex=True, tight_layout=True)
+    for ax, approx in zip(axes, [False, True]):
+        scene.plot(
+            ax,
+            emitters_kwargs=point_kwargs,
+            receivers=False,
+        )
 
-    P: Array = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, reduce_all=True, approx=approx
-    )
+        P: Array = scene.accumulate_on_receivers_grid_over_paths(
+            X, Y, fun=received_power, reduce_all=True, grad=grad, approx=approx
+        )
 
-    PdB = 10.0 * jnp.log10(P / P0)
+        if grad:
+            dP = jnp.linalg.norm(P, axis=-1)
+            dP = jnp.nan_to_num(dP)
+            im = ax.pcolormesh(
+                X,
+                Y,
+                dP,
+                norm=SymLogNorm(0.5, vmin=0.0, vmax=1000.0),
+                rasterized=True,
+                zorder=-1,
+            )
+        else:
+            PdB = 10.0 * jnp.log10(P / P0)
+            im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, rasterized=True, zorder=-1)
 
-    im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, rasterized=True, zorder=-1)
-    cbar = fig.colorbar(im, ax=ax)
-    cbar.ax.set_ylabel("Power (dB)")
+        cbar = fig.colorbar(im, ax=ax)
 
-    ax.set_ylabel("y coordinate")
-    ax.set_title("With approximation" if approx else "Without approximation")
+        if grad:
+            cbar.ax.set_ylabel("Power gradient")
+        else:
+            cbar.ax.set_ylabel("Power (dB)")
 
-axes[-1].set_xlabel("x coordinate")
+        ax.set_ylabel("y coordinate")
+        ax.set_title("With approximation" if approx else "Without approximation")
 
-folder = Path(__file__).parent / "pgf"
-folder.mkdir(exist_ok=True)
-fig.savefig(folder / "power_map.pgf", dpi=300)
+    axes[-1].set_xlabel("x coordinate")
+
+    folder = Path(__file__).parent / "pgf"
+    folder.mkdir(exist_ok=True)
+
+    if grad:
+        fig.savefig(folder / "power_gradient.pdf", dpi=300)
+    else:
+        fig.savefig(folder / "power_map.pdf", dpi=300)
