@@ -56,7 +56,7 @@ for ax, approx in zip(axes, [False, True]):
     )
 
     P: Array = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, reduce=True, approx=approx
+        X, Y, fun=received_power, reduce_all=True, approx=approx
     )
 
     PdB = 10.0 * jnp.log10(P / P0)

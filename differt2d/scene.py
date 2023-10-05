@@ -906,7 +906,9 @@ class Scene(Plottable):
         fun: PathFun,
         fun_args: Tuple = (),
         fun_kwargs: Mapping = {},
-        reduce: bool = False,
+        reduce_all: bool = False,
+        grad: bool = False,
+        value_and_grad: bool = False,
         path_cls: Type[Path] = ImagePath,
         emitter_cls: Type[Point] = Point,
         min_order: int = 0,
@@ -927,7 +929,7 @@ class Scene(Plottable):
             Positional arguments to be passed to ``fun``.
         :param fun_kwargs:
             Keyword arguments to be passed to ``fun``.
-        :param reduce: Whether to reduce the output by summing
+        :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
         :param path_cls: Method to be used to find the path coordinates.
@@ -943,7 +945,7 @@ class Scene(Plottable):
         :return:
             An iterator of receiver name and the corresponding
             accumulated result, or the sum of accumulated
-            if :python:`reduce=True`.
+            if :python:`reduce_all=True`.
         """
         emitters = self.emitters
         self.emitters = {"tx": Point(point=jnp.array([0.0, 0.0]))}
@@ -980,6 +982,9 @@ class Scene(Plottable):
 
             return acc
 
+        if grad:
+            facc = jax.grad(facc, argnums=0)
+
         vfacc = jax.vmap(
             jax.vmap(facc, in_axes=(0, None)),
             in_axes=(0, None),
@@ -990,7 +995,7 @@ class Scene(Plottable):
         def results() -> Iterator[Array]:
             return ((r_key, vfacc(grid, receiver)) for _, (r_key, receiver) in pairs)
 
-        if reduce:
+        if reduce_all:
             return sum(p for _, p in results())
         else:
             return results()
@@ -1002,7 +1007,9 @@ class Scene(Plottable):
         fun: PathFun,
         fun_args: Tuple = (),
         fun_kwargs: Mapping = {},
-        reduce: bool = False,
+        reduce_all: bool = False,
+        grad: bool = False,
+        value_and_grad: bool = False,
         path_cls: Type[Path] = ImagePath,
         receiver_cls: Type[Point] = Point,
         min_order: int = 0,
@@ -1023,7 +1030,7 @@ class Scene(Plottable):
             Positional arguments to be passed to ``fun``.
         :param fun_kwargs:
             Keyword arguments to be passed to ``fun``.
-        :param reduce: Whether to reduce the output by summing
+        :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
         :param path_cls: Method to be used to find the path coordinates.
@@ -1039,7 +1046,7 @@ class Scene(Plottable):
         :return:
             An iterator of emitter name and the corresponding
             accumulated result, or the sum of accumulated
-            if :python:`reduce=True`.
+            if :python:`reduce_all=True`.
         """
         receivers = self.receivers
         self.receivers = {"rx": Point(point=jnp.array([0.0, 0.0]))}
@@ -1076,6 +1083,9 @@ class Scene(Plottable):
 
             return acc
 
+        if grad:
+            facc = jax.grad(facc, argnums=1)
+
         vfacc = jax.vmap(
             jax.vmap(facc, in_axes=(None, 0)),
             in_axes=(None, 0),
@@ -1086,7 +1096,7 @@ class Scene(Plottable):
         def results() -> Iterator[Array]:
             return ((e_key, vfacc(emitter, grid)) for (e_key, emitter), _ in pairs)
 
-        if reduce:
+        if reduce_all:
             return sum(p for _, p in results())
         else:
             return results()

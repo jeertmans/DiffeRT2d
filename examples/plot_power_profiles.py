@@ -72,7 +72,7 @@ P: Array = scene.accumulate_on_receivers_grid_over_paths(
     X,
     Y,
     fun=received_power,
-    reduce=True,
+    reduce_all=True,
     approx=False,
     min_order=0,
     max_order=0,
@@ -102,7 +102,7 @@ y = jnp.array([0.5])
 X, Y = jnp.meshgrid(x, y)
 
 P = scene.accumulate_on_receivers_grid_over_paths(
-    X, Y, fun=received_power, reduce=True, approx=False, min_order=0, max_order=0
+    X, Y, fun=received_power, reduce_all=True, approx=False, min_order=0, max_order=0
 )
 
 PdB = 10.0 * jnp.log10(P.reshape(-1) / P0)
@@ -114,7 +114,7 @@ for alpha in [1.0, 10.0, 100.0, 1000.0]:
         X,
         Y,
         fun=received_power,
-        reduce=True,
+        reduce_all=True,
         approx=True,
         alpha=alpha,
         min_order=0,

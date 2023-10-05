@@ -46,7 +46,7 @@ If you are intersted in contributing to this tool, please checkout the
         X,
         Y,
         fun=received_power,
-        reduce=True,
+        reduce_all=True,
         approx=False,
     )
     ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z))

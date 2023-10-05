@@ -25,7 +25,7 @@ scene.plot(
 )
 
 P: Array = scene.accumulate_on_receivers_grid_over_paths(
-    X, Y, fun=received_power, max_order=0, reduce=True, approx=False
+    X, Y, fun=received_power, max_order=0, reduce_all=True, approx=False
 )
 
 PdB = 10.0 * jnp.log10(P / P0)

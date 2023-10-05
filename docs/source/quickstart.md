@@ -131,7 +131,7 @@ like the received power, on a grid and plot it:
         X,
         Y,
         fun=received_power,
-        reduce=True
+        reduce_all=True
     )
     ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z), zorder=-1)
     plt.show()
@@ -163,7 +163,7 @@ if we were to simulate a higher order of interacion, e.g.:
         X,
         Y,
         fun=received_power,
-        reduce=True,
+        reduce_all=True,
         max_order=2  # The default value was 1
     )
     ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z), zorder=-1)
