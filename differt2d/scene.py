@@ -932,6 +932,11 @@ class Scene(Plottable):
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
+        :param grad: If set, returns the gradient of ``fun`` with respect
+            to the emitter's position. The output array(s) will then have
+            an additional axis of size two.
+        :param value_and_grad: If set, returns both the ``fun`` and its
+            gradient. Takes precedence over setting :python:`grad=True`.
         :param path_cls: Method to be used to find the path coordinates.
         :param emitter_cls: A point constructor called on every emitter,
             should inherit from :class:`Point<differt2d.geometry.Point>`.
@@ -982,7 +987,9 @@ class Scene(Plottable):
 
             return acc
 
-        if grad:
+        if value_and_grad:
+            facc = jax.value_and_grad(facc, argnums=0)
+        elif grad:
             facc = jax.grad(facc, argnums=0)
 
         vfacc = jax.vmap(
@@ -1033,6 +1040,11 @@ class Scene(Plottable):
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
+        :param grad: If set, returns the gradient of ``fun`` with respect
+            to the receiver's position. The output array(s) will then have
+            an additional axis of size two.
+        :param value_and_grad: If set, returns both the ``fun`` and its
+            gradient. Takes precedence over setting :python:`grad=True`.
         :param path_cls: Method to be used to find the path coordinates.
         :param receiver_cls: A point constructor called on every receiver,
             should inherit from :class:`Point<differt2d.geometry.Point>`.
@@ -1083,7 +1095,9 @@ class Scene(Plottable):
 
             return acc
 
-        if grad:
+        if value_and_grad:
+            facc = jax.value_and_grad(facc, argnums=1)
+        elif grad:
             facc = jax.grad(facc, argnums=1)
 
         vfacc = jax.vmap(

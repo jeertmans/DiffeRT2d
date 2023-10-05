@@ -169,6 +169,46 @@ if we were to simulate a higher order of interacion, e.g.:
     ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z), zorder=-1)
     plt.show()
 
+Power gradient
+^^^^^^^^^^^^^^
+
+Because we use JAX almost everywhere in the code, taking gradient of functions
+becomes straighforward, with :func:`jax.grad` or :func:`jax.value_and_grad`.
+
+To make it easy, we also provide ``grad`` and ``value_and_grad`` options in
+both
+:meth:`Scene.accumulate_on_emitters_grid_over_paths<differt.scene.Scene.accumulate_on_emitters_grid_over_paths>`
+and 
+both
+:meth:`Scene.accumulate_on_receivers_grid_over_paths<differt.scene.Scene.accumulate_on_receivers_grid_over_paths>`.
+
+.. plot::
+    :include-source:
+
+    import jax.numpy as jnp
+    import matplotlib.pyplot as plt
+
+    from differt2d.geometry import Wall
+    from differt2d.scene import Scene
+    from differt2d.utils import received_power
+
+    ax = plt.gca()
+    scene = Scene.square_scene()
+    wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
+    scene.add_objects([wall])
+    scene.plot(ax, receivers=True)
+
+    X, Y = scene.grid(n=300)
+    dZ = scene.accumulate_on_receivers_grid_over_paths(
+        X,
+        Y,
+        fun=received_power,
+        reduce_all=True,
+        grad=True,
+    )
+    ax.pcolormesh(X, Y, jnp.linalg.norm(dZ, axis=-1), zorder=-1)
+    plt.show()
+
 ```
 
 ## More examples
