@@ -4,6 +4,7 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import optax
+from matplotlib.colors import LogNorm
 from utils import create_fig_for_paper
 
 from differt2d.geometry import Point
@@ -12,14 +13,13 @@ from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_obstacle()
 
-
 def objective_function(received_power_per_receiver):
-    acc = 0.0
+    acc = jnp.inf
     for p in received_power_per_receiver:
         p = p / P0  # Normalize power
-        acc = acc + jnp.log10(p)
+        acc = jnp.minimum(acc, p)
 
-    return 10.0 * acc
+    return acc
 
 
 def loss(tx_coords, scene, *args, **kwargs):
@@ -111,7 +111,9 @@ for frame, alpha in enumerate(alphas):
                 )
             )
 
-            im = ax.pcolormesh(X, Y, F, vmin=-60, vmax=5, zorder=-1, rasterized=True)
+            im = ax.pcolormesh(
+                X, Y, F, norm=LogNorm(vmin=1e-4, vmax=1e0), zorder=-1, rasterized=True
+            )
             if frame == 0:
                 cbar = fig1.colorbar(im, ax=ax)
                 cbar.ax.set_ylabel("Objective function")
@@ -135,5 +137,5 @@ for frame, alpha in enumerate(alphas):
 folder = Path(__file__).parent / "pgf"
 folder.mkdir(exist_ok=True)
 
-fig1.savefig(folder / "optimize_start.pgf", dpi=300)
-fig2.savefig(folder / "optimize_steps.pgf", dpi=300)
+fig1.savefig(folder / "optimize_start.pdf", dpi=300)
+fig2.savefig(folder / "optimize_steps.pdf", dpi=300)

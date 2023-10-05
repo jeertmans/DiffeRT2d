@@ -26,6 +26,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import optax
 from matplotlib.animation import FuncAnimation
+from matplotlib.colors import LogNorm
 
 from differt2d.geometry import Point
 from differt2d.scene import Scene
@@ -57,14 +58,14 @@ scene = Scene.square_scene_with_obstacle()
 
 
 def objective_function(received_power_per_receiver):
-    """Objective function, that wants to maximise the sum of receiver power by each user
-    (in dB)."""
-    acc = 0.0
+    """Objective function, that wants to maximise the received power by
+    each receiver."""
+    acc = jnp.inf
     for p in received_power_per_receiver:
         p = p / P0  # Normalize power
-        acc = acc + jnp.log10(p)
+        acc = jnp.minimum(acc, p)
 
-    return 10.0 * acc
+    return acc
 
 
 def loss(tx_coords, scene, *args, **kwargs):
@@ -121,7 +122,9 @@ for ax, approx, scene in zip(axes, [False, True], scenes):
     emitter_artists.append(scene_artists[0])
     annotate_artists.append(scene_artists[1])
 
-    im = ax.pcolormesh(X, Y, jnp.zeros_like(X), vmin=-60, vmax=5, zorder=-1)
+    im = ax.pcolormesh(
+        X, Y, jnp.ones_like(X), norm=LogNorm(vmin=1e-4, vmax=1e0), zorder=-1
+    )
     im_artists.append(im)
 
     cbar = fig.colorbar(im, ax=ax)
