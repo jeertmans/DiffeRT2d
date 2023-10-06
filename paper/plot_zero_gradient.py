@@ -8,7 +8,7 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
-scene.emitters["BS"] = scene.emitters.pop("tx")
+scene.emitters["TX"] = scene.emitters.pop("tx")
 
 fig, ax = create_fig_for_paper(1, 1, height_to_width_ratio=0.6, tight_layout=True)
 
