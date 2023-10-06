@@ -10,7 +10,7 @@ plt.rcParams.update(
         "pgf.texsystem": "pdflatex",
         "font.family": "serif",
         "font.size": 10,
-        "text.usetex": False,
+        "text.usetex": True,
         "pgf.rcfonts": False,
         "image.cmap": "plasma",
     }

@@ -9,7 +9,7 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
-
+scene.emitters["BS"] = scene.emitters.pop("tx")
 
 annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
 point_kwargs = dict(

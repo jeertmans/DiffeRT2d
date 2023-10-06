@@ -49,16 +49,16 @@ scene = Scene.square_scene_with_obstacle()
 #
 # In an optimization problem, one must first define an objective function.
 # Ideally, in a telecommunications scenario, we would like to serve all users,
-# i.e., receivers, with a good power. Because antennas are often designed to work
-# with power expressed in a logarithmic scale, our objective function will
-# reflect that and sum the received power by each user separately, in dB.
+# i.e., receivers, with a good power. Because we want all users to receive the
+# maximum power possible, we will maximize the mininum received power among all
+# users.
 #
 # Finally, we define a loss function that will take the opposite of the
 # objective function, because most optimizer minimize functions.
 
 
 def objective_function(received_power_per_receiver):
-    """Objective function, that wants to maximise the received power by
+    """Objective function, that wants to maximize the received power by
     each receiver."""
     acc = jnp.inf
     for p in received_power_per_receiver:
@@ -188,13 +188,7 @@ def func(alpha):
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
 
-        F = objective_function(
-            power
-            for _, power in scenes[i].accumulate_on_emitters_grid_over_paths(
-                X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
-            )
-        )
-        im_artists[i].set_array(F)
+        #alpha = 100.0
 
         loss, grads = f_and_df(
             tx_coords,
@@ -204,6 +198,30 @@ def func(alpha):
             approx=approx,
             alpha=alpha,
         )
+
+        print(grads)
+
+        while jnp.linalg.norm(jnp.nan_to_num(grads)) < 1e-8:
+            alpha *= 0.5
+
+            loss, grads = f_and_df(
+                tx_coords,
+                scenes[i],
+                fun=received_power,
+                max_order=0,
+                approx=approx,
+                alpha=alpha,
+            )
+            print(grads, alpha)
+
+        F = objective_function(
+            power
+            for _, power in scenes[i].accumulate_on_emitters_grid_over_paths(
+                X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
+            )
+        )
+        im_artists[i].set_array(F)
+
         updates, opt_state = optimizers[i].update(grads, opt_state)
         tx_coords = tx_coords + updates
 

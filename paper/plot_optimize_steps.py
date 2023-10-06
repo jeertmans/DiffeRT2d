@@ -13,6 +13,7 @@ from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_obstacle()
 
+
 def objective_function(received_power_per_receiver):
     acc = jnp.inf
     for p in received_power_per_receiver:
@@ -23,7 +24,7 @@ def objective_function(received_power_per_receiver):
 
 
 def loss(tx_coords, scene, *args, **kwargs):
-    scene.emitters["tx"].point = tx_coords
+    scene.emitters["BS"].point = tx_coords
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -49,11 +50,11 @@ point_kwargs = dict(
 )
 
 scene.emitters = dict(
-    tx=Point(point=jnp.array([0.5, 0.7])),
+    BS=Point(point=jnp.array([0.5, 0.7])),
 )
 scene.receivers = {
-    r"rx$_0$": Point(point=jnp.array([0.3, 0.1])),
-    r"rx$_1$": Point(point=jnp.array([0.5, 0.1])),
+    r"UE$_0$": Point(point=jnp.array([0.3, 0.1])),
+    r"UE$_1$": Point(point=jnp.array([0.5, 0.1])),
 }
 
 X, Y = scene.grid(n=600)
@@ -68,14 +69,14 @@ tx_coords = jnp.array([0.5, 0.7])
 optimizers = []
 carries = []
 for i, scene in enumerate(scenes):
-    scene.emitters["tx"].point = tx_coords
+    scene.emitters["BS"].point = tx_coords
     optimizers.append(optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans()))
     carries.append((tx_coords, optimizers[i].init(tx_coords)))
 
 for frame, alpha in enumerate(alphas):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
-        scenes[i].emitters["tx"].point = tx_coords
+        scenes[i].emitters["BS"].point = tx_coords
 
         # Plotting prior to updating
         if frame % 20 == 0:
@@ -84,6 +85,7 @@ for frame, alpha in enumerate(alphas):
                 ax.set_ylabel("y coordinate")
                 if i == 1:
                     ax.set_xlabel("x coordinate")
+                factor = 1.0
             elif approx:
                 j = (frame // 20) - 1
                 ax = axes2[j]
@@ -95,14 +97,26 @@ for frame, alpha in enumerate(alphas):
                 base, expo = alpha_str.split("e")
                 expo = str(int(expo))  # Remove trailing zeros and +
                 ax.set_title(f"Iterations: {frame:2d}")
+                factor = 1.5
             else:
                 continue  # We don't show further steps when no approx
 
             scenes[i].plot(
                 ax,
                 emitters_kwargs=point_kwargs,
-                receivers_kwargs=point_kwargs,
+                receivers=False,
+                receivers_kwargs=dict(marker="x", **point_kwargs),
             )
+            rx_kwargs = point_kwargs.copy()
+            rx_kwargs.update(
+                color="black",
+                marker="x",
+                annotate="UE$_0$",
+                annotate_offset=(-0.1 * factor, 0.0),
+            )
+            scenes[i].receivers["UE$_0$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
+            rx_kwargs.update(annotate="UE$_1$", annotate_offset=(+0.1 * factor, 0.0))
+            scenes[i].receivers["UE$_1$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
 
             F = objective_function(
                 power
