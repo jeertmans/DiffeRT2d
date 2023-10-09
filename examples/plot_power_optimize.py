@@ -188,8 +188,6 @@ def func(alpha):
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
 
-        #alpha = 100.0
-
         loss, grads = f_and_df(
             tx_coords,
             scenes[i],
@@ -198,21 +196,6 @@ def func(alpha):
             approx=approx,
             alpha=alpha,
         )
-
-        print(grads)
-
-        while jnp.linalg.norm(jnp.nan_to_num(grads)) < 1e-8:
-            alpha *= 0.5
-
-            loss, grads = f_and_df(
-                tx_coords,
-                scenes[i],
-                fun=received_power,
-                max_order=0,
-                approx=approx,
-                alpha=alpha,
-            )
-            print(grads, alpha)
 
         F = objective_function(
             power
