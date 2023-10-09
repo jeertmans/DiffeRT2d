@@ -543,7 +543,7 @@ class Path(Plottable):
             plt.show()
         """
         points = [obj.parametric_to_cartesian(0.5) for obj in objects]
-        points = jnp.vstack([tx, points, rx])
+        points = jnp.vstack([tx, *points, rx])
         return cls(points=points)
 
     @jax.jit
@@ -804,7 +804,7 @@ class ImagePath(Path):
         _, images = jax.lax.scan(forward, init=tx, xs=walls)
         _, points = jax.lax.scan(backward, init=rx, xs=(walls, images), reverse=True)
 
-        points = jnp.vstack([tx, points, rx])
+        points = jnp.vstack([tx, *points, rx])
 
         return cls(points=points, loss=path_loss(points))
 

@@ -29,7 +29,7 @@ jitted_non_convex_fun = jit(non_convex_fun)
 @pytest.mark.parametrize(("fun",), [(convex_fun,), (jitted_convex_fun,)])
 @pytest.mark.parametrize(("x0",), [([0.0],), ([1.0, 2.0, 3.0, 4.0],)])
 def test_default_optimizer(fun, x0):
-    x0 = jnp.atleast_1d(x0)
+    x0 = jnp.asarray(x0)
     expected_opt = default_optimizer()
     got_opt = eval(repr(expected_opt), globals())
 
@@ -54,8 +54,8 @@ def test_default_optimizer(fun, x0):
     [(0.0, 0.5, 2.0), (0.5, 0.5, 2.0), ([1.0, 2.0, 3.0], [0.5, 0.5, 0.5], 2.0)],
 )
 def test_minimize(fun, x0, expected_x, expected_loss):
-    x0 = jnp.atleast_1d(x0)
-    expected_x = jnp.atleast_1d(expected_x)
+    x0 = jnp.atleast_1d(jnp.asarray(x0))
+    expected_x = jnp.atleast_1d(jnp.asarray(expected_x))
     expected_loss = jnp.asarray(expected_loss)
     got_x, got_loss = minimize(fun, x0, steps=1000)
     chex.assert_trees_all_close(expected_x, got_x, rtol=1e-3)
@@ -70,7 +70,7 @@ def test_minimize(fun, x0, expected_x, expected_loss):
     [(0.5, 2.0), ([0.5, 0.5, 0.5], 2.0)],
 )
 def test_minimize_random_uniform(fun, seed, expected_x, expected_loss):
-    expected_x = jnp.atleast_1d(expected_x)
+    expected_x = jnp.atleast_1d(jnp.asarray(expected_x))
     expected_loss = jnp.asarray(expected_loss)
     n = len(expected_x)
     key = jax.random.PRNGKey(seed)
@@ -87,7 +87,7 @@ def test_minimize_random_uniform(fun, seed, expected_x, expected_loss):
     [(0.5, 2.0), ([0.5, 0.5, 0.5], 2.0)],
 )
 def test_minimize_many_random_uniform(fun, seed, expected_x, expected_loss):
-    expected_x = jnp.atleast_1d(expected_x)
+    expected_x = jnp.atleast_1d(jnp.asarray(expected_x))
     expected_loss = jnp.asarray(expected_loss)
     n = len(expected_x)
     key = jax.random.PRNGKey(seed)
