@@ -58,8 +58,8 @@ scene = Scene.square_scene_with_obstacle()
 
 
 def objective_function(received_power_per_receiver):
-    """Objective function, that wants to maximize the received power by
-    each receiver."""
+    """Objective function, that wants to maximize the received power by each
+    receiver."""
     acc = jnp.inf
     for p in received_power_per_receiver:
         p = p / P0  # Normalize power
