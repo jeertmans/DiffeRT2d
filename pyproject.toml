@@ -17,10 +17,10 @@ py_version = 39
 authors = ["Jérome Eertmans <jeertmans@icloud.com>"]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Topic :: Scientific/Engineering"
@@ -45,7 +45,7 @@ jax = "^0.4.7"
 matplotlib = "^3.7.1"
 numpy = "^1.24"
 optax = "^0.1.5"
-python = "<3.12,>=3.9"
+python = "<3.13,>=3.9"
 rustworkx = "^0.12.1"
 
 [tool.poetry.group.dev]
@@ -61,7 +61,7 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 furo = "^2023.5.20"
 myst-parser = ">=2"
-pyside6 = "^6.5.2"
+pyside6 = { version = "^6.5.2", python = "<3.12" }
 qtgallery = "^0.0.2"
 qtpy = "^2.4.0"
 sphinx = "^7.2.6"
