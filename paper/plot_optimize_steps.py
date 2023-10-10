@@ -24,7 +24,7 @@ def objective_function(received_power_per_receiver):
 
 
 def loss(tx_coords, scene, *args, **kwargs):
-    scene.emitters["TX"].point = tx_coords
+    scene.emitters["Tx"].point = tx_coords
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -32,7 +32,9 @@ def loss(tx_coords, scene, *args, **kwargs):
 
 f_and_df = jax.value_and_grad(loss)
 
-fig1, axes1 = create_fig_for_paper(2, 1, sharex=True, tight_layout=True)
+fig1, axes1 = create_fig_for_paper(
+    2, 1, sharex=True, height_to_width_ratio=1.125, tight_layout=True
+)
 fig2, axes2 = create_fig_for_paper(
     1,
     4,
@@ -50,11 +52,11 @@ point_kwargs = dict(
 )
 
 scene.emitters = dict(
-    TX=Point(point=jnp.array([0.5, 0.7])),
+    Tx=Point(point=jnp.array([0.5, 0.7])),
 )
 scene.receivers = {
-    r"RX$_0$": Point(point=jnp.array([0.3, 0.1])),
-    r"RX$_1$": Point(point=jnp.array([0.5, 0.1])),
+    r"Rx$_0$": Point(point=jnp.array([0.3, 0.1])),
+    r"Rx$_1$": Point(point=jnp.array([0.5, 0.1])),
 }
 
 X, Y = scene.grid(n=600)
@@ -69,14 +71,14 @@ tx_coords = jnp.array([0.5, 0.7])
 optimizers = []
 carries = []
 for i, scene in enumerate(scenes):
-    scene.emitters["TX"].point = tx_coords
+    scene.emitters["Tx"].point = tx_coords
     optimizers.append(optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans()))
     carries.append((tx_coords, optimizers[i].init(tx_coords)))
 
 for frame, alpha in enumerate(alphas):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
-        scenes[i].emitters["TX"].point = tx_coords
+        scenes[i].emitters["Tx"].point = tx_coords
 
         # Plotting prior to updating
         if frame % 20 == 0:
@@ -111,12 +113,12 @@ for frame, alpha in enumerate(alphas):
             rx_kwargs.update(
                 color="black",
                 marker="x",
-                annotate="RX$_0$",
+                annotate="Rx$_0$",
                 annotate_offset=(-0.1 * factor, 0.0),
             )
-            scenes[i].receivers["RX$_0$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
-            rx_kwargs.update(annotate="RX$_1$", annotate_offset=(+0.1 * factor, 0.0))
-            scenes[i].receivers["RX$_1$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
+            scenes[i].receivers["Rx$_0$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
+            rx_kwargs.update(annotate="Rx$_1$", annotate_offset=(+0.1 * factor, 0.0))
+            scenes[i].receivers["Rx$_1$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
 
             F = objective_function(
                 power
