@@ -177,7 +177,7 @@ def disable_approx(disable: bool = True):  # pragma: no cover
         yield
 
 
-@partial(jax.jit, inline=False, static_argnames=["function"])
+@partial(jax.jit, inline=True, static_argnames=["function"])
 def activation(
     x: Array,
     alpha: float = DEFAULT_ALPHA,
@@ -244,7 +244,7 @@ def activation(
         raise ValueError(f"Unknown function '{function}'")
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=["approx"])
 def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical :python:`x or y`.
@@ -262,7 +262,7 @@ def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     return jnp.maximum(x, y) if approx else jnp.logical_or(x, y)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=["approx"])
 def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical :python:`x and y`.
@@ -280,7 +280,7 @@ def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     return jnp.minimum(x, y) if approx else jnp.logical_and(x, y)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=["approx"])
 def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
     """
     Element-wise logical :python:`not x`.
@@ -298,7 +298,7 @@ def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx", "function"])
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def greater(
     x: Array,
     y: Array,
@@ -324,7 +324,7 @@ def greater(
     return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx", "function"])
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def greater_equal(
     x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any
 ) -> Array:
@@ -349,7 +349,7 @@ def greater_equal(
     )
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx", "function"])
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Array:
     """
     Element-wise logical :python:`x < y`.
@@ -370,7 +370,7 @@ def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Ar
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx", "function"])
+@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
 def less_equal(
     x: Array,
     y: Array,
@@ -396,7 +396,7 @@ def less_equal(
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
 
-@partial(jax.jit, inline=False, static_argnames=["axis", "approx"])
+@partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
 def logical_all(
     *x: Array,
     axis: Optional[Union[int, Tuple[int, ...]]] = None,
@@ -420,7 +420,7 @@ def logical_all(
     return jnp.min(arr, axis=axis) if approx else jnp.all(arr, axis=axis)
 
 
-@partial(jax.jit, inline=False, static_argnames=["axis", "approx"])
+@partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
 def logical_any(
     *x: Array,
     axis: Optional[Union[int, Tuple[int, ...]]] = None,
@@ -444,7 +444,7 @@ def logical_any(
     return jnp.max(arr, axis=axis) if approx else jnp.any(arr, axis=axis)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=["approx"])
 def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be true.
@@ -463,7 +463,7 @@ def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     return jnp.greater(x, 1.0 - tol) if approx else jnp.asarray(x)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=["approx"])
 def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     """
     Element-wise check if a given truth value can be considered to be false.
@@ -482,7 +482,7 @@ def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array
     return jnp.less(x, tol) if approx else jnp.logical_not(x)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=["approx"])
 def true_value(approx: Optional[bool] = None) -> Array:
     """
     Returns a scalar true value.
@@ -497,7 +497,7 @@ def true_value(approx: Optional[bool] = None) -> Array:
     return jnp.array(1.0) if approx else jnp.array(True)
 
 
-@partial(jax.jit, inline=False, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=["approx"])
 def false_value(approx: Optional[bool] = None) -> Array:
     """
     Returns a scalar false value.
