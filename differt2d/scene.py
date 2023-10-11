@@ -644,13 +644,13 @@ class Scene(Plottable):
                 )
 
         if receivers:
-            for r_key, receiver in self.receivers.items():
+            for rx_key, receiver in self.receivers.items():
                 artists.extend(
                     receiver.plot(
                         ax,
                         *receivers_args,
                         *args,
-                        annotate=r_key if annotate else None,
+                        annotate=rx_key if annotate else None,
                         **receivers_kwargs,
                         **kwargs,
                     )
@@ -821,7 +821,7 @@ class Scene(Plottable):
             min_order=min_order, max_order=max_order
         )
 
-        for (tx_key, transmitter), (r_key, receiver) in self.all_transmitter_receiver_pairs():
+        for (tx_key, transmitter), (rx_key, receiver) in self.all_transmitter_receiver_pairs():
             for path_candidate in path_candidates:
                 interacting_objects = self.get_interacting_objects(path_candidate)
                 path = path_cls.from_tx_objects_rx(
@@ -834,7 +834,7 @@ class Scene(Plottable):
                     **kwargs,
                 )
 
-                yield (tx_key, r_key, valid, path, path_candidate)
+                yield (tx_key, rx_key, valid, path, path_candidate)
 
     def all_valid_paths(
         self,
@@ -850,11 +850,11 @@ class Scene(Plottable):
         :return: The generator of valid paths, as
             (transmitter name, receiver name, path, path_candidate) tuples.
         """
-        for tx_key, r_key, valid, path, path_candidate in self.all_paths(
+        for tx_key, rx_key, valid, path, path_candidate in self.all_paths(
             approx=approx, **kwargs
         ):
             if is_true(valid, approx=approx):
-                yield (tx_key, r_key, path, path_candidate)
+                yield (tx_key, rx_key, path, path_candidate)
 
     def accumulate_over_paths(
         self,
@@ -888,12 +888,12 @@ class Scene(Plottable):
         """
 
         def results() -> Iterator[Tuple[str, str, Array]]:
-            for (tx_key, r_key), paths_group in groupby(
+            for (tx_key, rx_key), paths_group in groupby(
                 self.all_paths(**kwargs), lambda key: key[:2]
             ):
                 acc = 0.0
                 transmitter = self.transmitters[tx_key]
-                receiver = self.receivers[r_key]
+                receiver = self.receivers[rx_key]
 
                 for _, _, valid, path, path_candidate in paths_group:
                     interacting_objects = self.get_interacting_objects(path_candidate)
@@ -906,7 +906,7 @@ class Scene(Plottable):
                         **fun_kwargs,
                     )
 
-                yield tx_key, r_key, acc
+                yield tx_key, rx_key, acc
 
         if reduce_all:
             return sum(p for _, _, p in results())
@@ -1017,7 +1017,7 @@ class Scene(Plottable):
         grid = jnp.dstack((X, Y))
 
         def results() -> Iterator[Array]:
-            return ((r_key, vfacc(grid, receiver)) for _, (r_key, receiver) in pairs)
+            return ((rx_key, vfacc(grid, receiver)) for _, (rx_key, receiver) in pairs)
 
         if reduce_all:
             if value_and_grad:

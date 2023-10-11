@@ -172,11 +172,11 @@ class TestScene:
             X, Y, fun=fun, max_order=1, approx=False
         )
 
-        tx_key, got_Z0 = next(got_Z)
-        assert tx_key == "rx0"
+        rx_key, got_Z0 = next(got_Z)
+        assert rx_key == "rx0"
 
-        tx_key, got_Z1 = next(got_Z)
-        assert tx_key == "rx1"
+        rx_key, got_Z1 = next(got_Z)
+        assert rx_key == "rx1"
 
         chex.assert_trees_all_equal_shapes_and_dtypes(X, got_Z0)
         chex.assert_trees_all_equal_shapes_and_dtypes(Y, got_Z1)
