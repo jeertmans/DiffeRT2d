@@ -184,7 +184,9 @@ def merge_documentation_from_parent(app, what, name, obj, options, lines):
 
 
 def unskip_jitted(app, what, name, obj, skip, options):
-    if skip and "Pjit" in repr(obj):
+    """Methods that are both jitted and overloading (e.g., from a protocol) are skipped,
+    which should not be the case."""
+    if skip and what == "class" and "Pjit" in repr(obj):
         obj.__doc__ = get_doc(obj._fun)
         return obj.__doc__ == ""
 
