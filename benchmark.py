@@ -41,9 +41,9 @@ def make_benchmark_name(*args):
     return "_".join([caller_name, *args])
 
 
-def bench_accumulate_on_emitters_grid_over_paths(runner):
+def bench_accumulate_on_transmitters_grid_over_paths(runner):
     def bench(approx):
-        scene.accumulate_on_emitters_grid_over_paths(
+        scene.accumulate_on_transmitters_grid_over_paths(
             X, Y, fun=received_power, reduce_all=True, approx=approx
         ).block_until_ready()
 
@@ -56,7 +56,7 @@ def bench_accumulate_on_emitters_grid_over_paths(runner):
 def bench_path_method(runner):
     def bench(path_cls):
         path = path_cls.from_tx_objects_rx(
-            scene.emitters["tx"].point, scene.objects, scene.receivers["rx"].point
+            scene.transmitters["tx"].point, scene.objects, scene.receivers["rx"].point
         )
         path.loss.block_until_ready()
 
@@ -67,5 +67,5 @@ def bench_path_method(runner):
 
 
 runner = pyperf.Runner()
-bench_accumulate_on_emitters_grid_over_paths(runner)
+bench_accumulate_on_transmitters_grid_over_paths(runner)
 bench_path_method(runner)

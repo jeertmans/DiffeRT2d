@@ -138,7 +138,9 @@ class PlotWidget(QWidget):
         self.r_coef = 0.5
         self.path_cls = METHOD_TO_PATH_CLASS["image"]
 
-        assert len(scene.emitters) == 1, "This simulation only supports one emitter"
+        assert (
+            len(scene.transmitters) == 1
+        ), "This simulation only supports one transmitter"
         assert len(scene.receivers) == 1, "This simulation only supports one receiver"
 
         # -- Create widgets --
@@ -332,7 +334,7 @@ class PlotWidget(QWidget):
         scene.plot(
             ax=self.ax,
             annotate=False,
-            emitters_kwargs=dict(picker=True),
+            transmitters_kwargs=dict(picker=True),
             receivers_kwargs=dict(picker=True),
         )
 
@@ -376,7 +378,7 @@ class PlotWidget(QWidget):
         else:
             artist = event.artist
             coords = jnp.array(artist.get_xydata())
-            tx, dist_tx = self.scene.get_closest_emitter(coords)
+            tx, dist_tx = self.scene.get_closest_transmitter(coords)
             rx, dist_rx = self.scene.get_closest_receiver(coords)
 
             if dist_tx < dist_rx:
@@ -490,7 +492,7 @@ if __name__ == "__main__":
         metavar="Loc",
         default="NW",
         choices=get_args(Loc),
-        help="when file is set, set the emitter location (default: NW, "
+        help="when file is set, set the transmitter location (default: NW, "
         f"allowed: {', '.join(get_args(Loc))})",
     )
     parser.add_argument(

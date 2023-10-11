@@ -279,6 +279,13 @@ class TestPath:
         path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[wall])
         chex.assert_trees_all_close(path.length(), 2.0 * jnp.sqrt(2.0))
 
+    @path_cls
+    def test_from_tx_objects_rx_no_object(self, path_cls: Type[Path]):
+        tx = Point(point=jnp.array([0.0, 1.0]))
+        rx = Point(point=jnp.array([2.0, 1.0]))
+        path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[])
+        chex.assert_trees_all_close(path.length(), jnp.array(2.0))
+
     def test_path_length(self, key: Array):
         points = jax.random.uniform(key, (200, 2))
         expected = path_length(points)
@@ -290,7 +297,7 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=5)
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx_0"].point,
+                scene.transmitters["tx_0"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
@@ -309,7 +316,7 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=10)
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx_0"].point,
+                scene.transmitters["tx_0"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
@@ -322,7 +329,7 @@ class TestPath:
 
             scene = Scene.square_scene()
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
@@ -337,7 +344,7 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.square_scene()
             path = path_cls.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
@@ -373,7 +380,7 @@ class TestImagePath:
     def test_path_loss_is_zero(self):
         scene = Scene.square_scene()
         got = ImagePath.from_tx_objects_rx(
-            scene.emitters["tx"].point,
+            scene.transmitters["tx"].point,
             scene.objects,  # type: ignore[arg-type]
             scene.receivers["rx"].point,
         )

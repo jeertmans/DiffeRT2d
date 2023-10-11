@@ -9,7 +9,7 @@ DiffeRT2D is a Python toolbox for 2D differentiable Ray Tracing,
 with a focus on telecommunications-oriented applications[^1].
 
 [^1]: This means we are mostly interesting in simulating paths from
-  one node (emitter) to another (receiver),
+  one node (transmitter) to another (receiver),
   and not a highly efficient image renderer, like in computer gaphics.
 
 The present tool is thoroughly documented, so please have a look at the
