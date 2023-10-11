@@ -1,3 +1,5 @@
+from typing import Type
+
 import chex
 import jax
 import jax.numpy as jnp
@@ -49,6 +51,16 @@ approx = pytest.mark.parametrize(
     [
         (True,),
         (False,),
+    ],
+)
+
+path_cls = pytest.mark.parametrize(
+    ("path_cls",),
+    [
+        (Path,),
+        (ImagePath,),
+        (FermatPath,),
+        (MinPath,),
     ],
 )
 
@@ -318,6 +330,21 @@ class TestPath:
             expected = false_value()
             got = path.intersects_with_objects(scene.objects, path_candidate)
             chex.assert_trees_all_close(expected, got, atol=1e-8)
+
+    @approx
+    @path_cls
+    def test_is_valid(self, approx: bool, path_cls: Type[Path]):
+        with enable_approx(approx), disable_jit():
+            scene = Scene.square_scene()
+            path = path_cls.from_tx_objects_rx(
+                scene.emitters["tx"].point,
+                scene.objects,  # type: ignore[arg-type]
+                scene.receivers["rx"].point,
+            )
+            path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
+            interacting_objects = scene.get_interacting_objects(path_candidate)
+            got = path.is_valid(scene.objects, path_candidate, interacting_objects)
+            assert is_true(got)
 
     def test_plot(self, ax):
         wall = Wall(points=jnp.array([[0.0, 0.0], [2.0, 0.0]]))

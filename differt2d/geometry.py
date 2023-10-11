@@ -640,6 +640,7 @@ class Path(Plottable):
 
         return intersects
 
+    @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
     def is_valid(
         self,
         objects: List[Interactable],
@@ -814,7 +815,7 @@ class FermatPath(Path):
     """A path object that was obtained with the Fermat's Principle Tracing method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
+    @partial(jax.jit, static_argnames=["cls", "steps", "optimizer"])
     def from_tx_objects_rx(
         cls,
         tx: Array,
