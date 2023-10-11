@@ -14,13 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Added three keyword arguments to `Scene.plot`, to make plotting transmitters,
   receivers or objects, an option.
   [#37](https://github.com/jeertmans/DiffeRT2d/pull/37)
++ Added a new `annotate_offset` argument to `Point.plot` to shift the text.
++ Added options to compute the gradient (or the value and the gradient) of
+  accumulated functions from `Scene` class.
 
 ### Changed
 
 + Renamed all occurences of `emitter*` to `transmitter*`.
   This is a **breaking changes** regarding some function names.
   [#43](https://github.com/jeertmans/DiffeRT2d/pull/43)
-
++ Accumulate functions from `Scene` class now return an iterator by default,
+  which can be reduce with the `reduce_all` option.
+  This is a **breaking change**.
 
 ### Chore
 
