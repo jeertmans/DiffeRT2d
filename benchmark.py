@@ -19,7 +19,6 @@ To compare multiple benchmark results, you can use
 
 import inspect
 from functools import partial
-from itertools import product
 
 import pyperf
 
@@ -43,29 +42,30 @@ def make_benchmark_name(*args):
 
 
 def bench_accumulate_on_emitters_grid_over_paths(runner):
-    def bench(approx, method):
-        path_cls = METHOD_TO_PATH_CLASS[method]
+    def bench(approx):
         scene.accumulate_on_emitters_grid_over_paths(
-            X, Y, fun=received_power, approx=approx, path_cls=path_cls
+            X, Y, fun=received_power, reduce_all=True, approx=approx
+        ).block_until_ready()
+
+    for approx in [False, True]:
+        bench_name = make_benchmark_name("approx" if approx else "noapprox")
+        func = partial(bench, approx=approx)
+        runner.bench_func(bench_name, func)
+
+
+def bench_path_method(runner):
+    def bench(path_cls):
+        path = path_cls.from_tx_objects_rx(
+            scene.emitters["tx"].point, scene.objects, scene.receivers["rx"].point
         )
+        path.loss.block_until_ready()
 
-    for approx, method in product([False, True], METHOD_TO_PATH_CLASS.keys()):
-        bench_name = make_benchmark_name("approx" if approx else "noapprox", method)
-        runner.bench_func(bench_name, partial(bench, approx=approx, method=method))
-
-
-def bench_accumulate_on_receivers_grid_over_paths(runner):
-    def bench(approx, method):
-        path_cls = METHOD_TO_PATH_CLASS[method]
-        scene.accumulate_on_receivers_grid_over_paths(
-            X, Y, fun=received_power, approx=approx, path_cls=path_cls
-        )
-
-    for approx, method in product([False, True], METHOD_TO_PATH_CLASS.keys()):
-        bench_name = make_benchmark_name("approx" if approx else "noapprox", method)
-        runner.bench_func(bench_name, partial(bench, approx=approx, method=method))
+    for method, path_cls in METHOD_TO_PATH_CLASS.items():
+        bench_name = make_benchmark_name(method)
+        func = partial(bench, path_cls=path_cls)
+        runner.bench_func(bench_name, func)
 
 
 runner = pyperf.Runner()
 bench_accumulate_on_emitters_grid_over_paths(runner)
-bench_accumulate_on_receivers_grid_over_paths(runner)
+bench_path_method(runner)
