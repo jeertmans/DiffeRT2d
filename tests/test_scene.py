@@ -31,6 +31,10 @@ class TestScene:
     def test_from_geojson(self, geojson_file, transform):
         s_or_fp = transform(geojson_file)
         scene = Scene.from_geojson(s_or_fp, tx_loc="SW", rx_loc="NE")
+
+        if hasattr(s_or_fp, "close"):
+            s_or_fp.close()  # Important to close file
+
         bounding_box = scene.bounding_box()
         assert len(scene.transmitters) == 1
         assert len(scene.objects) == 28

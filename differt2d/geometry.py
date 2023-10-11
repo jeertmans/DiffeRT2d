@@ -351,7 +351,7 @@ class Wall(Ray, Interactable):
         plt.show()
     """
 
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def normal(self) -> Array:
         """
         Returns the normal to the current wall, expressed in cartesian coordinates and
