@@ -34,7 +34,7 @@ else:
     from chex import dataclass
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+@partial(jax.jit, static_argnames=["approx", "function"])
 def segments_intersect(
     P1: Array,
     P2: Array,
@@ -112,7 +112,7 @@ def segments_intersect(
     b = A[0] * C[1] - A[1] * C[0]  # beta numerator
     d = A[1] * B[0] - A[0] * B[1]  # both denominator
 
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def test(num, den):
         den_is_zero = den == 0.0
         den = jnp.where(den_is_zero, 1.0, den)
