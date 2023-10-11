@@ -16,6 +16,13 @@ from typing import (
 import jax
 import jax.numpy as jnp
 
+from .defaults import DEFAULT_HEIGHT, DEFAULT_R_COEF
+
+P0: float = 100.0
+"""Received power at zero distance from transmitter when using default parameter values,
+see :func:`received_power`."""
+
+
 if TYPE_CHECKING:  # pragma: no cover
     from jax import Array
 
@@ -24,17 +31,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 Pytree = Union[list, tuple, dict]
 T = TypeVar("T")
-
-DEFAULT_R_COEF: float = 0.5
-"""Default value for real reflection coefficient."""
-
-DEFAULT_HEIGHT: float = 0.1
-"""Default TX antenna height, used to avoid division by zero when computing
-:func:`received_power`."""
-
-P0 = 1 / (DEFAULT_HEIGHT * DEFAULT_HEIGHT)
-"""Default received power at zero distance from transmitter, see
-:func:`received_power`."""
 
 
 def stack_leaves(
