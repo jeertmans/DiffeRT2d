@@ -1,3 +1,5 @@
+from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import get_args
 
 import chex
@@ -8,7 +10,41 @@ from differt2d.geometry import Point
 from differt2d.scene import Scene, SceneName
 
 
+@pytest.fixture
+def geojson_file():
+    file = Path(__file__).parent / "example.geojson"
+    assert file.exists()
+    yield file
+
+
 class TestScene:
+    @pytest.mark.parametrize(
+        ("transform",),
+        [
+            (lambda p: p.read_text(),),
+            (lambda p: p.read_bytes(),),
+            (lambda p: bytearray(p.read_bytes()),),
+            (lambda p: p.open(),),
+        ],
+    )
+    def test_from_geojson(self, geojson_file, transform):
+        s_or_fp = transform(geojson_file)
+        scene = Scene.from_geojson(s_or_fp, tx_loc="SW", rx_loc="NE")
+        bounding_box = scene.bounding_box()
+        assert len(scene.emitters) == 1
+        assert len(scene.objects) == 28
+        assert len(scene.receivers) == 1
+        chex.assert_trees_all_equal(scene.emitters["tx"].point, bounding_box[0, :])
+        chex.assert_trees_all_equal(scene.receivers["rx"].point, bounding_box[1, :])
+
+    def test_from_geojson_unimplemented(self, geojson_file):
+        with pytest.raises(NotImplementedError):
+            _ = Scene.from_geojson(geojson_file)
+
+    def test_from_geojson_decode_error(self, geojson_file):
+        with pytest.raises(JSONDecodeError):
+            _ = Scene.from_geojson(geojson_file.as_posix())
+
     @pytest.mark.parametrize(
         ("scene_name",),
         [(scene_name,) for scene_name in get_args(SceneName)],
@@ -100,6 +136,27 @@ class TestScene:
         got = scene.bounding_box()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2, 2))
+
+    def test_get_closest_emitter(self, key):
+        scene = Scene.random_uniform_scene(key, n_emitters=10)
+        expected_point = Point(point=jnp.array([0.5, 0.5]))
+        expected_distance = jnp.array(0.0)
+        scene.emitters["closest"] = expected_point
+        got_point, got_distance = scene.get_closest_emitter(expected_point.point)
+        chex.assert_trees_all_equal(got_point, expected_point)
+        chex.assert_trees_all_equal(got_distance, expected_distance)
+
+    def test_get_closest_receiver(self, key):
+        scene = Scene.random_uniform_scene(key, n_receivers=10)
+        expected_point = Point(point=jnp.array([0.5, 0.5]))
+        expected_distance = jnp.array(0.0)
+        scene.receivers["closest"] = expected_point
+        got_point, got_distance = scene.get_closest_receiver(expected_point.point)
+        chex.assert_trees_all_equal(got_point, expected_point)
+        chex.assert_trees_all_equal(got_distance, expected_distance)
+
+    def test_accumulate_over_paths(self):
+        pass
 
     def test_accumulate_on_emitters_grid_over_paths(self):
         def fun(emitter, receiver, path, interacting_objects):

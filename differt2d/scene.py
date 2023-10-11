@@ -57,7 +57,7 @@ SceneName = Literal[
 @runtime_checkable
 class Readable(Protocol):
     def read(self) -> S:
-        pass
+        pass  # pragma: no cover
 
 
 @dataclass
@@ -288,7 +288,7 @@ class Scene(Plottable):
 
                 if _type == "Polygon":
                     for i in range(n):
-                        points = jnp.vstack(
+                        points = jnp.array(
                             [coordinates[i - 1], coordinates[i]], dtype=float
                         )
                         wall = Wall(points=points)
@@ -738,18 +738,18 @@ class Scene(Plottable):
         >>> from differt2d.scene import Scene
         >>> scene = Scene.square_scene()
         >>> scene.get_visibility_matrix()
-        array([[0., 1., 1., 1., 1., 1.],
-               [1., 0., 1., 1., 1., 1.],
-               [1., 1., 0., 1., 1., 1.],
-               [1., 1., 1., 0., 1., 1.],
-               [1., 1., 1., 1., 0., 1.],
-               [1., 1., 1., 1., 1., 0.]])
+        array([[0, 1, 1, 1, 1, 1],
+               [1, 0, 1, 1, 1, 1],
+               [1, 1, 0, 1, 1, 1],
+               [1, 1, 1, 0, 1, 1],
+               [1, 1, 1, 1, 0, 1],
+               [1, 1, 1, 1, 1, 0]])
 
         :return: The visibility matrix,
             (:python:`len(self.objects) + 2`, :python:`len(self.objects) + 2`).
         """
         n = len(self.objects)
-        return np.ones((n + 2, n + 2)) - np.eye(n + 2, n + 2)
+        return np.ones((n + 2, n + 2), dtype=int) - np.eye(n + 2, n + 2, dtype=int)
 
     @partial(jax.jit, static_argnames=["min_order", "max_order"])
     def all_path_candidates(
@@ -770,7 +770,9 @@ class Scene(Plottable):
         """
         n = len(self.objects)
 
-        graph = rx.PyGraph.from_adjacency_matrix(self.get_visibility_matrix())
+        graph = rx.PyGraph.from_adjacency_matrix(
+            self.get_visibility_matrix().astype(float)
+        )
 
         return rx.all_simple_paths(
             graph, 0, n + 1, min_depth=min_order + 2, cutoff=max_order + 2
@@ -859,6 +861,7 @@ class Scene(Plottable):
         fun: PathFun,
         fun_args: Tuple = (),
         fun_kwargs: Mapping = {},
+        reduce_all: bool = False,
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Array]]:
         """
@@ -872,33 +875,43 @@ class Scene(Plottable):
             Positional arguments to be passed to ``fun``.
         :param fun_kwargs:
             Keyword arguments to be passed to ``fun``.
+        :param reduce_all: Whether to reduce the output by summing
+            all accumulated results. This is especially useful
+            if you only care about the total accumulated results.
         :param kwargs:
             Keyword arguments to be passed to
             :meth:`all_paths`.
         :return:
             An iterator of emitter name, receiver name
-            and the corresponding accumulated result.
+            and the corresponding accumulated result, or the
+            sum of accumulated results if :python:`reduce_all=True`.
         """
-        acc = 0.0
-        for (e_key, r_key), paths_group in groupby(
-            self.all_paths(**kwargs), lambda key: key[:2]
-        ):
-            acc = 0.0
-            emitter = self.emitters[e_key]
-            receiver = self.receivers[r_key]
 
-            for _, _, valid, path, path_candidate in paths_group:
-                interacting_objects = self.get_interacting_objects(path_candidate)
-                acc = acc + valid * fun(
-                    emitter,
-                    receiver,
-                    path,
-                    interacting_objects,  # type: ignore[arg-type]
-                    *fun_args,
-                    **fun_kwargs,
-                )
+        def results() -> Iterator[Tuple[str, str, Array]]:
+            for (e_key, r_key), paths_group in groupby(
+                self.all_paths(**kwargs), lambda key: key[:2]
+            ):
+                acc = 0.0
+                emitter = self.emitters[e_key]
+                receiver = self.receivers[r_key]
 
-            yield e_key, r_key, acc
+                for _, _, valid, path, path_candidate in paths_group:
+                    interacting_objects = self.get_interacting_objects(path_candidate)
+                    acc = acc + valid * fun(
+                        emitter,
+                        receiver,
+                        path,
+                        interacting_objects,  # type: ignore[arg-type]
+                        *fun_args,
+                        **fun_kwargs,
+                    )
+
+                yield e_key, r_key, acc
+
+        if reduce_all:
+            return sum(p for _, _, p in results())
+        else:
+            return results()
 
     def accumulate_on_emitters_grid_over_paths(
         self,
@@ -953,7 +966,7 @@ class Scene(Plottable):
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return:
             An iterator of receiver name and the corresponding
-            accumulated result, or the sum of accumulated
+            accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
         emitters = self.emitters
@@ -1073,7 +1086,7 @@ class Scene(Plottable):
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return:
             An iterator of emitter name and the corresponding
-            accumulated result, or the sum of accumulated
+            accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
         receivers = self.receivers
