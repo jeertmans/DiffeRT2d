@@ -15,7 +15,7 @@ scenes.
 
 A scene is simply defined as a collection of objects
 (see :class:`Object<differt2d.abc.Object>`),
-and some emitters / receivers (see :class:`Point<differt2d.geometry.Point>`).
+and some transmitters / receivers (see :class:`Point<differt2d.geometry.Point>`).
 
 By default, DiffeRT2d only provides a few basic objects
 (like straight walls, see :class:`Wall<differt2d.geometry.Wall>`), but anyone
@@ -79,7 +79,7 @@ Tracing rays
 ^^^^^^^^^^^^
 
 Of course, this would not be a Ray Tracing module without some Ray Tracing tools!
-The easiest way to trace all paths from every emitter to every receiver is to use
+The easiest way to trace all paths from every transmitter to every receiver is to use
 :meth:`Scene.all_valid_paths<differt2d.scene.Scene.all_valid_paths>`:
 
 .. plot::
@@ -137,7 +137,7 @@ like the received power, on a grid and plot it:
     plt.show()
 
 The above plot shows, for every possible receiver position in the scene,
-the received power transmitted by the emitter.
+the received power transmitted by the transmitter.
 One can clearly see a shadowed region on the right of the scene, caused by
 the wall we just added. Of course, this region would receive some power
 if we were to simulate a higher order of interacion, e.g.:
@@ -177,7 +177,7 @@ becomes straighforward, with :func:`jax.grad` or :func:`jax.value_and_grad`.
 
 To make it easy, we also provide ``grad`` and ``value_and_grad`` options in
 both
-:meth:`Scene.accumulate_on_emitters_grid_over_paths<differt2d.scene.Scene.accumulate_on_emitters_grid_over_paths>`
+:meth:`Scene.accumulate_on_transmitters_grid_over_paths<differt2d.scene.Scene.accumulate_on_transmitters_grid_over_paths>`
 and
 both
 :meth:`Scene.accumulate_on_receivers_grid_over_paths<differt2d.scene.Scene.accumulate_on_receivers_grid_over_paths>`.

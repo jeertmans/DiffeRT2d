@@ -9,7 +9,7 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
-scene.emitters["Tx"] = scene.emitters.pop("tx")
+scene.transmitters["Tx"] = scene.transmitters.pop("tx")
 
 annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
 point_kwargs = dict(
@@ -25,7 +25,7 @@ for grad in [False, True]:
     for ax, approx in zip(axes, [False, True]):
         scene.plot(
             ax,
-            emitters_kwargs=point_kwargs,
+            transmitters_kwargs=point_kwargs,
             receivers=False,
         )
 

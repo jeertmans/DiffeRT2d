@@ -24,7 +24,7 @@ def objective_function(received_power_per_receiver):
 
 
 def loss(tx_coords, scene, *args, **kwargs):
-    scene.emitters["Tx"].point = tx_coords
+    scene.transmitters["Tx"].point = tx_coords
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -51,7 +51,7 @@ point_kwargs = dict(
     markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
 )
 
-scene.emitters = dict(
+scene.transmitters = dict(
     Tx=Point(point=jnp.array([0.5, 0.7])),
 )
 scene.receivers = {
@@ -71,14 +71,14 @@ tx_coords = jnp.array([0.5, 0.7])
 optimizers = []
 carries = []
 for i, scene in enumerate(scenes):
-    scene.emitters["Tx"].point = tx_coords
+    scene.transmitters["Tx"].point = tx_coords
     optimizers.append(optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans()))
     carries.append((tx_coords, optimizers[i].init(tx_coords)))
 
 for frame, alpha in enumerate(alphas):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
-        scenes[i].emitters["Tx"].point = tx_coords
+        scenes[i].transmitters["Tx"].point = tx_coords
 
         # Plotting prior to updating
         if frame % 20 == 0:
@@ -105,7 +105,7 @@ for frame, alpha in enumerate(alphas):
 
             scenes[i].plot(
                 ax,
-                emitters_kwargs=point_kwargs,
+                transmitters_kwargs=point_kwargs,
                 receivers=False,
                 receivers_kwargs=dict(marker="x", **point_kwargs),
             )
@@ -122,7 +122,7 @@ for frame, alpha in enumerate(alphas):
 
             F = objective_function(
                 power
-                for _, power in scenes[i].accumulate_on_emitters_grid_over_paths(
+                for _, power in scenes[i].accumulate_on_transmitters_grid_over_paths(
                     X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
                 )
             )

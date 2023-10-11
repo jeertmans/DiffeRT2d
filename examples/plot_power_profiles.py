@@ -4,7 +4,7 @@ Plot power profiles for various parameters
 
 This examples shows how one can plot the received power profiles, i.e.,
 the power received along a line as the sum of the power from
-each emitter, for a variety of approximation parameters.
+each transmitter, for a variety of approximation parameters.
 
 The receiver shown on the plot is just indicative, but are not actually used
 in the process of computing the power profiles.
@@ -57,13 +57,13 @@ annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 # ^^^^^^^^^^
 #
 # On the first axis, we plot a top-down view of the scene, as well as
-# the power map for a fixed emitter location, and a received location
+# the power map for a fixed transmitter location, and a received location
 # given by the coordinates.
 # This is performed without approximation.
 
 scene.plot(
     axes[0],
-    emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+    transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
     receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
 )
 
@@ -90,7 +90,7 @@ _ = axes[1].set_title("Without approx.")  # dummy assign only needed for docs
 # Second axis
 # ^^^^^^^^^^^
 #
-# We plot various power profiles, along a line that joins the emitter and
+# We plot various power profiles, along a line that joins the transmitter and
 # receiver shown on the first axis.
 #
 # The first profile is the no-approximation case. Subsequent profiles are

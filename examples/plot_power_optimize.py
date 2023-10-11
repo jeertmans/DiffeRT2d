@@ -5,7 +5,7 @@ Animate power optimization using approximation
 This example shows how one can use approximation to perform
 power optimization on a given network configuration.
 
-Here, to goal is to find the emitter location that
+Here, to goal is to find the transmitter location that
 maximizes some ``objective_function``, using the approximation framework
 and the :func:`optax.adam` optimizer.
 
@@ -70,7 +70,7 @@ def objective_function(received_power_per_receiver):
 
 def loss(tx_coords, scene, *args, **kwargs):
     """Loss function, to be minimized."""
-    scene.emitters["tx"].point = tx_coords
+    scene.transmitters["tx"].point = tx_coords
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -88,7 +88,7 @@ f_and_df = jax.value_and_grad(
 #
 # .. note::
 #
-#    The emitter is intentionnally placed in a zero-gradient zone, to showcase
+#    The transmitter is intentionnally placed in a zero-gradient zone, to showcase
 #    the problem of non-convergence when not using approximation. Note that
 #    the zero gradient region can be avoided if one simulates a ``max_order``
 #    greater than ``0`` (e.g., ``1`` is sufficient here). This, of course,
@@ -98,7 +98,7 @@ fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
-scene.emitters = dict(
+scene.transmitters = dict(
     tx=Point(point=jnp.array([0.5, 0.7])),
 )
 scene.receivers = {
@@ -109,17 +109,17 @@ scene.receivers = {
 X, Y = scene.grid(n=300)
 
 im_artists = []
-emitter_artists = []
+transmitter_artists = []
 annotate_artists = []
 scenes = [scene, copy(scene)]  # Need a copy, because scenes will diverge
 
 for ax, approx, scene in zip(axes, [False, True], scenes):
     scene_artists = scene.plot(
         ax,
-        emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+        transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
         receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
     )
-    emitter_artists.append(scene_artists[0])
+    transmitter_artists.append(scene_artists[0])
     annotate_artists.append(scene_artists[1])
 
     im = ax.pcolormesh(
@@ -173,7 +173,7 @@ carries = [(None, None), (None, None)]
 def init_func():
     tx_coords = jnp.array([0.5, 0.7])
     for i, scene in enumerate(scenes):
-        scene.emitters["tx"].point = tx_coords
+        scene.transmitters["tx"].point = tx_coords
         optimizers[i] = optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
@@ -183,8 +183,8 @@ def func(alpha):
         tx_coords, opt_state = carries[i]
 
         # Plotting prior to updating
-        scenes[i].emitters["tx"].point = tx_coords
-        emitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
+        scenes[i].transmitters["tx"].point = tx_coords
+        transmitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
 
@@ -199,7 +199,7 @@ def func(alpha):
 
         F = objective_function(
             power
-            for _, power in scenes[i].accumulate_on_emitters_grid_over_paths(
+            for _, power in scenes[i].accumulate_on_transmitters_grid_over_paths(
                 X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
             )
         )
