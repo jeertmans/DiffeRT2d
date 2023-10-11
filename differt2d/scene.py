@@ -62,11 +62,11 @@ class Readable(Protocol):
 
 @dataclass
 class Scene(Plottable):
-    """2D Scene made of objects, one or more emitting node(s), and one or more receiving
+    """2D Scene made of objects, one or more transmitting node(s), and one or more receiving
     node(s)."""
 
     transmitters: Dict[str, Point]
-    """The emitting nodes."""
+    """The transmitting nodes."""
     receivers: Dict[str, Point]
     """The receiving nodes."""
     objects: List[Object]
