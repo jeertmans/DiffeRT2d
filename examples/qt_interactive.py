@@ -138,7 +138,9 @@ class PlotWidget(QWidget):
         self.r_coef = 0.5
         self.path_cls = METHOD_TO_PATH_CLASS["image"]
 
-        assert len(scene.transmitters) == 1, "This simulation only supports one transmitter"
+        assert (
+            len(scene.transmitters) == 1
+        ), "This simulation only supports one transmitter"
         assert len(scene.receivers) == 1, "This simulation only supports one receiver"
 
         # -- Create widgets --

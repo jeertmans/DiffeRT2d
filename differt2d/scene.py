@@ -362,8 +362,12 @@ class Scene(Plottable):
             _ = scene.plot(ax)
             plt.show()
         """
-        points = jax.random.uniform(key, (n_transmitters + 2 * n_walls + n_receivers, 2))
-        transmitters = {f"tx_{i}": Point(point=points[i, :]) for i in range(n_transmitters)}
+        points = jax.random.uniform(
+            key, (n_transmitters + 2 * n_walls + n_receivers, 2)
+        )
+        transmitters = {
+            f"tx_{i}": Point(point=points[i, :]) for i in range(n_transmitters)
+        }
         receivers = {
             f"rx_{i}": Point(point=points[-(i + 1), :]) for i in range(n_receivers)
         }
@@ -821,7 +825,10 @@ class Scene(Plottable):
             min_order=min_order, max_order=max_order
         )
 
-        for (tx_key, transmitter), (rx_key, receiver) in self.all_transmitter_receiver_pairs():
+        for (tx_key, transmitter), (
+            rx_key,
+            receiver,
+        ) in self.all_transmitter_receiver_pairs():
             for path_candidate in path_candidates:
                 interacting_objects = self.get_interacting_objects(path_candidate)
                 path = path_cls.from_tx_objects_rx(
@@ -865,8 +872,8 @@ class Scene(Plottable):
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Array]]:
         """
-        Repeatedly calls ``fun`` on all paths between each pair of (transmitter, receiver)
-        in the scene, and accumulates the results.
+        Repeatedly calls ``fun`` on all paths between each pair of (transmitter,
+        receiver) in the scene, and accumulates the results.
 
         Produces an iterator with each (transmitter, receiver) pair.
 
@@ -934,8 +941,8 @@ class Scene(Plottable):
     ]:
         """
         Repeatedly calls ``fun`` on all paths between the receivers in the scene and
-        every transmitter coordinate in :python:`(X, Y)`, and accumulates the results over
-        one array that has the same shape a ``X`` and ``Y``.
+        every transmitter coordinate in :python:`(X, Y)`, and accumulates the results
+        over one array that has the same shape a ``X`` and ``Y``.
 
         Produces an iterator with one element for each receiver location.
 
@@ -1137,7 +1144,9 @@ class Scene(Plottable):
         grid = jnp.dstack((X, Y))
 
         def results() -> Iterator[Array]:
-            return ((tx_key, vfacc(transmitter, grid)) for (tx_key, transmitter), _ in pairs)
+            return (
+                (tx_key, vfacc(transmitter, grid)) for (tx_key, transmitter), _ in pairs
+            )
 
         if reduce_all:
             if value_and_grad:

@@ -33,7 +33,8 @@ DEFAULT_HEIGHT: float = 0.1
 :func:`received_power`."""
 
 P0 = 1 / (DEFAULT_HEIGHT * DEFAULT_HEIGHT)
-"""Default received power at zero distance from transmitter, see :func:`received_power`."""
+"""Default received power at zero distance from transmitter, see
+:func:`received_power`."""
 
 
 def stack_leaves(
@@ -77,7 +78,8 @@ def received_power(
     height: float = DEFAULT_HEIGHT,
 ) -> Array:
     """
-    Returns the received power for a given path between some transmitter and some receiver.
+    Returns the received power for a given path between some transmitter and some
+    receiver.
 
     Here, the power decreases with the square of the path length, and each interaction
     introduces some reflection coefficient.

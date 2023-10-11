@@ -7,6 +7,7 @@ import jax.numpy as jnp
 import pytest
 
 from differt2d.geometry import Point
+from differt2d.logic import is_true
 from differt2d.scene import Scene, SceneName
 
 
@@ -107,7 +108,9 @@ class TestScene:
         assert len(scene.objects) == 8
 
     def test_plot(self, ax, key):
-        scene = Scene.random_uniform_scene(key, n_transmitters=3, n_walls=5, n_receivers=2)
+        scene = Scene.random_uniform_scene(
+            key, n_transmitters=3, n_walls=5, n_receivers=2
+        )
         _ = scene.plot(ax)
 
         scene = Scene.basic_scene()
@@ -155,8 +158,79 @@ class TestScene:
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
+    @pytest.mark.parametrize(
+        ("min_order", "max_order"), [(0, 0), (1, 1), (2, 2), (0, 2)]
+    )
+    def test_all_paths_and_valid_paths(self, min_order, max_order):
+        scene = Scene.square_scene()
+
+        valid_paths = scene.all_valid_paths(
+            approx=False, min_order=min_order, max_order=max_order
+        )
+
+        for tx_key, rx_key, got_valid, expected_path, path_candidate in scene.all_paths(
+            min_order=min_order, max_order=max_order, approx=False
+        ):
+            assert tx_key == "tx"
+            assert rx_key == "rx"
+
+            assert min_order <= expected_path.points.shape[0] - 2 <= max_order
+            assert min_order <= len(path_candidate) - 2 <= max_order
+
+            interacting_objects = scene.get_interacting_objects(path_candidate)
+            expected_valid = expected_path.is_valid(
+                scene.objects, path_candidate, interacting_objects, approx=False
+            )
+
+            chex.assert_trees_all_equal(got_valid, expected_valid)
+
+            if is_true(got_valid, approx=False):
+                _, _, got_path, _ = next(valid_paths)
+                chex.assert_trees_all_equal(got_path, expected_path)
+
+        with pytest.raises(StopIteration):
+            _ = next(valid_paths)
+
     def test_accumulate_over_paths(self):
-        pass
+        def fun(transmitter, receiver, path, interacting_objects):
+            return path.length() ** 2  # = x^2 + y^2 in LOS
+
+        tx0 = Point(point=jnp.array([0.0, 0.0]))
+        tx1 = Point(point=jnp.array([1.0, 0.0]))
+        rx0 = Point(point=jnp.array([1.0, 1.0]))
+        rx1 = Point(point=jnp.array([0.0, 1.0]))
+        scene = Scene(
+            transmitters=dict(tx0=tx0, tx1=tx1),
+            objects=[],
+            receivers=dict(rx0=rx0, rx1=rx1),
+        )
+
+        got = scene.accumulate_over_paths(fun=fun, max_order=1, approx=False)
+
+        tx_key, rx_key, acc = next(got)
+        assert tx_key == "tx0"
+        assert rx_key == "rx0"
+        chex.assert_trees_all_close(acc, jnp.array(2.0))
+
+        tx_key, rx_key, acc = next(got)
+        assert tx_key == "tx0"
+        assert rx_key == "rx1"
+        chex.assert_trees_all_close(acc, jnp.array(1.0))
+
+        tx_key, rx_key, acc = next(got)
+        assert tx_key == "tx1"
+        assert rx_key == "rx0"
+        chex.assert_trees_all_close(acc, jnp.array(1.0))
+
+        tx_key, rx_key, acc = next(got)
+        assert tx_key == "tx1"
+        assert rx_key == "rx1"
+        chex.assert_trees_all_close(acc, jnp.array(2.0))
+
+        got = scene.accumulate_over_paths(
+            fun=fun, reduce_all=True, max_order=1, approx=False
+        )
+        chex.assert_trees_all_close(got, jnp.array(6.0))
 
     def test_accumulate_on_transmitters_grid_over_paths(self):
         def fun(transmitter, receiver, path, interacting_objects):
