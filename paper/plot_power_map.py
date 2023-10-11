@@ -30,7 +30,13 @@ for grad in [False, True]:
         )
 
         P: Array = scene.accumulate_on_receivers_grid_over_paths(
-            X, Y, fun=received_power, reduce_all=True, grad=grad, approx=approx
+            X,
+            Y,
+            fun=received_power,
+            reduce_all=True,
+            grad=grad,
+            approx=approx,
+            alpha=50.0,
         )
 
         if grad:
@@ -42,11 +48,21 @@ for grad in [False, True]:
                 dP,
                 norm=LogNorm(vmin=1e-1, vmax=1e3),
                 rasterized=True,
+                antialiased=True,
                 zorder=-1,
             )
         else:
             PdB = 10.0 * jnp.log10(P / P0)
-            im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, rasterized=True, zorder=-1)
+            im = ax.pcolormesh(
+                X,
+                Y,
+                PdB,
+                vmin=-50,
+                vmax=5,
+                rasterized=True,
+                antialiased=True,
+                zorder=-1,
+            )
 
         cbar = fig.colorbar(im, ax=ax)
 
@@ -64,6 +80,6 @@ for grad in [False, True]:
     folder.mkdir(exist_ok=True)
 
     if grad:
-        fig.savefig(folder / "power_gradient.pgf", dpi=300)
+        fig.savefig(folder / "power_gradient.pgf", dpi=300, bbox_inches="tight")
     else:
-        fig.savefig(folder / "power_map.pgf", dpi=300)
+        fig.savefig(folder / "power_map.pgf", dpi=300, bbox_inches="tight")

@@ -128,7 +128,13 @@ for frame, alpha in enumerate(alphas):
             )
 
             im = ax.pcolormesh(
-                X, Y, F, norm=LogNorm(vmin=1e-4, vmax=1e0), zorder=-1, rasterized=True
+                X,
+                Y,
+                F,
+                norm=LogNorm(vmin=1e-4, vmax=1e0),
+                zorder=-1,
+                rasterized=True,
+                antialiased=True,
             )
             if frame == 0:
                 cbar = fig1.colorbar(im, ax=ax)
@@ -153,5 +159,5 @@ for frame, alpha in enumerate(alphas):
 folder = Path(__file__).parent / "pgf"
 folder.mkdir(exist_ok=True)
 
-fig1.savefig(folder / "optimize_start.pgf", dpi=300)
-fig2.savefig(folder / "optimize_steps.pgf", dpi=300)
+fig1.savefig(folder / "optimize_start.pgf", dpi=300, bbox_inches="tight")
+fig2.savefig(folder / "optimize_steps.pgf", dpi=300, bbox_inches="tight")

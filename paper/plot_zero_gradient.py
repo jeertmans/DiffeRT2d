@@ -31,7 +31,9 @@ P: Array = scene.accumulate_on_receivers_grid_over_paths(
 
 PdB = 10.0 * jnp.log10(P / P0)
 
-im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, rasterized=True, zorder=-1)
+im = ax.pcolormesh(
+    X, Y, PdB, vmin=-50, vmax=5, rasterized=True, antialiased=True, zorder=-1
+)
 cbar = fig.colorbar(im, ax=ax)
 cbar.ax.set_ylabel("Power (dB)")
 ax.annotate(r"$\nabla = 0$", (0.6, 0.5))
@@ -58,4 +60,4 @@ ax.set_xlabel("x coordinate")
 folder = Path(__file__).parent / "pgf"
 folder.mkdir(exist_ok=True)
 
-fig.savefig(folder / "zero_gradient.pgf", dpi=300)
+fig.savefig(folder / "zero_gradient.pgf", dpi=300, bbox_inches="tight")
