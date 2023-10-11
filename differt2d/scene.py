@@ -987,7 +987,6 @@ class Scene(Plottable):
         pairs = list(self.all_transmitter_receiver_pairs())
         self.transmitters = transmitters
 
-        @jax.jit
         def facc(tx_coords: Array, receiver: Point) -> Array:
             acc = 0.0
             for path_candidate in path_candidates:
@@ -1108,7 +1107,6 @@ class Scene(Plottable):
         pairs = list(self.all_transmitter_receiver_pairs())
         self.receivers = receivers
 
-        @jax.jit
         def facc(transmitter: Point, rx_coords: Array) -> Array:
             acc = 0.0
             for path_candidate in path_candidates:
