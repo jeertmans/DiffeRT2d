@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-+ Added three keyword arguments to `Scene.plot`, to make plotting emitters,
++ Added three keyword arguments to `Scene.plot`, to make plotting transmitters,
   receivers or objects, an option.
   [#37](https://github.com/jeertmans/DiffeRT2d/pull/37)
 

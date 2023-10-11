@@ -4,7 +4,7 @@ Plot received power over a grid
 
 This examples shows how one can plot the received power map, i.e.,
 the power received at each (x, y) coordinate as the sum of the power from
-each emitter.
+each transmitter.
 
 The first plot shows the power map when no approximation is used, and the
 second shows the power map, but when approximation is enabled (with default parameters,
@@ -51,7 +51,7 @@ X, Y = scene.grid(n=300)
 for ax, approx in zip(axes, [False, True]):
     scene.plot(
         ax,
-        emitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+        transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
         receivers=False,
     )
 

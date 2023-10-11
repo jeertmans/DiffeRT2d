@@ -535,7 +535,7 @@ class Path(Plottable):
             scene = Scene.square_scene()
             _ = scene.plot(ax)
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,
                 scene.receivers["rx"].point
             )
@@ -762,7 +762,7 @@ class ImagePath(Path):
             scene = Scene.square_scene()
             _ = scene.plot(ax)
             path = ImagePath.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,
                 scene.receivers["rx"].point
             )
@@ -854,7 +854,7 @@ class FermatPath(Path):
             scene = Scene.square_scene()
             _ = scene.plot(ax)
             path = FermatPath.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,
                 scene.receivers["rx"].point
             )
@@ -939,7 +939,7 @@ class MinPath(Path):
             scene = Scene.square_scene()
             _ = scene.plot(ax)
             path = MinPath.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,
                 scene.receivers["rx"].point
             )

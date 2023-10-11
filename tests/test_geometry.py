@@ -290,7 +290,7 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=5)
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx_0"].point,
+                scene.transmitters["tx_0"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
@@ -309,7 +309,7 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=10)
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx_0"].point,
+                scene.transmitters["tx_0"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
@@ -322,7 +322,7 @@ class TestPath:
 
             scene = Scene.square_scene()
             path = Path.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
@@ -337,7 +337,7 @@ class TestPath:
         with enable_approx(approx), disable_jit():
             scene = Scene.square_scene()
             path = path_cls.from_tx_objects_rx(
-                scene.emitters["tx"].point,
+                scene.transmitters["tx"].point,
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
@@ -373,7 +373,7 @@ class TestImagePath:
     def test_path_loss_is_zero(self):
         scene = Scene.square_scene()
         got = ImagePath.from_tx_objects_rx(
-            scene.emitters["tx"].point,
+            scene.transmitters["tx"].point,
             scene.objects,  # type: ignore[arg-type]
             scene.receivers["rx"].point,
         )

@@ -33,7 +33,7 @@ DEFAULT_HEIGHT: float = 0.1
 :func:`received_power`."""
 
 P0 = 1 / (DEFAULT_HEIGHT * DEFAULT_HEIGHT)
-"""Default received power at zero distance from emitter, see :func:`received_power`."""
+"""Default received power at zero distance from transmitter, see :func:`received_power`."""
 
 
 def stack_leaves(
@@ -69,7 +69,7 @@ def unstack_leaves(pytrees) -> List[Pytree]:
 
 @jax.jit
 def received_power(
-    emitter: Point,
+    transmitter: Point,
     receiver: Point,
     path: Path,
     interacting_objects: Sequence[Interactable],
@@ -77,17 +77,17 @@ def received_power(
     height: float = DEFAULT_HEIGHT,
 ) -> Array:
     """
-    Returns the received power for a given path between some emitter and some receiver.
+    Returns the received power for a given path between some transmitter and some receiver.
 
     Here, the power decreases with the square of the path length, and each interaction
     introduces some reflection coefficient.
 
-    :param emitter: The emitting node, ignored.
+    :param transmitter: The emitting node, ignored.
     :param receiver: The receiving node, ignored.
     :param path: The ray path.
     :param interacting_objects: The sequence of interacting objects, ignored.
     :param r_coef: The reflection coefficient, with :python:`0 <= r_coef <= 1`.
-    :param height: The TX antenna height to avoid division by zero when emitter and
+    :param height: The TX antenna height to avoid division by zero when transmitter and
         receiver are located at the same coordinates.
     :return: The received power.
     """
