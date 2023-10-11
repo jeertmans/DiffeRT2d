@@ -283,7 +283,7 @@ class TestPath:
     def test_from_tx_objects_rx_no_object(self, path_cls: Type[Path]):
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
-        path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[])
+        path = path_cls.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[])
         chex.assert_trees_all_close(path.length(), jnp.array(2.0))
 
     def test_path_length(self, key: Array):

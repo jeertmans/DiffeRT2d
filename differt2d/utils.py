@@ -84,7 +84,7 @@ def received_power(
     Here, the power decreases with the square of the path length, and each interaction
     introduces some reflection coefficient.
 
-    :param transmitter: The emitting node, ignored.
+    :param transmitter: The transmitting node, ignored.
     :param receiver: The receiving node, ignored.
     :param path: The ray path.
     :param interacting_objects: The sequence of interacting objects, ignored.

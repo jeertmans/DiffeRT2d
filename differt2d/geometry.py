@@ -515,7 +515,7 @@ class Path(Plottable):
         The present implementation will sample a point at :python:`t = 0.5`
         on each object.
 
-        :param tx: The emitting node, (2,).
+        :param tx: The transmitting node, (2,).
         :param objects:
             The list of objects to interact with (order is important).
         :param rx: The receiving node, (2,).
@@ -742,7 +742,7 @@ class ImagePath(Path):
         """
         Returns a path with minimal length.
 
-        :param tx: The emitting node, (2,).
+        :param tx: The transmitting node, (2,).
         :param objects:
             The list of walls to interact with (order is important).
         :param rx: The receiving node, (2,).
@@ -828,7 +828,7 @@ class FermatPath(Path):
         """
         Returns a path with minimal length.
 
-        :param tx: The emitting node, (2,).
+        :param tx: The transmitting node, (2,).
         :param objects:
             The list of objects to interact with (order is important).
         :param rx: The receiving node, (2,).
@@ -913,7 +913,7 @@ class MinPath(Path):
         """
         Returns a path that minimizes the sum of interactions.
 
-        :param tx: The emitting node, (2,).
+        :param tx: The transmitting node, (2,).
         :param objects:
             The list of objects to interact with (order is important).
         :param rx: The receiving node, (2,).
