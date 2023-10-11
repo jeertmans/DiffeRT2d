@@ -279,6 +279,13 @@ class TestPath:
         path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[wall])
         chex.assert_trees_all_close(path.length(), 2.0 * jnp.sqrt(2.0))
 
+    @path_cls
+    def test_from_tx_objects_rx_no_object(self, path_cls: Type[Path]):
+        tx = Point(point=jnp.array([0.0, 1.0]))
+        rx = Point(point=jnp.array([2.0, 1.0]))
+        path = Path.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[])
+        chex.assert_trees_all_close(path.length(), jnp.array(2.0))
+
     def test_path_length(self, key: Array):
         points = jax.random.uniform(key, (200, 2))
         expected = path_length(points)

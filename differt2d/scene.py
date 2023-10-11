@@ -298,7 +298,7 @@ class Scene(Plottable):
             tx = Point(point=walls[0].origin())
             rx = Point(point=walls[0].dest())
 
-        else:
+        else:  # pragma: no cover
             tx = Point(point=jnp.array([0.0, 0.0]))
             rx = Point(point=jnp.array([1.0, 1.0]))
 
