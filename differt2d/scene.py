@@ -5,7 +5,7 @@ from __future__ import annotations
 __all__ = ["Scene", "SceneName"]
 
 import json
-from functools import singledispatchmethod
+from functools import partial, singledispatchmethod
 from itertools import groupby, product
 from typing import (
     TYPE_CHECKING,
@@ -751,6 +751,7 @@ class Scene(Plottable):
         n = len(self.objects)
         return np.ones((n + 2, n + 2)) - np.eye(n + 2, n + 2)
 
+    @partial(jax.jit, static_argnames=["min_order", "max_order"])
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
     ) -> List[List[int]]:

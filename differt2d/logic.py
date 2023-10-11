@@ -56,8 +56,6 @@ _enable_approx = jax.config.define_bool_state(
     help=("Enable approximation using some activation function."),
 )
 
-jit_approx = partial(jax.jit, inline=True, static_argnames=["approx", "function"])
-
 
 @contextmanager
 def enable_approx(enable: bool = True):
