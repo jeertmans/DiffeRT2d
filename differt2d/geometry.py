@@ -785,10 +785,12 @@ class ImagePath(Path):
 
             return _loss
 
+        @partial(jax.jit, inline=True)
         def forward(image, wall):
             image = wall.image_of(image)
             return image, image
 
+        @partial(jax.jit, inline=True)
         def backward(point, x):
             wall, image = x
             p = wall.origin()
