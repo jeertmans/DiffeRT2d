@@ -370,11 +370,11 @@ class Wall(Ray, Interactable):
     def parameters_count() -> int:
         return 1
 
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def parametric_to_cartesian(self, param_coords: Array) -> Array:
         return self.origin() + param_coords * self.t()
 
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def cartesian_to_parametric(self, carte_coords: Array) -> Array:
         other = carte_coords - self.origin()
         squared_length = jnp.dot(self.t(), self.t())
@@ -419,7 +419,7 @@ class Wall(Ray, Interactable):
             **kwargs,
         )
 
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def evaluate_cartesian(self, ray_path: Array) -> Array:
         i = ray_path[1, :] - ray_path[0, :]  # Incident
         r = ray_path[2, :] - ray_path[1, :]  # Reflected
@@ -429,7 +429,7 @@ class Wall(Ray, Interactable):
         e = r - (i - 2 * jnp.dot(i, n) * n)
         return jnp.dot(e, e)
 
-    @jax.jit
+    @partial(jax.jit, inline=True)
     def image_of(self, point: Array) -> Array:
         """
         Returns the image of a point with respect to this mirror (wall), using specular
