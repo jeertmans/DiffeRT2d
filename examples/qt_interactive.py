@@ -60,8 +60,8 @@ from qtpy.QtWidgets import (
 )
 
 from differt2d.abc import Loc
-from differt2d.geometry import DEFAULT_PATCH, FermatPath, ImagePath, MinPath, Point
-from differt2d.logic import DEFAULT_ALPHA, DEFAULT_FUNCTION
+from differt2d.defaults import DEFAULT_ALPHA, DEFAULT_FUNCTION, DEFAULT_PATCH
+from differt2d.geometry import FermatPath, ImagePath, MinPath, Point
 from differt2d.scene import Scene, SceneName
 from differt2d.utils import P0, received_power
 
