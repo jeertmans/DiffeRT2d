@@ -256,7 +256,7 @@ def activation(
 
         for name, function in [("sigmoid", sigmoid), ("hard_sigmoid", hard_sigmoid)]:
             def f(x):
-                return activation(x, alpha=2.0, function=function)
+                return activation(x, alpha=1.5, function=function)
 
             y = f(x)
             dydx = vmap(grad(f))(x)
