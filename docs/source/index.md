@@ -24,7 +24,7 @@ examples_gallery/index
 reference/index
 ```
 
-If you are intersted in contributing to this tool, please checkout the
+If you are interested in contributing to this tool, please checkout the
 [Contributing](contributing/index) section!
 
 ```{eval-rst}
