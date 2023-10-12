@@ -838,6 +838,7 @@ class FermatPath(Path):
         :param kwargs:
             Keyword arguments to be passed to
             :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
+            Note that the ``many`` parameter defaults to ``1`` here.
         :return: The resulting path of the FPT method.
 
         :Examples:
@@ -886,6 +887,8 @@ class FermatPath(Path):
         if key is None:
             key = jax.random.PRNGKey(seed)
 
+        kwargs.setdefault("many", 1)
+
         theta, _ = minimize_many_random_uniform(
             fun=loss_fun, n=n_unknowns, key=key, **kwargs
         )
@@ -923,6 +926,7 @@ class MinPath(Path):
         :param kwargs:
             Keyword arguments to be passed to
             :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
+            Note that the ``many`` parameter defaults to ``1`` here.
         :return: The resulting path of the MPT method.
 
         :Examples:
@@ -966,6 +970,8 @@ class MinPath(Path):
 
         if key is None:
             key = jax.random.PRNGKey(seed)
+
+        kwargs.setdefault("many", 1)
 
         theta, loss = minimize_many_random_uniform(
             fun=loss_fun, n=n_unknowns, key=key, **kwargs

@@ -195,6 +195,9 @@ def minimize_many_random_uniform(
     >>> chex.assert_trees_all_close(x, jnp.ones(10), rtol=1e-2)
     >>> chex.assert_trees_all_close(y, 0.0, atol=1e-4)
     """
+    if many == 1:
+        return minimize_random_uniform(fun=fun, key=key, n=n, **kwargs)
+
     keys = jax.random.split(key, num=many)
 
     def _minimize(key):
