@@ -27,6 +27,7 @@ __all__ = [
     "enable_approx",
     "greater",
     "greater_equal",
+    "hard_sigmoid",
     "is_false",
     "is_true",
     "less",
@@ -36,6 +37,7 @@ __all__ = [
     "logical_any",
     "logical_not",
     "logical_or",
+    "sigmoid",
 ]
 
 from contextlib import contextmanager
