@@ -11,6 +11,7 @@ from differt2d.logic import (
     false_value,
     greater,
     greater_equal,
+    hard_sigmoid,
     is_false,
     is_true,
     less,
@@ -20,6 +21,7 @@ from differt2d.logic import (
     logical_any,
     logical_not,
     logical_or,
+    sigmoid,
     true_value,
 )
 
@@ -27,7 +29,7 @@ approx = pytest.mark.parametrize(("approx",), [(True,), (False,), (None,)])
 alpha = pytest.mark.parametrize(
     ("alpha",), [(1e-3,), (1e-2,), (1e-1,), (1e-0,), (1e1,)]
 )
-function = pytest.mark.parametrize(("function",), [("sigmoid",), ("hard_sigmoid",)])
+function = pytest.mark.parametrize(("function",), [(sigmoid,), (hard_sigmoid,)])
 tol = pytest.mark.parametrize(("tol",), [(0.05,), (0.5,)])
 
 
@@ -210,7 +212,7 @@ def test_enable_approx_with_keyword():
 
 @pytest.mark.parametrize(
     ("function", "jax_fun"),
-    [("sigmoid", jax.nn.sigmoid), ("hard_sigmoid", jax.nn.hard_sigmoid)],
+    [(sigmoid, jax.nn.sigmoid), (hard_sigmoid, jax.nn.hard_sigmoid)],
 )
 @alpha
 def test_activation(function, jax_fun, alpha):
@@ -219,15 +221,6 @@ def test_activation(function, jax_fun, alpha):
     got = activation(x, alpha=alpha, function=function)
     chex.assert_trees_all_close(expected, got)
     chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-
-
-@pytest.mark.parametrize(
-    ("function",), [("relu",), ("SIGMOID",), ("HARD_SIGMOID",), ("hard-sigmoid",)]
-)
-def test_invalid_activation(function):
-    with pytest.raises(ValueError) as e:
-        activation(1.0, function=function)
-        assert "Unknown" in str(e)
 
 
 @approx
@@ -394,6 +387,5 @@ def test_true_value(approx, tol):
 @approx
 @tol
 def test_false_value(approx, tol):
-    print("approx", approx, jax.config.jax_enable_approx)
     x = false_value(approx=approx)
     assert is_false(x, tol=tol, approx=approx)
