@@ -177,12 +177,10 @@ def disable_approx(disable: bool = True):  # pragma: no cover
 
 X = TypeVar("X", bound=Array)
 Y = TypeVar("Y", bound=Array)
-A = TypeVar("A", bound=Array)
-ActivationFunction = Callable[[X, A], Y]
 
 
 @partial(jax.jit, inline=True)
-def sigmoid(x: Array, alpha: Array) -> Array:
+def sigmoid(x: Array, alpha: float) -> Array:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -201,7 +199,7 @@ def sigmoid(x: Array, alpha: Array) -> Array:
 
 
 @partial(jax.jit, inline=True)
-def hard_sigmoid(x: Array, alpha: Array) -> Array:
+def hard_sigmoid(x: Array, alpha: float) -> Array:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -223,7 +221,7 @@ def hard_sigmoid(x: Array, alpha: Array) -> Array:
 def activation(
     x: Array,
     alpha: float = DEFAULT_ALPHA,
-    function: ActivationFunction = hard_sigmoid,
+    function: Callable[[X, float], Y] = hard_sigmoid,
 ) -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1, with
