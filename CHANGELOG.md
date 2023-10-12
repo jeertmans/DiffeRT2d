@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Accumulate functions from `Scene` class now return an iterator by default,
   which can be reduce with the `reduce_all` option.
   This is a **breaking change**.
++ Changed `function` parameter in `activation` to be a callable, not a `str`,
+  so anyone can provide a custom activation function.
+  This is a **breaking change**.
+  [#45](https://github.com/jeertmans/DiffeRT2d/pull/45)
 
 ### Chore
 

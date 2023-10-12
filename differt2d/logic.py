@@ -40,15 +40,13 @@ __all__ = [
 
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, TypeVar, Union
 
 import jax
 import jax.numpy as jnp
+from jax import Array
 
-from .defaults import DEFAULT_ALPHA, DEFAULT_FUNCTION
-
-if TYPE_CHECKING:  # pragma: no cover
-    from jax import Array
+from .defaults import DEFAULT_ALPHA
 
 _enable_approx = jax.config.define_bool_state(
     name="jax_enable_approx",
@@ -177,30 +175,64 @@ def disable_approx(disable: bool = True):  # pragma: no cover
         yield
 
 
+X = TypeVar("X", bound=Array)
+Y = TypeVar("Y", bound=Array)
+
+
+@partial(jax.jit, inline=True)
+def sigmoid(x: Array, alpha: float) -> Array:
+    r"""
+    Element-wise sigmoid, parametrized with ``alpha``.
+
+    .. math::
+        \text{sigmoid}(x;\alpha) = \frac{1}{1 + e^{-\alpha x}},
+
+    where :math:`\alpha` (``alpha``) is a slope parameter.
+
+    See :func:`jax.nn.sigmoid` for more details.
+
+    :param x: The input array.
+    :param alpha: The slope parameter.
+    :return: The corresponding values.
+    """
+    return jax.nn.sigmoid(alpha * x)
+
+
+@partial(jax.jit, inline=True)
+def hard_sigmoid(x: Array, alpha: float) -> Array:
+    r"""
+    Element-wise sigmoid, parametrized with ``alpha``.
+
+    .. math::
+        \text{hard_sigmoid}(x;\alpha) = \frac{\text{relu6}(\alpha x + 3)}{6},
+
+    where :math:`\alpha` (``alpha``) is a slope parameter.
+
+    See :func:`jax.nn.hard_sigmoid` and :func:`jax.nn.relu6` for more details.
+
+    :param x: The input array.
+    :param alpha: The slope parameter.
+    :return: The corresponding values.
+    """
+    return jax.nn.hard_sigmoid(alpha * x)
+
+
 @partial(jax.jit, inline=True, static_argnames=["function"])
 def activation(
     x: Array,
     alpha: float = DEFAULT_ALPHA,
-    function: Literal["sigmoid", "hard_sigmoid"] = DEFAULT_FUNCTION,
+    function: Callable[[X, float], Y] = hard_sigmoid,
 ) -> Array:
     r"""
     Element-wise function for approximating a discrete transition between 0 and 1, with
     a smoothed transition centered at :python:`x = 0.0`.
 
     Depending on the ``function`` argument, the activation function has the
-    following definition:
+    different definition.
 
-    .. math::
-        \text{sigmoid}(x;\alpha) = \frac{1}{1 + e^{-\alpha x}},
-
-    or
-
-    .. math::
-        \text{hard_sigmoid}(x;\alpha) = \frac{\text{relu6}(\alpha x+3)}{6},
-
-    where :math:`\alpha` (:code:`alpha`) is a slope parameter.
-
-    See :func:`jax.nn.sigmoid` or :func:`jax.nn.hard_sigmoid` for more details.
+    Two basic activation functions are provided: :func:`sigmoid` and :func:`hard_sigmoid`.
+    If needed, you can implement your own activation function and pass it as an argument,
+    granted that it satisfies the properties defined in the related paper.
 
     :param x: The input array.
     :param alpha: The slope parameter.
@@ -213,21 +245,21 @@ def activation(
 
         import matplotlib.pyplot as plt
         import numpy as np
-        from differt2d.logic import activation
+        from differt2d.logic import activation, hard_sigmoid, sigmoid
         from jax import grad, vmap
 
         x = np.linspace(-5, +5, 200)
 
         _, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=[6.4, 8])
 
-        for function in ["sigmoid", "hard_sigmoid"]:
+        for name, function in [("sigmoid", sigmoid), ("hard_sigmoid", hard_sigmoid)]:
             def f(x):
-                return activation(x, alpha=1.0, function=function)
+                return activation(x, alpha=2.0, function=function)
 
             y = f(x)
             dydx = vmap(grad(f))(x)
-            _ = ax1.plot(x, y, "--", label=f"{function}")
-            _ = ax2.plot(x, dydx, "-", label=f"{function}")
+            _ = ax1.plot(x, y, "--", label=f"{name}")
+            _ = ax2.plot(x, dydx, "-", label=f"{name}")
 
         ax2.set_xlabel("$x$")
         ax1.set_ylabel("$f(x)$")
@@ -236,12 +268,7 @@ def activation(
         plt.tight_layout()
         plt.show()
     """
-    if function == "sigmoid":
-        return jax.nn.sigmoid(alpha * x)
-    elif function == "hard_sigmoid":
-        return jax.nn.hard_sigmoid(alpha * x)
-    else:
-        raise ValueError(f"Unknown function '{function}'")
+    return function(x, alpha)
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx"])

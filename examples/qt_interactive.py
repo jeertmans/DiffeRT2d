@@ -60,8 +60,9 @@ from qtpy.QtWidgets import (
 )
 
 from differt2d.abc import Loc
-from differt2d.defaults import DEFAULT_ALPHA, DEFAULT_FUNCTION, DEFAULT_PATCH
+from differt2d.defaults import DEFAULT_ALPHA, DEFAULT_PATCH
 from differt2d.geometry import FermatPath, ImagePath, MinPath, Point
+from differt2d.logic import hard_sigmoid, sigmoid
 from differt2d.scene import Scene, SceneName
 from differt2d.utils import P0, received_power
 
@@ -134,7 +135,7 @@ class PlotWidget(QWidget):
         self.patch = DEFAULT_PATCH
         self.approx = True
         self.alpha = DEFAULT_ALPHA
-        self.function = DEFAULT_FUNCTION
+        self.function = hard_sigmoid
         self.r_coef = 0.5
         self.path_cls = METHOD_TO_PATH_CLASS["image"]
 
@@ -193,13 +194,16 @@ class PlotWidget(QWidget):
         self.function_combo_box = QComboBox()
         self.function_combo_box.addItems(["sigmoid", "hard_sigmoid"])
         self.function_combo_box.setToolTip(" The activation function")
-        self.function_combo_box.setCurrentText(self.function)
+        self.function_combo_box.setCurrentText("hard_sigmoid")
 
         grid.addWidget(QLabel("activation function:"), 2, 1)
         grid.addWidget(self.function_combo_box, 2, 3)
 
         def set_function(function):
-            self.function = function
+            self.function = {
+                "sigmoid": sigmoid,
+                "hard_sigmoid": hard_sigmoid,
+            }[function]
             self.on_scene_change()
 
         self.function_combo_box.currentTextChanged.connect(set_function)
