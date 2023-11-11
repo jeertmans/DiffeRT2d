@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 + Added benchmarks to better quantify performance changes.
 
+### Fixed
+
++ Fixed how path candidates are computed
+
 ## [v0.1.0](https://github.com/jeertmans/DiffeRT2d/commits/v0.1.0)
 
 This version added all basic features. This changelog will only document feature

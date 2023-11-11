@@ -24,10 +24,9 @@ from typing import (
     runtime_checkable,
 )
 
+import differt_core
 import jax
 import jax.numpy as jnp
-import numpy as np
-import rustworkx as rx
 
 from .abc import Interactable, Loc, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
@@ -718,71 +717,34 @@ class Scene(Plottable):
         """
         return product(self.transmitters.items(), self.receivers.items())
 
-    def get_visibility_matrix(self) -> np.array:
-        """
-        Returns the visibility matrix between all objects in the scene, plus one
-        arbitrary transmitter and one arbitrary receiver.
-
-        Arbitrary because, for scenes with multiple transmitters
-        or receivers, the same matrix will be used, so it should
-        not be computed for a specific (transmitter, receiver) pair.
-
-        The first row / column is for :attr:`transmitters`,
-        and the last row / column for :attr:`receivers`.
-
-        If :python:`V` is the visibility matrix, then
-        :python:`V[i, j]` indicates whether object ``i``
-        can see object ``j``. In general, :python:`V` is
-        expected to be symmetric (but this is not a requirement),
-        and visibility is indicated by a :python:`1` value, whereas
-        obstruction is indicated by a :python:`0` value.
-
-        :Examples:
-
-        >>> from differt2d.scene import Scene
-        >>> scene = Scene.square_scene()
-        >>> scene.get_visibility_matrix()
-        array([[0, 1, 1, 1, 1, 1],
-               [1, 0, 1, 1, 1, 1],
-               [1, 1, 0, 1, 1, 1],
-               [1, 1, 1, 0, 1, 1],
-               [1, 1, 1, 1, 0, 1],
-               [1, 1, 1, 1, 1, 0]])
-
-        :return: The visibility matrix,
-            (:python:`len(self.objects) + 2`, :python:`len(self.objects) + 2`).
-        """
-        n = len(self.objects)
-        return np.ones((n + 2, n + 2), dtype=int) - np.eye(n + 2, n + 2, dtype=int)
-
     @partial(jax.jit, static_argnames=["min_order", "max_order"])
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
-    ) -> List[List[int]]:
+    ) -> List[Array]:
         """
         Returns all path candidates, from any of the :attr:`transmitters` to any of the
-        :attr:`receivers`, as a list of list of indices.
+        :attr:`receivers`, as a list of array of indices.
 
-        Note that index 0 is for :attr:`transmitters`,
-        and last index is for :attr:`receivers`.
+        Note that it only inclides indices for objects.
 
-        :param min_order:
-            The minimum order of the path, i.e., the number of interactions.
-        :param max_order:
-            The maximum order of the path, i.e., the number of interactions.
+        :param min_order: The minimum order of the path, i.e., the number of
+            interactions.
+        :param max_order: The maximum order of the path, i.e., the number of
+            interactions.
         :return: The list of list of indices.
         """
-        n = len(self.objects)
+        num_primitives = len(self.objects)
 
-        graph = rx.PyGraph.from_adjacency_matrix(
-            self.get_visibility_matrix().astype(float)
-        )
+        return [
+            path_candidate
+            for order in range(min_order, max_order + 1)
+            for path_candidate in jnp.asarray(
+                differt_core.generate_path_candidates(num_primitives, order),
+                dtype=jnp.uint32,
+            ).T
+        ]
 
-        return rx.all_simple_paths(
-            graph, 0, n + 1, min_depth=min_order + 2, cutoff=max_order + 2
-        )
-
-    def get_interacting_objects(self, path_candidate: List[int]) -> List[Interactable]:
+    def get_interacting_objects(self, path_candidate: Array) -> List[Interactable]:
         """
         Returns the list of interacting objects from a path candidate.
 
@@ -793,7 +755,7 @@ class Scene(Plottable):
             as returned by :meth:`all_path_candidates`.
         :return: The list of interacting objects.
         """
-        return [self.objects[i - 1] for i in path_candidate[1:-1]]
+        return [self.objects[i] for i in path_candidate]
 
     def all_paths(
         self,
