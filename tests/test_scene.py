@@ -162,6 +162,12 @@ class TestScene:
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
+    def test_all_path_candidates(self, key):
+        scene = Scene.random_uniform_scene(key, n_receivers=10)
+        got = scene.all_path_candidates(min_order=0, max_order=0)
+        assert len(got) == 1
+        assert len(got[0]) == 0
+
     @pytest.mark.parametrize(
         ("min_order", "max_order"), [(0, 0), (1, 1), (2, 2), (0, 2)]
     )
@@ -179,7 +185,7 @@ class TestScene:
             assert rx_key == "rx"
 
             assert min_order <= expected_path.points.shape[0] - 2 <= max_order
-            assert min_order <= len(path_candidate) - 2 <= max_order
+            assert min_order <= len(path_candidate) <= max_order
 
             interacting_objects = scene.get_interacting_objects(path_candidate)
             expected_valid = expected_path.is_valid(
