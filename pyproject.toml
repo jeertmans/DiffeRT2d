@@ -93,7 +93,6 @@ env = [
   "JAX_DEBUG_NANS=True",
   "JAX_PLATFORM_NAME=cpu"
 ]
-
 filterwarnings = [
   "ignore:jax.config.define_bool_state is deprecated:DeprecationWarning"
 ]
