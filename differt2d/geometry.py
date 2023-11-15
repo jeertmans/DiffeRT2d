@@ -593,7 +593,7 @@ class Path(Plottable):
     def intersects_with_objects(
         self,
         objects: List[Interactable],
-        path_candidate: List[int],
+        path_candidate: Array,
         patch: float = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
@@ -613,7 +613,7 @@ class Path(Plottable):
             :func:`activation<differt2d.logic.activation>`.
         :return: Whether this path intersects any of the objects, ().
         """
-        interacting_object_indices = [-1] + [i - 1 for i in path_candidate[1:-1]] + [-1]
+        interacting_object_indices = [-1] + [i for i in path_candidate] + [-1]
         intersects = false_value(approx=approx)
 
         for i in range(self.points.shape[0] - 1):
@@ -644,7 +644,7 @@ class Path(Plottable):
     def is_valid(
         self,
         objects: List[Interactable],
-        path_candidate: List[int],
+        path_candidate: Array,
         interacting_objects: List[Interactable],
         tol: float = 1e-2,
         patch: float = DEFAULT_PATCH,
@@ -662,7 +662,7 @@ class Path(Plottable):
            (except those concerned by 2.).
 
         :param objects: The objects in the scene.
-        :param path_candidate: The list of indices of interacting objects,
+        :param path_candidate: The array of indices of interacting objects,
             usually generated with
             :meth:`Scene.all_path_candidates<differt2d.scene.Scene.all_path_candidates>`
         :param interacting_objects: The list of interacting objects,

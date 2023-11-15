@@ -320,7 +320,7 @@ class TestPath:
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
-            path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
+            path_candidate = jnp.arange(len(scene.objects), dtype=int)
             expected = true_value()
             # Very high probability that random paths intersect
             # at least one object in the scene.
@@ -333,7 +333,7 @@ class TestPath:
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
-            path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
+            path_candidate = jnp.arange(len(scene.objects), dtype=int)
             expected = false_value()
             got = path.intersects_with_objects(scene.objects, path_candidate)
             chex.assert_trees_all_close(expected, got, atol=1e-8)
@@ -348,7 +348,7 @@ class TestPath:
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
-            path_candidate = jnp.arange(len(scene.objects) + 2, dtype=int)
+            path_candidate = jnp.arange(len(scene.objects), dtype=int)
             interacting_objects = scene.get_interacting_objects(path_candidate)
             got = path.is_valid(scene.objects, path_candidate, interacting_objects)
             assert is_true(got)

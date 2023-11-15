@@ -41,12 +41,11 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 chex = "^0.1.7"
+differt-core = "0.0.5"
 jax = "^0.4.7"
 matplotlib = "^3.7.1"
-numpy = "^1.24"
 optax = "^0.1.5"
 python = "<3.13,>=3.9"
-rustworkx = "^0.12.1"
 
 [tool.poetry.group.dev]
 optional = true
@@ -93,6 +92,10 @@ rtoml = "^0.9.0"
 env = [
   "JAX_DEBUG_NANS=True",
   "JAX_PLATFORM_NAME=cpu"
+]
+filterwarnings = [
+  "error",
+  'ignore:jax\.config\.define_bool_state is deprecated:DeprecationWarning'
 ]
 
 [tool.ruff]
