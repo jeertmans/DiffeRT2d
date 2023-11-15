@@ -39,7 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-+ Fixed how path candidates are computed
++ Fixed how path candidates are computed, which actually removes the
+  `get_visibility` matrix method and changes the output type of `all_path_candidates`
+  to a list of arrays.
+  [#48](https://github.com/jeertmans/DiffeRT2d/pull/458
 
 ## [v0.1.0](https://github.com/jeertmans/DiffeRT2d/commits/v0.1.0)
 
