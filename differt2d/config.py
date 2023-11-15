@@ -1,9 +1,7 @@
-"""
-DiffeRT2d config tools.
-"""
-import jax
-
+"""DiffeRT2d config tools."""
 from contextlib import contextmanager
+
+import jax
 
 
 def varname(name: str) -> str:
@@ -40,7 +38,7 @@ class Config:
                 yield state
             finally:
                 self.name = old_state
-            
+
         return update
 
 
