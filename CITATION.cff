@@ -31,7 +31,7 @@ preferred-citation:
     - name: Jérome Eertmans
       orcid: 'https://orcid.org/0000-0002-5579-5360'
   doi: 10.48550/arXiv.2401.11882 # TODO: update me once published on IEEE
-  booktitle: '2024 18th European Conference on Antennas and Propagation (EuCAP);
+  booktitle: '2024 18th European Conference on Antennas and Propagation (EuCAP)'
   month: 3 # TODO: update me once published on IEEE
   year: 2024
   title: 'Fully Differentiable Ray Tracing via Discontinuity Smoothing for Radio Network Optimization'
