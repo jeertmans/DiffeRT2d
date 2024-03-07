@@ -1,0 +1,39 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: DiffeRT
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - name: Jérome Eertmans
+    orcid: 'https://orcid.org/0000-0002-5579-5360'
+    website: 'https://eertmans.be'
+repository-code: 'https://github.com/jeertmans/DiffeRT2d'
+url: 'https://eertmans.be/DiffeRT2d'
+abstract: >-
+  2D Toolbox for Differentiable Ray Tracing, for
+  Radio-Propagation oriented applications.
+keywords:
+  - Ray Tracing
+  - Differentiable
+  - JAX
+  - Radio Propagation
+license: MIT
+version: v0.1.0
+preferred-citation:
+  publisher:
+    name: ArXiV # TODO: update me once published on IEEE
+  type: conference-paper
+  authors:
+    - name: Jérome Eertmans
+      orcid: 'https://orcid.org/0000-0002-5579-5360'
+  doi: 10.48550/arXiv.2401.11882 # TODO: update me once published on IEEE
+  booktitle: '2024 18th European Conference on Antennas and Propagation (EuCAP);
+  month: 3 # TODO: update me once published on IEEE
+  year: 2024
+  title: 'Fully Differentiable Ray Tracing via Discontinuity Smoothing for Radio Network Optimization'
+  start: 1
+  end: 5
