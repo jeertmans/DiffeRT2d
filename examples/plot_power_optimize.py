@@ -19,6 +19,12 @@ step after step, using a geometric progression.
 #
 # First, we need to import the necessary modules.
 
+import sys
+
+sys.path.append("paper")
+
+print(sys.path)
+
 from copy import deepcopy as copy
 
 import jax
@@ -27,6 +33,7 @@ import matplotlib.pyplot as plt
 import optax
 from matplotlib.animation import FuncAnimation
 from matplotlib.colors import LogNorm
+from utils import create_fig_for_paper
 
 from differt2d.geometry import Point
 from differt2d.scene import Scene
@@ -70,7 +77,7 @@ def objective_function(received_power_per_receiver):
 
 def loss(tx_coords, scene, *args, **kwargs):
     """Loss function, to be minimized."""
-    scene.transmitters["tx"].point = tx_coords
+    scene.transmitters["TX"].point = tx_coords
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -94,19 +101,25 @@ f_and_df = jax.value_and_grad(
 #    greater than ``0`` (e.g., ``1`` is sufficient here). This, of course,
 #    depends on the scene.
 
-fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
-annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
+fig, axes = create_fig_for_paper(
+    2, 1, sharex=True, height_to_width_ratio=1.125, tight_layout=True
+)
+
+annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
+point_kwargs = dict(
+    markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
+)
 
 scene.transmitters = dict(
-    tx=Point(point=jnp.array([0.5, 0.7])),
+    TX=Point(point=jnp.array([0.5, 0.7])),
 )
 scene.receivers = {
-    r"rx_0": Point(point=jnp.array([0.3, 0.1])),
-    r"rx_1": Point(point=jnp.array([0.5, 0.1])),
+    r"Rx$_0$": Point(point=jnp.array([0.3, 0.1])),
+    r"Rx$_1$": Point(point=jnp.array([0.5, 0.1])),
 }
 
-X, Y = scene.grid(n=300)
+X, Y = scene.grid(n=600)
 
 im_artists = []
 transmitter_artists = []
@@ -173,17 +186,22 @@ carries = [(None, None), (None, None)]
 def init_func():
     tx_coords = jnp.array([0.5, 0.7])
     for i, scene in enumerate(scenes):
-        scene.transmitters["tx"].point = tx_coords
+        scene.transmitters["TX"].point = tx_coords
         optimizers[i] = optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
 
-def func(alpha):
+print("Init!")
+init_func()
+
+print("Iterations!")
+
+for step, alpha in enumerate(alphas):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
 
         # Plotting prior to updating
-        scenes[i].transmitters["tx"].point = tx_coords
+        scenes[i].transmitters["TX"].point = tx_coords
         transmitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
@@ -205,6 +223,12 @@ def func(alpha):
         )
         im_artists[i].set_array(F)
 
+        if not approx and step == 0:
+            plt.draw()
+            plt.savefig(f"optimization_start.png", dpi=300)
+
+        # Before we move
+
         updates, opt_state = optimizers[i].update(grads, opt_state)
         tx_coords = tx_coords + updates
 
@@ -216,6 +240,5 @@ def func(alpha):
             expo = str(int(expo))  # Remove trailing zeros and +
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 
-
-anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
-plt.show()
+    plt.draw()
+    plt.savefig(f"optimization_{step:02d}.png", dpi=300)

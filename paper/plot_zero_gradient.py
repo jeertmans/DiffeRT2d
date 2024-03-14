@@ -8,7 +8,7 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
-scene.transmitters["Tx"] = scene.transmitters.pop("tx")
+scene.transmitters["TX"] = scene.transmitters.pop("tx")
 
 fig, ax = create_fig_for_paper(1, 1, height_to_width_ratio=0.6, tight_layout=True)
 
@@ -32,7 +32,7 @@ P: Array = scene.accumulate_on_receivers_grid_over_paths(
 PdB = 10.0 * jnp.log10(P / P0)
 
 im = ax.pcolormesh(
-    X, Y, PdB, vmin=-50, vmax=5, rasterized=True, antialiased=True, zorder=-1
+    X, Y, PdB, vmin=-50, vmax=5, rasterized=True, antialiased=True, zorder=-1, cmap="viridis"
 )
 cbar = fig.colorbar(im, ax=ax)
 cbar.ax.set_ylabel("Power (dB)")
@@ -57,7 +57,7 @@ ax.annotate(
 ax.set_ylabel("y coordinate")
 ax.set_xlabel("x coordinate")
 
-folder = Path(__file__).parent / "pgf"
+folder = Path(__file__).parent / "png"
 folder.mkdir(exist_ok=True)
 
-fig.savefig(folder / "zero_gradient.pgf", dpi=300, bbox_inches="tight")
+fig.savefig(folder / "zero_gradient.png", dpi=300, bbox_inches="tight")

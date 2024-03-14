@@ -4,14 +4,14 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
-mpl.use("pgf")
+#mpl.use("pgf")
 plt.rcParams.update(
     {
-        "pgf.texsystem": "pdflatex",
-        "font.family": "serif",
-        "font.size": 10,
-        "text.usetex": True,
-        "pgf.rcfonts": False,
+#        "pgf.texsystem": "pdflatex",
+#        "font.family": "serif",
+        "font.size": 6,
+#        "text.usetex": True,
+#        "pgf.rcfonts": False,
         "image.cmap": "plasma",
     }
 )

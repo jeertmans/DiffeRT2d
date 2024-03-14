@@ -9,7 +9,7 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
-scene.transmitters["Tx"] = scene.transmitters.pop("tx")
+scene.transmitters["TX"] = scene.transmitters.pop("tx")
 
 annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
 point_kwargs = dict(
@@ -50,6 +50,7 @@ for grad in [False, True]:
                 rasterized=True,
                 antialiased=True,
                 zorder=-1,
+                cmap="viridis",
             )
         else:
             PdB = 10.0 * jnp.log10(P / P0)
@@ -62,6 +63,7 @@ for grad in [False, True]:
                 rasterized=True,
                 antialiased=True,
                 zorder=-1,
+                cmap="viridis",
             )
 
         cbar = fig.colorbar(im, ax=ax)
@@ -76,10 +78,10 @@ for grad in [False, True]:
 
     axes[-1].set_xlabel("x coordinate")
 
-    folder = Path(__file__).parent / "pgf"
+    folder = Path(__file__).parent / "png"
     folder.mkdir(exist_ok=True)
 
     if grad:
-        fig.savefig(folder / "power_gradient.pgf", dpi=300, bbox_inches="tight")
+        fig.savefig(folder / "power_gradient.png", dpi=300, bbox_inches="tight")
     else:
-        fig.savefig(folder / "power_map.pgf", dpi=300, bbox_inches="tight")
+        fig.savefig(folder / "power_map.png", dpi=300, bbox_inches="tight")
