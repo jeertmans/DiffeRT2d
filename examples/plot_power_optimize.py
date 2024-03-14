@@ -115,8 +115,8 @@ scene.transmitters = dict(
     TX=Point(point=jnp.array([0.5, 0.7])),
 )
 scene.receivers = {
-    r"Rx$_0$": Point(point=jnp.array([0.3, 0.1])),
-    r"Rx$_1$": Point(point=jnp.array([0.5, 0.1])),
+    r"RX$_0$": Point(point=jnp.array([0.3, 0.1])),
+    r"RX$_1$": Point(point=jnp.array([0.5, 0.1])),
 }
 
 X, Y = scene.grid(n=600)
