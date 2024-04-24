@@ -40,11 +40,11 @@ repository = "https://github.com/jeertmans/DiffeRT2d"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-chex = "^0.1.7"
+chex = ">=0.1.7"
 differt-core = "0.0.5"
 jax = "^0.4.7"
-matplotlib = "^3.7.1"
-optax = "^0.1.5"
+matplotlib = ">=3.7.1"
+optax = ">=0.1.5"
 python = "<3.13,>=3.9"
 
 [tool.poetry.group.dev]
