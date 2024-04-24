@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#45](https://github.com/jeertmans/DiffeRT2d/pull/45)
 + Changed the default value for `many` parameter to `1` when generating paths
   using `MPT` or `FPT`. Prior to that, `10` was used.
++ Renamed environ variable `JAX_ENABLE_APPROX` to `DISABLE_APPROX`.
+  Setting this variable to any value will disable approximation.
+  This is a **breaking change**.
+  [#45](https://github.com/jeertmans/DiffeRT2d/pull/54)
++ Changing the default value of enabling (or not) approximation from `jax.config`
+  (removed from their API) to `differt2d.logic.set_approx`.
+  This is a **breaking change**.
+  [#45](https://github.com/jeertmans/DiffeRT2d/pull/54)
 
 ### Chore
 

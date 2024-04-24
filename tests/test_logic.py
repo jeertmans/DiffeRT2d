@@ -4,6 +4,7 @@ import jax.numpy as jnp
 import pytest
 from jax import disable_jit
 
+import differt2d.logic
 from differt2d.logic import (
     activation,
     disable_approx,
@@ -21,6 +22,7 @@ from differt2d.logic import (
     logical_any,
     logical_not,
     logical_or,
+    set_approx,
     sigmoid,
     true_value,
 )
@@ -47,17 +49,25 @@ def xy(key):
     yield x, y
 
 
+def test_set_approx():
+    set_approx(True)
+    assert differt2d.logic.ENABLE_APPROX is True
+
+    set_approx(False)
+    assert differt2d.logic.ENABLE_APPROX is False
+
+
 def test_enable_approx():
     @jax.jit
     def approx_enabled():
-        return jax.config.jax_enable_approx
+        return differt2d.logic.ENABLE_APPROX
 
     with enable_approx(True), disable_jit():
-        assert jax.config.jax_enable_approx is True
+        assert differt2d.logic.ENABLE_APPROX is True
         chex.assert_equal(True, approx_enabled())
 
     with enable_approx(False), disable_jit():
-        assert jax.config.jax_enable_approx is False
+        assert differt2d.logic.ENABLE_APPROX is False
         chex.assert_equal(False, approx_enabled())
 
     with enable_approx(True), disable_jit():
@@ -123,14 +133,14 @@ def test_enable_approx_clear_cache():
 def test_disable_approx():
     @jax.jit
     def approx_enabled():
-        return jax.config.jax_enable_approx
+        return differt2d.logic.ENABLE_APPROX
 
     with disable_approx(False), disable_jit():
-        assert jax.config.jax_enable_approx is True
+        assert differt2d.logic.ENABLE_APPROX is True
         chex.assert_equal(True, approx_enabled())
 
     with disable_approx(True), disable_jit():
-        assert jax.config.jax_enable_approx is False
+        assert differt2d.logic.ENABLE_APPROX is False
         chex.assert_equal(False, approx_enabled())
 
     with disable_approx(False), disable_jit():
@@ -226,7 +236,7 @@ def test_activation(function, jax_fun, alpha):
 @approx
 def test_logical_or(xy, approx):
     x, y = xy
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.maximum(x, y)
     else:
         expected = jnp.logical_or(x, y)
@@ -239,7 +249,7 @@ def test_logical_or(xy, approx):
 @approx
 def test_logical_and(xy, approx):
     x, y = xy
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.minimum(x, y)
     else:
         expected = jnp.logical_and(x, y)
@@ -251,7 +261,7 @@ def test_logical_and(xy, approx):
 
 @approx
 def test_logical_not(x, approx):
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.subtract(1.0, x)
     else:
         expected = jnp.logical_not(x)
@@ -263,7 +273,7 @@ def test_logical_not(x, approx):
 
 @approx
 def test_logical_all(x, approx):
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         x = jnp.array([0.8, 0.2, 0.3])
         expected = jnp.min(x)
     else:
@@ -277,7 +287,7 @@ def test_logical_all(x, approx):
 
 @approx
 def test_logical_any(x, approx):
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         x = jnp.array([0.8, 0.2, 0.3])
         expected = jnp.max(x)
     else:
@@ -294,7 +304,7 @@ def test_logical_any(x, approx):
 @function
 def test_greater(xy, approx, alpha, function):
     x, y = xy
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(x - y, alpha=alpha, function=function)
     else:
         expected = jnp.greater(x, y)
@@ -309,7 +319,7 @@ def test_greater(xy, approx, alpha, function):
 @function
 def test_greater_equal(xy, approx, alpha, function):
     x, y = xy
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(x - y, alpha=alpha, function=function)
     else:
         expected = jnp.greater_equal(x, y)
@@ -324,7 +334,7 @@ def test_greater_equal(xy, approx, alpha, function):
 @function
 def test_less(xy, approx, alpha, function):
     x, y = xy
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(y - x, alpha=alpha, function=function)
     else:
         expected = jnp.less(x, y)
@@ -339,7 +349,7 @@ def test_less(xy, approx, alpha, function):
 @function
 def test_less_equal(xy, approx, alpha, function):
     x, y = xy
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(y - x, alpha=alpha, function=function)
     else:
         expected = jnp.less_equal(x, y)
@@ -352,7 +362,7 @@ def test_less_equal(xy, approx, alpha, function):
 @approx
 @tol
 def test_is_true(x, approx, tol):
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.greater(x, 1.0 - tol)
     else:
         x = jnp.greater(x, 1.0 - tol)
@@ -366,7 +376,7 @@ def test_is_true(x, approx, tol):
 @approx
 @tol
 def test_is_false(x, approx, tol):
-    if approx or (approx is None and jax.config.jax_enable_approx):
+    if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.less(x, tol)
     else:
         x = jnp.greater(x, tol)

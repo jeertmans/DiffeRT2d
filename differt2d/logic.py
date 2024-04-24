@@ -13,7 +13,7 @@ when :code:`approx` is set to :python:`False`.
     Whenever a function takes an argument named ``approx``, it can take
     three different values:
 
-    1. :python:`None`: defaults to :py:attr:`jax.config.jax_enable_approx`,
+    1. :python:`None`: defaults to :py:data:`differt2d.logic.ENABLE_APPROX`,
        see :py:func:`enable_approx` for comments on that;
     2. :python:`True`: forces to enable approximation;
     3. or :python:`False`: forces to disable approximation.
@@ -22,7 +22,9 @@ when :code:`approx` is set to :python:`False`.
 from __future__ import annotations
 
 __all__ = [
+    "ENABLE_APPROX",
     "activation",
+    "set_approx",
     "disable_approx",
     "enable_approx",
     "greater",
@@ -40,8 +42,10 @@ __all__ = [
     "sigmoid",
 ]
 
+import os
 from contextlib import contextmanager
 from functools import partial
+from threading import Lock
 from typing import Any, Callable, Optional, Tuple, TypeVar, Union
 
 import jax
@@ -50,11 +54,36 @@ from jax import Array
 
 from .defaults import DEFAULT_ALPHA
 
-_enable_approx = jax.config.define_bool_state(
-    name="jax_enable_approx",
-    default=True,
-    help=("Enable approximation using some activation function."),
-)
+ENABLE_APPROX: bool = "ENABLE_APPROX" not in os.environ
+"""Enable approximation using some activation function."""
+
+_LOCK = Lock()
+"""Lock to prevent mutating ``ENABLE_APPROX`` in multiple threads."""
+
+
+def set_approx(enable: bool):
+    """
+    Enable or disable the approximation in future function calls.
+
+    Note that JIT-compiled version will not be affected if they
+    were compiled before this function was called.
+
+    :param enable: Whether to enable or not approximation.
+
+    :Examples:
+
+    >>> from differt2d.logic import greater, set_approx
+    >>>
+    >>> # doc: hide
+    >>> greater.clear_cache()
+    >>> # doc: hide
+    >>> set_approx(False)
+    >>> print(greater(20.0, 5.0))
+    True
+    """
+    global ENABLE_APPROX
+
+    ENABLE_APPROX = enable
 
 
 @contextmanager
@@ -68,10 +97,9 @@ def enable_approx(enable: bool = True):
     To disable approximation, you have multiple options:
 
     1. use this context manager to disable it (see example below);
-    2. set the environ variable ``JAX_ENABLE_APPROX`` to ``0``
-       (or any falsy value);
+    2. set the environ variable ``DISABLE_APPROX`` (any value);
     3. update the config with
-       :python:`jax.config.update("jax_enable_approx", False)`;
+       :py:func:`set_approx(False)`;
     4. or set, for specific logic functions only, the keyword argument
        ``approx`` to :python:`False`.
 
@@ -108,9 +136,9 @@ def enable_approx(enable: bool = True):
 
     .. warning::
 
-        Calling already-jitted functions after mutating ``jax_enable_approx``
+        Calling already-jitted functions after mutating ``ENABLE_APPROX``
         will not produce any visible change. This is because
-        ``jax.config.jax_enable_approx`` is evaluated once, at compilation.
+        ``differt2d.logic.ENABLE_APPROX`` is evaluated once, at compilation.
 
         For example:
 
@@ -119,7 +147,7 @@ def enable_approx(enable: bool = True):
         >>>
         >>> @jax.jit
         ... def f():
-        ...     if jax.config.jax_enable_approx:
+        ...     if differt2d.logic.ENABLE_APPROX:
         ...         return 1.0
         ...     else:
         ...         return 0.0
@@ -140,7 +168,7 @@ def enable_approx(enable: bool = True):
         >>>
         >>> @jax.jit
         ... def f():
-        ...     if jax.config.jax_enable_approx:
+        ...     if differt2d.logic.ENABLE_APPROX:
         ...         return 1.0
         ...     else:
         ...         return 0.0
@@ -153,8 +181,14 @@ def enable_approx(enable: bool = True):
         ...     print(f())
         0.0
     """
-    with _enable_approx(enable):
-        yield
+    global ENABLE_APPROX
+    state = ENABLE_APPROX
+    with _LOCK:
+        try:
+            ENABLE_APPROX = enable
+            yield
+        finally:
+            ENABLE_APPROX = state
 
 
 @contextmanager
@@ -173,7 +207,7 @@ def disable_approx(disable: bool = True):  # pragma: no cover
         Contrary to :py:func:`enable_approx`, there is no ``JAX_DISABLE_APPROX``
         environ variable, nor ``jax.config.jax_disable_approx`` config variable.
     """
-    with _enable_approx(not disable):
+    with enable_approx(not disable):
         yield
 
 
@@ -287,7 +321,7 @@ def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return jnp.maximum(x, y) if approx else jnp.logical_or(x, y)
 
 
@@ -305,7 +339,7 @@ def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return jnp.minimum(x, y) if approx else jnp.logical_and(x, y)
 
 
@@ -323,7 +357,7 @@ def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
 
@@ -349,7 +383,7 @@ def greater(
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
 
@@ -372,7 +406,7 @@ def greater_equal(
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return (
         activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater_equal(x, y)
     )
@@ -395,7 +429,7 @@ def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Ar
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
 
@@ -421,7 +455,7 @@ def less_equal(
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
 
@@ -444,7 +478,7 @@ def logical_all(
     :return: Output array.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     arr = jnp.asarray(x)
     return jnp.min(arr, axis=axis) if approx else jnp.all(arr, axis=axis)
 
@@ -468,7 +502,7 @@ def logical_any(
     :return: Output array.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     arr = jnp.asarray(x)
     return jnp.max(arr, axis=axis) if approx else jnp.any(arr, axis=axis)
 
@@ -488,7 +522,7 @@ def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     :return: True array if the value is considered to be true.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return jnp.greater(x, 1.0 - tol) if approx else jnp.asarray(x)
 
 
@@ -507,7 +541,7 @@ def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array
     :return: True if the value is considered to be false.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return jnp.less(x, tol) if approx else jnp.logical_not(x)
 
 
@@ -522,7 +556,7 @@ def true_value(approx: Optional[bool] = None) -> Array:
     :return: A value that evaluates to true.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return jnp.array(1.0) if approx else jnp.array(True)
 
 
@@ -537,5 +571,5 @@ def false_value(approx: Optional[bool] = None) -> Array:
     :return: A value that evaluates to false.
     """
     if approx is None:
-        approx = jax.config.jax_enable_approx  # type: ignore[attr-defined]
+        approx = ENABLE_APPROX
     return jnp.array(0.0) if approx else jnp.array(False)

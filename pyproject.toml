@@ -94,8 +94,7 @@ env = [
   "JAX_PLATFORM_NAME=cpu"
 ]
 filterwarnings = [
-  "error",
-  'ignore:jax\.config\.define_bool_state is deprecated:DeprecationWarning'
+  "error"
 ]
 
 [tool.ruff]
