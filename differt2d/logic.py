@@ -143,6 +143,7 @@ def enable_approx(enable: bool = True):
         For example:
 
         >>> import jax
+        >>> import differt2d.logic
         >>> from differt2d.logic import enable_approx
         >>>
         >>> @jax.jit

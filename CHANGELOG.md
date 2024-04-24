@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Setting this variable to any value will disable approximation.
   This is a **breaking change**.
   [#45](https://github.com/jeertmans/DiffeRT2d/pull/54)
-+ Changing the default value of enabling (or not) approximation from `jax.config`
++ Changed the default value of enabling (or not) approximation from `jax.config`
   (removed from their API) to `differt2d.logic.set_approx`.
   This is a **breaking change**.
   [#45](https://github.com/jeertmans/DiffeRT2d/pull/54)
