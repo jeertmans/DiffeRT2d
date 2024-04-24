@@ -10,8 +10,10 @@
 Differentiable Ray Tracing (RT) Python framework for Telecommunications-oriented
 applications.
 
-> **NOTE**: the present work offers a simple Python module to create basic 2D scenarios,
-> and should be used for experimental purposes only.
+> [!IMPORTANT]
+> The present work offers a simple Python module to create basic 2D scenarios,
+> and should be used for experimental purposes only. For practical 3D applications,
+> checkout [DiffeRT](https://github.com/jeertmans/DiffeRT).
 
 - [Installation](#installation)
   * [Dependencies](#dependencies)
