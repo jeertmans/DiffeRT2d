@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- start changelog -->
 
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.1.0...HEAD)
+(unreleased)=
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.2.0...HEAD)
 
+(v0.2.0)=
+## [v0.2.0](https://github.com/jeertmans/DiffeRT2d/compare/v0.1.0...v0.2.0)
+
+(v0.2.0-added)=
 ### Added
 
 + Added three keyword arguments to `Scene.plot`, to make plotting transmitters,
@@ -18,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Added options to compute the gradient (or the value and the gradient) of
   accumulated functions from `Scene` class.
 
+(v0.2.0-changed)=
 ### Changed
 
 + Renamed all occurences of `emitter*` to `transmitter*`.
@@ -41,16 +47,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This is a **breaking change**.
   [#45](https://github.com/jeertmans/DiffeRT2d/pull/54)
 
+(v0.2.0-chore)=
 ### Chore
 
 + Added benchmarks to better quantify performance changes.
 
+(v0.2.0-fixed)=
 ### Fixed
 
 + Fixed how path candidates are computed, which actually removes the
   `get_visibility` matrix method and changes the output type of `all_path_candidates`
   to a list of arrays.
-  [#48](https://github.com/jeertmans/DiffeRT2d/pull/458
+  [#48](https://github.com/jeertmans/DiffeRT2d/pull/458)
 
 ## [v0.1.0](https://github.com/jeertmans/DiffeRT2d/commits/v0.1.0)
 

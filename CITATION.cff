@@ -25,7 +25,7 @@ license: MIT
 version: v0.1.0
 preferred-citation:
   publisher:
-    name: ArXiV # TODO: update me once published on IEEE
+    name: IEEE
   type: conference-paper
   authors:
     - name: Jérome Eertmans
@@ -34,9 +34,9 @@ preferred-citation:
       orcid: 'https://orcid.org/0000-0002-6261-0328'
     - name: Claude Oestges
       orcid: 'https://orcid.org/0000-0002-0902-4565'
-  doi: 10.48550/arXiv.2401.11882 # TODO: update me once published on IEEE
+  doi: 10.23919/EuCAP60739.2024.10501570
   booktitle: '2024 18th European Conference on Antennas and Propagation (EuCAP)'
-  month: 3 # TODO: update me once published on IEEE
+  month: 4
   year: 2024
   title: 'Fully Differentiable Ray Tracing via Discontinuity Smoothing for Radio Network Optimization'
   start: 1
