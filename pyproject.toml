@@ -60,7 +60,7 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 furo = "^2023.5.20"
 myst-parser = ">=2"
-pyside6 = {version = "^6.5.2", python = "<3.12"}
+pyside6 = ">=6.5.2,<6.7"
 qtgallery = "^0.0.2"
 qtpy = "^2.4.0"
 sphinx = "^7.2.6"
