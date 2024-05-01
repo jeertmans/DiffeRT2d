@@ -27,6 +27,6 @@ jobs:
       run: poetry run pytest --cov-report xml --cov=differt2d tests/
 
     - name: Upload to codecov.io
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         fail_ci_if_error: true
