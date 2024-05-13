@@ -72,7 +72,7 @@ def objective_function(received_power_per_receiver):
 
 def loss(tx_coords, scene, *args, **kwargs):
     """Loss function, to be minimized."""
-    scene.transmitters["tx"].point = tx_coords
+    scene.transmitters["tx"] = Point(point=tx_coords)
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -181,7 +181,7 @@ carries = [(None, None), (None, None)]
 def init_func():
     tx_coords = jnp.array([0.5, 0.7])
     for i, scene in enumerate(scenes):
-        scene.transmitters["tx"].point = tx_coords
+        scene.transmitters["tx"] = Point(point=tx_coords)
         optimizers[i] = optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
@@ -191,7 +191,7 @@ def func(alpha):
         tx_coords, opt_state = carries[i]
 
         # Plotting prior to updating
-        scenes[i].transmitters["tx"].point = tx_coords
+        scenes[i].transmitters["tx"] = Point(point=tx_coords)
         transmitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
