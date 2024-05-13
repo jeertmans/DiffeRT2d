@@ -184,7 +184,6 @@ dev-dependencies = [
   "pytest>=7.4.0",
   "pytest-cov>=4.1.0",
   "pytest-env>=0.8.2",
-  "pytest-qt>=4.2.0",
   "pytest-xdist>=3.3.1",
   "tomli>=1.1.0;python_version<'3.11'",
   "notebook>=7.1.3",
