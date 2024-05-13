@@ -1,17 +1,21 @@
 """Geometrical objects to be placed in a :class:`differt2d.scene.Scene`."""
 
-from __future__ import annotations
-
 from collections.abc import Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, TypeVar, Union
 
+import equinox as eqx
 import jax
 import jax.numpy as jnp
+from beartype import beartype as typechecker
+from jaxtyping import Array, Float, jaxtyped
+from matplotlib.artist import Artist
+from matplotlib.axes import Axes
 
 from .abc import Interactable, Plottable
 from .defaults import DEFAULT_PATCH
 from .logic import (
+    Truthy,
     false_value,
     greater_equal,
     less,
@@ -23,28 +27,54 @@ from .logic import (
     true_value,
 )
 from .optimize import minimize_many_random_uniform
-from .utils import stack_leaves
 
-if TYPE_CHECKING:  # pragma: no cover
-    from dataclasses import dataclass
-
-    from jax import Array
-    from matplotlib.artist import Artist
-    from matplotlib.axes import Axes
-else:
-    from chex import dataclass
+Pytree = Union[list, tuple, dict]
+T = TypeVar("T")
 
 
-@partial(jax.jit, static_argnames=["approx", "function"])
+def stack_leaves(
+    pytrees: Pytree, axis: int = 0, is_leaf: Optional[Callable[..., Any]] = None
+) -> Pytree:
+    """
+    Stacks the leaves of one or more Pytrees along a new axis.
+
+    Solution inspired from:
+    https://github.com/google/jax/discussions/16882#discussioncomment-6638501.
+
+    :param pytress: One or more Pytrees.
+    :param axis: Axis along which leaves are stacked.
+    :param is_leaf: See eponym parameter from :func:`jax.tree_util.tree_map`.
+    :return: A new Pytree with leaves stacked along the new axis.
+    """
+    return jax.tree_util.tree_map(
+        lambda *xs: jnp.stack(xs, axis=axis), *pytrees, is_leaf=is_leaf
+    )
+
+
+def unstack_leaves(pytrees) -> list[Pytree]:
+    """
+    Unstacks the leaves of a Pytree. Reciprocal of :func:`stack_leaves`.
+
+    :param pytrees: A Pytree.
+    :return: A list of Pytrees, where each Pytree has the same structure
+        as the input Pytree, but each leaf contains only one part of the
+        original leaf.
+    """
+    leaves, treedef = jax.tree_util.tree_flatten(pytrees)
+    return [treedef.unflatten(leaf) for leaf in zip(*leaves)]
+
+
+@eqx.filter_jit
+@jaxtyped(typechecker=typechecker)
 def segments_intersect(
-    P1: Array,
-    P2: Array,
-    P3: Array,
-    P4: Array,
+    P1: Float[Array, "2"],  # noqa: N803
+    P2: Float[Array, "2"],  # noqa: N803
+    P3: Float[Array, "2"],  # noqa: N803
+    P4: Float[Array, "2"],  # noqa: N803
     tol: float = 0.005,
     approx: Optional[bool] = None,
     **kwargs: Any,
-) -> Array:
+) -> Truthy:
     r"""
     Checks whether two line segments intersect.
 
@@ -88,6 +118,7 @@ def segments_intersect(
     :Examples:
 
     >>> from differt2d.geometry import segments_intersect
+    >>> from differt2d.logic import sigmoid
     >>> import jax.numpy as jnp
     >>> P1 = jnp.array([+0., +0.]); P2 = jnp.array([+1., +0.])
     >>> P3 = jnp.array([+.5, -1.]); P4 = jnp.array([+.5, +1.])
@@ -95,7 +126,7 @@ def segments_intersect(
     Array(1., dtype=float32)
     >>> segments_intersect(P1, P2, P3, P4, approx=False)
     Array(True, dtype=bool)
-    >>> segments_intersect(P1, P2, P3, P4, function="sigmoid")
+    >>> segments_intersect(P1, P2, P3, P4, function=sigmoid)
     Array(1., dtype=float32)
 
 
@@ -130,7 +161,8 @@ def segments_intersect(
 
 
 @partial(jax.jit, inline=True)
-def path_length(points: Array) -> Array:
+@jaxtyped(typechecker=typechecker)
+def path_length(points: Float[Array, "N 2"]) -> Float[Array, " "]:
     """
     Returns the length of the given path, with N points.
 
@@ -159,7 +191,8 @@ def path_length(points: Array) -> Array:
 
 
 @partial(jax.jit, inline=True)
-def normalize(vector: Array) -> Tuple[Array, Array]:
+@jaxtyped(typechecker=typechecker)
+def normalize(vector: Float[Array, "2"]) -> tuple[Float[Array, "2"], Float[Array, " "]]:
     """
     Normalizes a vector, and also returns its length.
 
@@ -185,7 +218,8 @@ def normalize(vector: Array) -> Tuple[Array, Array]:
 
 
 @partial(jax.jit, inline=True)
-def closest_point(points: Array, target: Array) -> Tuple[Array, Array]:
+@jaxtyped(typechecker=typechecker)
+def closest_point(points: Array, target: Array) -> tuple[Array, Array]:
     """
     Returns the index of the closest point to some target, and the actual
     distance.
@@ -216,8 +250,7 @@ def closest_point(points: Array, target: Array) -> Tuple[Array, Array]:
     return i_min, distances[i_min]
 
 
-@dataclass
-class Ray(Plottable):
+class Ray(Plottable, eqx.Module):
     """
     A ray object with origin and destination points.
 
@@ -231,14 +264,16 @@ class Ray(Plottable):
         ax = plt.gca()
         ray = Ray(points=jnp.array([[0., 0.], [1., 1.]]))
         _ = ray.plot(ax)
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
-    points: Array  # a b
+    points: Float[Array, "2 2"]
     """Ray points (origin, dest)."""
 
     @partial(jax.jit, inline=True)
-    def origin(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def origin(self) -> Float[Array, "2"]:
         """
         Returns the origin of this object.
 
@@ -247,7 +282,8 @@ class Ray(Plottable):
         return self.points[0]
 
     @partial(jax.jit, inline=True)
-    def dest(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def dest(self) -> Float[Array, "2"]:
         """
         Returns the destination of this object.
 
@@ -256,7 +292,8 @@ class Ray(Plottable):
         return self.points[1]
 
     @partial(jax.jit, inline=True)
-    def t(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def t(self) -> Float[Array, "2"]:
         """
         Returns the direction vector of this object.
 
@@ -264,17 +301,16 @@ class Ray(Plottable):
         """
         return self.dest() - self.origin()
 
-    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> List[Artist]:
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> list[Artist]:
         kwargs.setdefault("color", "blue")
         x, y = self.points.T
         return ax.plot(x, y, *args, **kwargs)  # type: ignore[func-returns-value]
 
-    def bounding_box(self) -> Array:
+    def bounding_box(self) -> Float[Array, "2 2"]:
         return jnp.vstack([jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)])
 
 
-@dataclass
-class Point(Plottable):
+class Point(Plottable, eqx.Module):
     """
     A point object defined by its coordinates.
 
@@ -290,10 +326,11 @@ class Point(Plottable):
         _ = p1.plot(ax)
         p2 = Point(point=jnp.array([1., 1.]))
         _ = p2.plot(ax, color="b", annotate="$p_2$")
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
-    point: Array
+    point: Float[Array, "2"]
     """Cartesian coordinates."""
 
     def plot(
@@ -307,6 +344,7 @@ class Point(Plottable):
     ) -> List[Artist]:
         """
         :param annotate: Text to put next the the point.
+        :param annotate_offset:
         :param annotate_kwargs:
             Keyword arguments to be passed to
             :meth:`matplotlib.axes.Axes.annotate`.
@@ -335,8 +373,7 @@ class Point(Plottable):
         return jnp.vstack([self.point, self.point])
 
 
-@dataclass
-class Wall(Ray, Interactable):
+class Wall(Ray, Interactable, eqx.Module):
     """
     A wall object defined by its corners.
 
@@ -350,7 +387,8 @@ class Wall(Ray, Interactable):
         ax = plt.gca()
         wall = Wall(points=jnp.array([[0., 0.], [1., 0.]]))
         _ = wall.plot(ax)
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
     @partial(jax.jit, inline=True)
@@ -452,8 +490,7 @@ class Wall(Ray, Interactable):
         return point - 2.0 * jnp.dot(i, self.normal()) * self.normal()
 
 
-@dataclass
-class RIS(Wall):
+class RIS(Wall, eqx.Module):
     """
     A very basic Reflective Intelligent Surface (RIS) object.
 
@@ -479,8 +516,7 @@ class RIS(Wall):
         return super().plot(ax, *args, **kwargs)
 
 
-@dataclass
-class Path(Plottable):
+class Path(Plottable, eqx.Module):
     """
     A path object with at least two points.
 
@@ -494,7 +530,8 @@ class Path(Plottable):
         ax = plt.gca()
         path = Path(points=jnp.array([[0., 0.], [.8, .2], [1., 1.]]))
         _ = path.plot(ax)
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
     points: Array
@@ -509,7 +546,7 @@ class Path(Plottable):
         tx: Array,
         objects: List[Interactable],
         rx: Array,
-    ) -> Path:
+    ) -> "Path":
         """
         Returns a path from TX to RX, traversing each object in the list in
         the provided order.
@@ -542,7 +579,8 @@ class Path(Plottable):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         points = [obj.parametric_to_cartesian(0.5) for obj in objects]
         points = jnp.vstack([tx, *points, rx])
@@ -728,8 +766,7 @@ def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords)
     return cartesian_coords
 
 
-@dataclass
-class ImagePath(Path):
+class ImagePath(Path, eqx.Module):
     """A path object that was obtained with the Image method."""
 
     @classmethod
@@ -740,7 +777,7 @@ class ImagePath(Path):
         objects: List[Wall],
         rx: Array,
         **kwargs: Any,
-    ) -> ImagePath:
+    ) -> "ImagePath":
         """
         Returns a path with minimal length.
 
@@ -769,7 +806,8 @@ class ImagePath(Path):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         n = len(objects)
 
@@ -812,8 +850,7 @@ class ImagePath(Path):
         return cls(points=points, loss=path_loss(points))
 
 
-@dataclass
-class FermatPath(Path):
+class FermatPath(Path, eqx.Module):
     """
     A path object that was obtained with the Fermat's Principle Tracing
     method.
@@ -829,7 +866,7 @@ class FermatPath(Path):
         key: Optional[Array] = None,
         seed: int = 1234,
         **kwargs: Any,
-    ) -> FermatPath:
+    ) -> "FermatPath":
         """
         Returns a path with minimal length.
 
@@ -865,7 +902,8 @@ class FermatPath(Path):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         n = len(objects)
 
@@ -903,8 +941,7 @@ class FermatPath(Path):
         return cls(points=points, loss=path_loss(points))
 
 
-@dataclass
-class MinPath(Path):
+class MinPath(Path, eqx.Module):
     """A path object that was obtained with the Min-Path-Tracing method."""
 
     @classmethod
@@ -917,7 +954,7 @@ class MinPath(Path):
         key: Optional[Array] = None,
         seed: int = 1234,
         **kwargs: Any,
-    ) -> MinPath:
+    ) -> "MinPath":
         """
         Returns a path that minimizes the sum of interactions.
 
@@ -953,7 +990,7 @@ class MinPath(Path):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
         """
         n = len(objects)
 

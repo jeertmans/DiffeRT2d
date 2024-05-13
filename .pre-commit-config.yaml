@@ -26,11 +26,6 @@ repos:
   rev: v1.1.362
   hooks:
   - id: pyright
-- repo: https://github.com/FlamingTempura/bibtex-tidy
-  rev: v1.11.0  # DO NOT CHANGE, see https://github.com/FlamingTempura/bibtex-tidy/issues/419
-  hooks:
-  - id: bibtex-tidy
-    args: [--no-backup, --sort, --sort-fields]
 - repo: https://github.com/codespell-project/codespell
   rev: v2.2.6
   hooks:

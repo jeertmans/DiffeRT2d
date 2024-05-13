@@ -5,11 +5,11 @@ from __future__ import annotations
 __all__ = ["Scene", "SceneName"]
 
 import json
+from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from functools import partial, singledispatchmethod
 from itertools import groupby, product
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -23,23 +23,17 @@ from typing import (
 )
 
 import differt_core
+import equinox as eqx
 import jax
 import jax.numpy as jnp
+from jaxtyping import Array, Float
+from matplotlib.artist import Artist
 
 from .abc import Interactable, Loc, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
 from .logic import is_true
 
-if TYPE_CHECKING:  # pragma: no cover
-    from dataclasses import dataclass
-
-    from jax import Array
-    from matplotlib.artist import Artist
-
-    PathFun = Callable[[Point, Point, Path, List[Interactable]], Array]
-else:
-    from chex import dataclass
-
+PathFun = Callable[[Point, Point, Path, list[Interactable]], Float[Array, " "]]
 
 S = Union[str, bytes, bytearray]
 SceneName = Literal[
@@ -53,22 +47,21 @@ SceneName = Literal[
 
 @runtime_checkable
 class Readable(Protocol):
-    def read(self) -> S:
-        pass  # pragma: no cover
+    @abstractmethod
+    def read(self) -> S: ...
 
 
-@dataclass
-class Scene(Plottable):
+class Scene(Plottable, eqx.Module):
     """
     2D Scene made of objects, one or more transmitting node(s), and one or
     more receiving node(s).
     """
 
-    transmitters: Dict[str, Point]
+    transmitters: dict[str, Point]
     """The transmitting nodes."""
-    receivers: Dict[str, Point]
+    receivers: dict[str, Point]
     """The receiving nodes."""
-    objects: List[Object]
+    objects: list[Object]
     """The list of objects in the scene."""
 
     @singledispatchmethod
@@ -361,7 +354,8 @@ class Scene(Plottable):
             key = jax.random.PRNGKey(1234)
             scene = Scene.random_uniform_scene(key, n_walls=5)
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         points = jax.random.uniform(
             key, (n_transmitters + 2 * n_walls + n_receivers, 2)
@@ -415,7 +409,8 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.basic_scene()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         tx = Point(point=jnp.asarray(tx_coords, dtype=float))
         rx = Point(point=jnp.asarray(rx_coords, dtype=float))
@@ -469,7 +464,8 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         tx = Point(point=jnp.asarray(tx_coords, dtype=float))
         rx = Point(point=jnp.asarray(rx_coords, dtype=float))
@@ -522,7 +518,8 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene_with_wall()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         scene = Scene.square_scene(tx_coords=tx_coords, rx_coords=rx_coords)
 
@@ -565,7 +562,8 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         scene = Scene.square_scene(**kwargs)
 
@@ -679,31 +677,31 @@ class Scene(Plottable):
             ]
         )
 
-    def get_closest_transmitter(self, coords: Array) -> Tuple[Point, Array]:
+    def get_closest_transmitter(self, coords: Array) -> tuple[str, Array]:
         """
         Returns the closest transmitter to the given coordinates.
 
         :param coords: The x-y coordinates, (2,).
-        :return: The closet transmitter and its distance to the
+        :return: The closet transmitter (name) and its distance to the
             coordinates.
         """
-        transmitters = list(self.transmitters.values())
-        points = jnp.vstack([tx.point for tx in transmitters])
+        transmitters = list(self.transmitters.items())
+        points = jnp.vstack([tx.point for _, tx in transmitters])
         i_min, distance = closest_point(points, coords)
-        return transmitters[i_min], distance
+        return transmitters[i_min][0], distance
 
-    def get_closest_receiver(self, coords: Array) -> Tuple[Point, Array]:
+    def get_closest_receiver(self, coords: Array) -> tuple[str, Array]:
         """
         Returns the closest receivers to the given coordinates.
 
         :param coords: The x-y coordinates, (2,).
-        :return: The closet receiver and its distance to the
+        :return: The closet receiver (name) and its distance to the
             coordinates.
         """
-        receivers = list(self.receivers.values())
-        points = jnp.vstack([rx.point for rx in receivers])
+        receivers = list(self.receivers.items())
+        points = jnp.vstack([rx.point for _, rx in receivers])
         i_min, distance = closest_point(points, coords)
-        return receivers[i_min], distance
+        return receivers[i_min][0], distance
 
     def all_transmitter_receiver_pairs(
         self,
@@ -945,8 +943,9 @@ class Scene(Plottable):
             accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
-        transmitters = self.transmitters
-        self.transmitters = {"tx": Point(point=jnp.array([0.0, 0.0]))}
+        transmitters = self.transmitters.copy()
+        self.transmitters.clear()
+        self.transmitters["tx"] = Point(point=jnp.array([0.0, 0.0]))
 
         path_candidates = self.all_path_candidates(
             min_order=min_order,
@@ -954,7 +953,8 @@ class Scene(Plottable):
         )
 
         pairs = list(self.all_transmitter_receiver_pairs())
-        self.transmitters = transmitters
+        self.transmitters.clear()
+        self.transmitters.update(transmitters)
 
         def facc(tx_coords: Array, receiver: Point) -> Array:
             acc = 0.0
@@ -1011,11 +1011,10 @@ class Scene(Plottable):
 
     def accumulate_on_receivers_grid_over_paths(
         self,
-        X: Array,
-        Y: Array,
+        X: Float[Array, "m n"],  # noqa: N803
+        Y: Float[Array, "m n"],  # noqa: N803
         fun: PathFun,
-        fun_args: Tuple = (),
-        fun_kwargs: Mapping = {},
+        args: tuple = (),
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
@@ -1039,10 +1038,8 @@ class Scene(Plottable):
         :param X: The grid of x-coordinates, (m, n).
         :param Y: The grid of y-coordinates, (m, n).
         :param fun: The function to evaluate on each path.
-        :param fun_args:
+        :param args:
             Positional arguments to be passed to ``fun``.
-        :param fun_kwargs:
-            Keyword arguments to be passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
@@ -1066,8 +1063,9 @@ class Scene(Plottable):
             accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
-        receivers = self.receivers
-        self.receivers = {"rx": Point(point=jnp.array([0.0, 0.0]))}
+        receivers = self.receivers.copy()
+        self.receivers.clear()
+        self.receivers["rx"] = Point(point=jnp.array([0.0, 0.0]))
 
         path_candidates = self.all_path_candidates(
             min_order=min_order,
@@ -1075,7 +1073,8 @@ class Scene(Plottable):
         )
 
         pairs = list(self.all_transmitter_receiver_pairs())
-        self.receivers = receivers
+        self.receivers.clear()
+        self.receivers.update(receivers)
 
         def facc(transmitter: Point, rx_coords: Array) -> Array:
             acc = 0.0
@@ -1095,8 +1094,7 @@ class Scene(Plottable):
                     receiver_cls(point=rx_coords),
                     path,
                     interacting_objects,
-                    *fun_args,
-                    **fun_kwargs,
+                    *args,
                 )
 
             return acc
@@ -1113,7 +1111,7 @@ class Scene(Plottable):
 
         grid = jnp.dstack((X, Y))
 
-        def results() -> Iterator[Array]:
+        def results() -> Iterator[Float[Array, " "]]:
             return (
                 (tx_key, vfacc(transmitter, grid)) for (tx_key, transmitter), _ in pairs
             )

@@ -21,8 +21,9 @@ when :code:`approx` is set to :python:`False`.
 
 from __future__ import annotations
 
-__all__ = [
+__all__ = (
     "ENABLE_APPROX",
+    "Truthy",
     "activation",
     "set_approx",
     "disable_approx",
@@ -40,17 +41,17 @@ __all__ = [
     "logical_not",
     "logical_or",
     "sigmoid",
-]
+)
 
 import os
 from contextlib import contextmanager
 from functools import partial
 from threading import Lock
-from typing import Any, Callable, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Optional, Union
 
 import jax
 import jax.numpy as jnp
-from jax import Array
+from jaxtyping import Array, Bool, Float
 
 from .defaults import DEFAULT_ALPHA
 
@@ -59,6 +60,9 @@ ENABLE_APPROX: bool = "ENABLE_APPROX" not in os.environ
 
 _LOCK = Lock()
 """Lock to prevent mutating ``ENABLE_APPROX`` in multiple threads."""
+
+Truthy = Union[Bool[Array, " *batch"], Float[Array, " *batch"]]
+"""An array of truthy values, either booleans or floats between 0 and 1."""
 
 
 def set_approx(enable: bool):
@@ -212,12 +216,8 @@ def disable_approx(disable: bool = True):  # pragma: no cover
         yield
 
 
-X = TypeVar("X", bound=Array)
-Y = TypeVar("Y", bound=Array)
-
-
 @partial(jax.jit, inline=True)
-def sigmoid(x: Array, alpha: float) -> Array:
+def sigmoid(x: Float[Array, " *batch"], alpha: float) -> Float[Array, " *batch"]:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -236,7 +236,7 @@ def sigmoid(x: Array, alpha: float) -> Array:
 
 
 @partial(jax.jit, inline=True)
-def hard_sigmoid(x: Array, alpha: float) -> Array:
+def hard_sigmoid(x: Float[Array, " *batch"], alpha: float) -> Float[Array, " *batch"]:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -256,10 +256,12 @@ def hard_sigmoid(x: Array, alpha: float) -> Array:
 
 @partial(jax.jit, inline=True, static_argnames=["function"])
 def activation(
-    x: Array,
+    x: Float[Array, " *batch"],
     alpha: float = DEFAULT_ALPHA,
-    function: Callable[[X, float], Y] = hard_sigmoid,
-) -> Array:
+    function: Callable[
+        [Float[Array, " *batch"], float], Float[Array, " *batch"]
+    ] = hard_sigmoid,
+) -> Float[Array, " *batch"]:
     r"""
     Element-wise function for approximating a discrete transition between 0
     and 1, with a smoothed transition centered at :python:`x = 0.0`.
@@ -303,13 +305,17 @@ def activation(
         ax2.set_ylabel(r"$\frac{\partial f(x)}{\partial x}$")
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        plt.show()  # doctest: +SKIP
     """
     return function(x, alpha)
 
 
 @partial(jax.jit, inline=True, static_argnames=["approx"])
-def logical_or(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+def logical_or(
+    x: Float[Array, " *batch"],
+    y: Float[Array, " *batch"],
+    approx: Optional[bool] = None,
+) -> Truthy:
     """
     Element-wise logical :python:`x or y`.
 
@@ -463,7 +469,7 @@ def less_equal(
 @partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
 def logical_all(
     *x: Array,
-    axis: Optional[Union[int, Tuple[int, ...]]] = None,
+    axis: Optional[Union[int, tuple[int, ...]]] = None,
     approx: Optional[bool] = None,
 ) -> Array:
     """
@@ -487,7 +493,7 @@ def logical_all(
 @partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
 def logical_any(
     *x: Array,
-    axis: Optional[Union[int, Tuple[int, ...]]] = None,
+    axis: Optional[Union[int, tuple[int, ...]]] = None,
     approx: Optional[bool] = None,
 ) -> Array:
     """

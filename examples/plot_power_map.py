@@ -69,4 +69,4 @@ for ax, approx in zip(axes, [False, True]):
     ax.set_title("With approximation" if approx else "Without approximation")
 
 axes[-1].set_xlabel("x coordinate")
-plt.show()
+plt.show()  # doctest: +SKIP

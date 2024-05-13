@@ -13,7 +13,7 @@ def test_version():
     got = __version__
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
 
-    with open(pyproject) as file:
-        expected = load(file)["tool"]["poetry"]["version"]
+    with open(pyproject, "rb") as file:
+        expected = load(file)["tool"]["bumpversion"]["current_version"]
 
     assert got == expected

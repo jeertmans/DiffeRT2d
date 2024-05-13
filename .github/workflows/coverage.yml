@@ -10,21 +10,24 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Poetry
-      run: pipx install poetry
+    - name: Setup Rye
+      if: matrix.os != 'windows-latest'
+      env:
+        RYE_INSTALL_OPTION: --yes
+      run: |
+        curl -sSf https://rye-up.com/get | bash
+        echo "$HOME/.rye/shims" >> $GITHUB_PATH
 
-    - name: Install Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: poetry
+    - name: Configure Rye
+      shell: bash
+      run: |
+        rye config --set-bool behavior.use-uv=true
 
     - name: Install Differt2D
-      run: |
-        poetry install --with test
+      run: rye sync
 
     - name: Run pytest and coverage
-      run: poetry run pytest --cov-report xml --cov=differt2d tests/
+      run: rye run pytest --cov-report xml --cov=differt2d tests/ differt2d/
 
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v3

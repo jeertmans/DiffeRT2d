@@ -18,6 +18,8 @@ from differt2d.geometry import (
     Wall,
     path_length,
     segments_intersect,
+    stack_leaves,
+    unstack_leaves,
 )
 from differt2d.logic import enable_approx, false_value, is_false, is_true, true_value
 from differt2d.scene import Scene
@@ -68,6 +70,33 @@ path_cls = pytest.mark.parametrize(
 @pytest.fixture
 def steps():
     return 100
+
+
+def test_stack_and_unstack_leaves(key: Array):
+    scene = Scene.random_uniform_scene(key, n_walls=10)
+    walls = scene.objects
+
+    assert all(isinstance(wall, Wall) for wall in walls)
+
+    stacked_walls = stack_leaves(walls)
+
+    assert isinstance(stacked_walls, Wall)
+
+    unstacked_walls = unstack_leaves(stacked_walls)
+
+    for w1, w2 in zip(walls, unstacked_walls):
+        chex.assert_trees_all_equal(w1, w2)
+
+
+def test_stack_and_unstack_different_pytrees(key: Array):
+    scene = Scene.random_uniform_scene(key, n_walls=2)
+    walls: List[Wall] = scene.objects  # type: ignore[assignment]
+    walls[0] = RIS(points=walls[0].points)
+
+    assert all(isinstance(wall, Wall) for wall in walls)
+
+    with pytest.raises(ValueError):
+        _ = stack_leaves(walls)
 
 
 @approx

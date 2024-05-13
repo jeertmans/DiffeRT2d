@@ -5,7 +5,7 @@ Requirements
 ------------
 
 First, make sure ``pyperf`` is installed. If you have cloned
-the repository, you can use ``poetry install --with test``.
+the repository, you can use ``rye sync``.
 
 Usage
 -----

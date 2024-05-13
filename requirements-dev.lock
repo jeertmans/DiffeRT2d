@@ -34,6 +34,8 @@ attrs==23.2.0
 babel==2.15.0
     # via jupyterlab-server
     # via sphinx
+beartype==0.18.5
+    # via differt2d
 beautifulsoup4==4.12.3
     # via furo
     # via nbconvert
@@ -53,7 +55,6 @@ cfgv==3.4.0
 charset-normalizer==3.3.2
     # via requests
 chex==0.1.86
-    # via differt2d
     # via optax
 click==8.1.7
     # via bump-my-version
@@ -79,6 +80,8 @@ distlib==0.3.8
 docutils==0.21.2
     # via myst-parser
     # via sphinx
+equinox==0.11.4
+    # via differt2d
 exceptiongroup==1.2.1
     # via anyio
     # via ipython
@@ -132,10 +135,14 @@ isoduration==20.11.0
 jax==0.4.28
     # via chex
     # via differt2d
+    # via equinox
     # via optax
 jaxlib==0.4.28
     # via chex
     # via optax
+jaxtyping==0.2.28
+    # via differt2d
+    # via equinox
 jedi==0.19.1
     # via ipython
 jinja2==3.1.4
@@ -232,6 +239,7 @@ numpy==1.26.4
     # via differt-core
     # via jax
     # via jaxlib
+    # via jaxtyping
     # via matplotlib
     # via ml-dtypes
     # via opt-einsum
@@ -450,12 +458,16 @@ traitlets==5.14.3
     # via nbclient
     # via nbconvert
     # via nbformat
+typeguard==2.13.3
+    # via jaxtyping
 types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.11.0
     # via anyio
     # via async-lru
     # via chex
+    # via differt2d
+    # via equinox
     # via ipython
     # via pydantic
     # via pydantic-core

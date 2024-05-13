@@ -22,6 +22,7 @@ dependencies = [
   "jaxtyping>=0.2.24",
   "matplotlib>=3.7.1",
   "optax>=0.1.5",
+  "typing-extensions>=4.9.0;python_version<'3.11'",
 ]
 description = "2D Toolbox for Differentiable Ray Tracing"
 dynamic = ["readme", "version"]
@@ -91,7 +92,7 @@ search = "<!-- start changelog -->"
 [tool.codespell]
 builtin = "clear,rare,informal,usage,names,en-GB_to_en-US"
 check-hidden = true
-ignore-words-list = "master,FPT"
+ignore-words-list = "master,fpt"
 skip = "requirements.lock,requirements-dev.lock"
 
 [tool.coverage.report]
@@ -122,6 +123,15 @@ venv = ".venv"
 venvPath = "."
 
 [tool.pytest.ini_options]
+addopts = [
+  "--ignore=benchmark.py",
+  "--ignore=examples",
+  "--doctest-modules",
+  "--doctest-ignore-import-errors",
+  "--doctest-glob=*.md",
+  "--doctest-glob=*.rst",
+]
+doctest_optionflags = ["NORMALIZE_WHITESPACE"]
 env = [
   "JAX_DEBUG_NANS=True",
   "JAX_PLATFORM_NAME=cpu",

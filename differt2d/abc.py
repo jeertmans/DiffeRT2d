@@ -5,26 +5,26 @@ __all__ = (
     "Loc",
     "Object",
     "Plottable",
-    )
+)
 
-from abc import abstractmethod
-from jaxtyping import Float, Array
-from typing import TYPE_CHECKING, Any, List, Literal, Optional, Protocol, Tuple
+from abc import ABC, abstractmethod
+from typing import Any, Literal, Optional
 
+import equinox as eqx
 import jax.numpy as jnp
-
-
-from jax import Array
+from beartype import beartype as typechecker
+from jaxtyping import Array, Float, jaxtyped
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 
 from .defaults import DEFAULT_PATCH
+from .logic import Truthy
 
 Loc = Literal["N", "E", "S", "W", "C", "NE", "NW", "SE", "SW"]
 """Literal type for all valid locations."""
 
 
-class Plottable(Protocol):  # pragma: no cover
+class Plottable(ABC):
     """Protocol for any object that can be plotted using matplotlib."""
 
     @abstractmethod
@@ -51,6 +51,8 @@ class Plottable(Protocol):  # pragma: no cover
         """
         pass
 
+    @eqx.filter_jit
+    @jaxtyped(typechecker=typechecker)
     def grid(self, n: int = 50) -> tuple[Float[Array, "n n"], Float[Array, "n n"]]:
         """
         Returns a (mesh) grid that overlays the current object.
@@ -65,6 +67,8 @@ class Plottable(Protocol):  # pragma: no cover
         X, Y = jnp.meshgrid(x, y)
         return X, Y
 
+    @eqx.filter_jit
+    @jaxtyped(typechecker=typechecker)
     def center(self) -> Float[Array, "2"]:
         """
         Returns the center coordinates of this object.
@@ -77,6 +81,8 @@ class Plottable(Protocol):  # pragma: no cover
 
         return 0.5 * (bounding_box[0, :] + bounding_box[1, :])
 
+    @eqx.filter_jit
+    @jaxtyped(typechecker=typechecker)
     def get_location(self, location: Loc) -> Float[Array, "2"]:
         """
         Returns the relative location within this object's extents.
@@ -111,7 +117,7 @@ class Plottable(Protocol):  # pragma: no cover
             raise ValueError(f"Invalid location '{location}'") from e
 
 
-class Interactable(Protocol):  # pragma: no cover
+class Interactable(ABC):
     """Protocol for any object that a ray path can interact with."""
 
     @staticmethod
@@ -128,7 +134,9 @@ class Interactable(Protocol):  # pragma: no cover
         pass
 
     @abstractmethod
-    def parametric_to_cartesian(self, param_coords: Float[Array, " n"]) -> Float[Array, "2"]:
+    def parametric_to_cartesian(
+        self, param_coords: Float[Array, " n"]
+    ) -> Float[Array, "2"]:
         """
         Converts parametric coordinates to cartesian coordinates.
 
@@ -139,7 +147,9 @@ class Interactable(Protocol):  # pragma: no cover
         pass
 
     @abstractmethod
-    def cartesian_to_parametric(self, carte_coords: Float[Array, "2"]) -> Float[Array, " n"]:
+    def cartesian_to_parametric(
+        self, carte_coords: Float[Array, "2"]
+    ) -> Float[Array, " n"]:
         """
         Converts cartesian coordinates to parametric coordinates.
 
@@ -154,7 +164,7 @@ class Interactable(Protocol):  # pragma: no cover
         param_coords: Float[Array, " n"],
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Array:
+    ) -> Truthy:
         """
         Checks if the given coordinates are within the object.
 
@@ -170,11 +180,11 @@ class Interactable(Protocol):  # pragma: no cover
     @abstractmethod
     def intersects_cartesian(
         self,
-        ray: Array,
+        ray: Float[Array, "2 2"],
         patch: float = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Array:
+    ) -> Truthy:
         """
         Ray intersection test on the current object.
 
@@ -194,7 +204,7 @@ class Interactable(Protocol):  # pragma: no cover
         pass
 
     @abstractmethod
-    def evaluate_cartesian(self, ray_path: Array) -> Array:
+    def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:
         """
         Evaluates the given interaction triplet, such that:
 
@@ -213,7 +223,7 @@ class Interactable(Protocol):  # pragma: no cover
         pass
 
 
-class Object(Plottable, Interactable, Protocol):
+class Object(Plottable, Interactable):
     """
     Protocol for any object implementing both :class:`Plottable` and
     :class:`Interactable`.

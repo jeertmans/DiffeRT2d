@@ -100,13 +100,19 @@ fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
-scene.transmitters = dict(
-    tx=Point(point=jnp.array([0.5, 0.7])),
+scene.transmitters.clear()
+scene.transmitters.update(
+    {
+        "tx": Point(point=jnp.array([0.5, 0.7])),
+    }
 )
-scene.receivers = {
-    r"rx_0": Point(point=jnp.array([0.3, 0.1])),
-    r"rx_1": Point(point=jnp.array([0.5, 0.1])),
-}
+scene.receivers.clear()
+scene.receivers.update(
+    {
+        r"rx_0": Point(point=jnp.array([0.3, 0.1])),
+        r"rx_1": Point(point=jnp.array([0.5, 0.1])),
+    }
+)
 
 X, Y = scene.grid(n=300)
 
@@ -220,4 +226,4 @@ def func(alpha):
 
 
 anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
-plt.show()
+plt.show()  # doctest: +SKIP

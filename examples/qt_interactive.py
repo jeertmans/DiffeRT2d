@@ -350,19 +350,20 @@ class PlotWidget(QWidget):
         self.path_artists: List[Artist] = []
 
         def f(rx_coords):
-            receivers = self.scene.receivers
-            self.scene.receivers = {"rx": Point(point=rx_coords)}
+            receivers = self.scene.receivers.copy()
+            self.scene.receivers.clear()
+            self.scene.receivers.update({"rx": Point(point=rx_coords)})
 
             total_power = self.scene.accumulate_over_paths(
-                fun=received_power,
-                fun_kwargs=dict(r_coef=self.r_coef),
+                fun=partial(received_power, r_coef=self.r_coef),
                 reduce_all=True,
                 min_order=self.min_order,
                 max_order=self.max_order,
                 path_cls=self.path_cls,
             )
 
-            self.scene.receivers = receivers
+            self.scene.receivers.clear()
+            self.scene.receivers.update(receivers)
 
             return total_power
 
@@ -387,13 +388,22 @@ class PlotWidget(QWidget):
 
             if dist_tx < dist_rx:
                 self.picked = (event.artist, tx)
+                self.picked_tx = True
             else:
                 self.picked = (event.artist, rx)
+                self.picked_tx = False
 
     def on_motion_notify_event(self, event):
         if self.picked:
-            artist, point = self.picked
-            point.point = jnp.array([event.xdata, event.ydata])
+            artist, point_name = self.picked
+            if self.picked_tx:
+                self.scene.transmitters[point_name] = Point(
+                    point=jnp.array([event.xdata, event.ydata])
+                )
+            else:
+                self.scene.receivers[point_name] = Point(
+                    point=jnp.array([event.xdata, event.ydata])
+                )
             artist.set_xdata([event.xdata])
             artist.set_ydata([event.ydata])
             self.on_scene_change()
@@ -407,8 +417,7 @@ class PlotWidget(QWidget):
         P = self.scene.accumulate_on_receivers_grid_over_paths(
             self.X,
             self.Y,
-            fun=received_power,
-            fun_kwargs=dict(r_coef=self.r_coef),
+            fun=partial(received_power, r_coef=self.r_coef),
             reduce_all=True,
             min_order=self.min_order,
             max_order=self.max_order,

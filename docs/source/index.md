@@ -51,7 +51,7 @@ If you are interested in contributing to this tool, please checkout the
     )
     ax.pcolormesh(X, Y, 10.0 * jnp.log10(Z))
     scene.plot(ax)
-    plt.show()
+    plt.show()  # doctest: +SKIP
 ```
 
 ```{toctree}
