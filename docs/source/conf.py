@@ -66,6 +66,12 @@ exclude_patterns = []
 # Removes the 'package.module' part from package.module.Class
 add_module_names = False
 
+show_warning_types = True
+suppress_warnings = [
+    # WARNING: cannot cache unpickable configuration value: 'sphinx_gallery_conf'
+    "config.cache",
+]
+
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
 sphinx_gallery_conf = {
@@ -88,6 +94,7 @@ qtgallery_conf = {
     "xvfb_size": (640, 775),
     "xvfb_color_depth": 24,
     "xfvb_use_xauth": False,
+    "xfvb_extra_args": [],
 }
 
 # -- Options for HTML output -------------------------------------------------
