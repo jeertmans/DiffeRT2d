@@ -88,7 +88,6 @@ qtgallery_conf = {
     "xvfb_size": (640, 775),
     "xvfb_color_depth": 24,
     "xfvb_use_xauth": False,
-    "xfvb_extra_args": [],
 }
 
 # -- Options for HTML output -------------------------------------------------
@@ -121,11 +120,14 @@ html_theme_options = {
 # -- Intersphinx mapping
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "matplotlib": ("https://matplotlib.org/stable", None),
+    "equinox": ("https://docs.kidger.site/equinox/", None),
     "jax": ("https://jax.readthedocs.io/en/latest", None),
+    "jaxtyping": ("https://docs.kidger.site/jaxtyping/", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
     "optax": ("https://optax.readthedocs.io/en/latest", None),
+    "python": ("https://docs.python.org/3", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
 }
 
 # -- OpenGraph settings
