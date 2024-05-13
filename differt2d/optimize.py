@@ -1,12 +1,11 @@
 """
-Otimization toolbox.
+Optimization toolbox.
 
 All the functions present in this toolbox support
 Just-in-time compilation with :func:`jax.jit`.
 
 Examples
-========
-
+--------
 >>> from differt2d.optimize import minimize
 >>> import chex
 >>> import jax
@@ -22,9 +21,11 @@ Examples
 >>> x, y = parabola_min(2.0, 1.0, 1.0)
 >>> chex.assert_trees_all_close(x, -1.5, rtol=1e-2)
 >>> chex.assert_trees_all_close(y, +0.0, atol=1e-3)
+
 """
 
-from typing import Any, Callable, Mapping, Tuple, TypeVar
+from collections.abc import Mapping
+from typing import Any, Callable, Tuple, TypeVar
 
 import jax
 import jax.numpy as jnp
@@ -48,7 +49,7 @@ def default_optimizer() -> optax.GradientTransformation:
 
     .. note::
 
-        This optimizer should be a good default choise when used by
+        This optimizer should be a good default choice when used by
         :class:`MinPath<differt2d.geometry.MinPath>` as it gave the
         best convergence results when compared to other optimizers
         provided by `Optax <https://optax.readthedocs.io/>`_.
@@ -132,8 +133,8 @@ def minimize_random_uniform(
     **kwargs: Any,
 ) -> Tuple[X, Y]:
     """
-    Minimizes a scalar function of one or more variables, with initial guess drawn
-    randomly from a uniform distribution.
+    Minimizes a scalar function of one or more variables, with initial guess
+    drawn randomly from a uniform distribution.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guess.
@@ -168,9 +169,9 @@ def minimize_many_random_uniform(
     **kwargs: Any,
 ) -> Tuple[X, Y]:
     """
-    Minimizes many times a scalar function of one or more variables, with initial guess
-    drawn randomly from a uniform distribution, and returns the best minimum out of the
-    :code:`many` trials.
+    Minimizes many times a scalar function of one or more variables, with
+    initial guess drawn randomly from a uniform distribution, and returns the
+    best minimum out of the :code:`many` trials.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guesses.

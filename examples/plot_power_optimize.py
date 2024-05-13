@@ -50,7 +50,7 @@ scene = Scene.square_scene_with_obstacle()
 # In an optimization problem, one must first define an objective function.
 # Ideally, in a telecommunications scenario, we would like to serve all users,
 # i.e., receivers, with a good power. Because we want all users to receive the
-# maximum power possible, we will maximize the mininum received power among all
+# maximum power possible, we will maximize the minimum received power among all
 # users.
 #
 # Finally, we define a loss function that will take the opposite of the
@@ -58,8 +58,10 @@ scene = Scene.square_scene_with_obstacle()
 
 
 def objective_function(received_power_per_receiver):
-    """Objective function, that wants to maximize the received power by each
-    receiver."""
+    """
+    Objective function, that wants to maximize the received power by each
+    receiver.
+    """
     acc = jnp.inf
     for p in received_power_per_receiver:
         p = p / P0  # Normalize power
@@ -142,7 +144,7 @@ steps = 101  # In how many steps we hope to converge
 # Choosing the right alpha values
 # -------------------------------
 #
-# Theoritically, one should choose an infinitely big ``alpha`` value
+# Theoretically, one should choose an infinitely big ``alpha`` value
 # to reduce the approximation to zero.
 #
 # However, it can be observed that values above 100.0 are already high enough

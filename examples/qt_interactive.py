@@ -455,7 +455,7 @@ class PlotWidget(QWidget):
 # CLI options
 # -----------
 #
-# This part is not very intersting, and uses the builtin :mod:`argparse`
+# This part is not very interesting, and uses the builtin :mod:`argparse`
 # module to create a set of command-line options and parse them.
 
 

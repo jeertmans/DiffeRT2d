@@ -28,11 +28,12 @@ def create_fig_for_paper(
     Creates a new figure (and subplots), with a nice setup for IEEE papers.
 
     :param fig: The figure to setup.
-    :param columns: The number of columns on which the figure should span.
-    :param column_width: The width of one column (in pixels), defaults to the column
-        width specified by the IEEE template.
-    :param height_to_width_ratio: If set, the figure's height will be set accordingly,
-        proportional to its width.
+    :param columns: The number of columns on which the figure should
+        span.
+    :param column_width: The width of one column (in pixels), defaults
+        to the column width specified by the IEEE template.
+    :param height_to_width_ratio: If set, the figure's height will be
+        set accordingly, proportional to its width.
     """
     fig, axes = plt.subplots(*args, **kwargs)
 

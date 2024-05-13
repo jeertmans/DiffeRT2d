@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (v0.2.0-changed)=
 ### Changed
 
-+ Renamed all occurences of `emitter*` to `transmitter*`.
++ Renamed all occurrences of `emitter*` to `transmitter*`.
   This is a **breaking change** regarding some function names.
   [#43](https://github.com/jeertmans/DiffeRT2d/pull/43)
 + Accumulate functions from `Scene` class now return an iterator by default,

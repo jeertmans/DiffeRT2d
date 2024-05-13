@@ -1,6 +1,10 @@
+import sys
 from pathlib import Path
 
-from rtoml import load
+if sys.version_info >= (3, 11):
+    from tomllib import load
+else:
+    from tomli import load
 
 from differt2d.__version__ import __version__
 
@@ -8,5 +12,8 @@ from differt2d.__version__ import __version__
 def test_version():
     got = __version__
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
-    expected = load(pyproject)["tool"]["poetry"]["version"]
+
+    with open(pyproject) as file:
+        expected = load(file)["tool"]["poetry"]["version"]
+
     assert got == expected

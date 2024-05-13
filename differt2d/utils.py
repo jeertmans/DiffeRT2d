@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     List,
     Optional,
-    Sequence,
     TypeVar,
     Union,
 )
@@ -19,8 +19,8 @@ import jax.numpy as jnp
 from .defaults import DEFAULT_HEIGHT, DEFAULT_R_COEF
 
 P0: float = 100.0
-"""Received power at zero distance from transmitter when using default parameter values,
-see :func:`received_power`."""
+"""Received power at zero distance from transmitter when using default
+parameter values, see :func:`received_power`."""
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -57,8 +57,9 @@ def unstack_leaves(pytrees) -> List[Pytree]:
     Unstacks the leaves of a Pytree. Reciprocal of :func:`stack_leaves`.
 
     :param pytrees: A Pytree.
-    :return: A list of Pytrees, where each Pytree has the same structure as the input
-        Pytree, but each leaf contains only one part of the original leaf.
+    :return: A list of Pytrees, where each Pytree has the same structure
+        as the input Pytree, but each leaf contains only one part of the
+        original leaf.
     """
     leaves, treedef = jax.tree_util.tree_flatten(pytrees)
     return [treedef.unflatten(leaf) for leaf in zip(*leaves)]
@@ -74,19 +75,21 @@ def received_power(
     height: float = DEFAULT_HEIGHT,
 ) -> Array:
     """
-    Returns the received power for a given path between some transmitter and some
-    receiver.
+    Returns the received power for a given path between some transmitter and
+    some receiver.
 
-    Here, the power decreases with the square of the path length, and each interaction
-    introduces some reflection coefficient.
+    Here, the power decreases with the square of the path length, and
+    each interaction introduces some reflection coefficient.
 
     :param transmitter: The transmitting node, ignored.
     :param receiver: The receiving node, ignored.
     :param path: The ray path.
-    :param interacting_objects: The sequence of interacting objects, ignored.
-    :param r_coef: The reflection coefficient, with :python:`0 <= r_coef <= 1`.
-    :param height: The TX antenna height to avoid division by zero when transmitter and
-        receiver are located at the same coordinates.
+    :param interacting_objects: The sequence of interacting objects,
+        ignored.
+    :param r_coef: The reflection coefficient, with :python:`0 <= r_coef
+        <= 1`.
+    :param height: The TX antenna height to avoid division by zero when
+        transmitter and receiver are located at the same coordinates.
     :return: The received power.
     """
     r = path.length()

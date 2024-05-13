@@ -16,9 +16,12 @@ import qtgallery
 from sphinx.ext.autodoc import between
 from sphinx.util.inspect import isclassmethod
 
+from differt2d.__version__ import __version__
+
 project = "DiffeRT2d"
-copyright = f"{date.today().year}, Jérome Eertmans"
+copyright = f"2023-{date.today().year}, Jérome Eertmans"
 author = "Jérome Eertmans"
+version = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -39,6 +42,9 @@ extensions = [
     "sphinx_gallery.gen_gallery",
     "qtgallery",
 ]
+
+add_module_names = False
+add_function_parentheses = False
 
 rst_prolog = """
 .. role:: python(code)
@@ -184,8 +190,10 @@ def merge_documentation_from_parent(app, what, name, obj, options, lines):
 
 
 def unskip_jitted(app, what, name, obj, skip, options):
-    """Methods that are both jitted and overloading (e.g., from a protocol) are skipped,
-    which should not be the case."""
+    """
+    Methods that are both jitted and overloading (e.g., from a protocol) are
+    skipped, which should not be the case.
+    """
     if skip and what == "class" and "Pjit" in repr(obj):
         obj.__doc__ = get_doc(obj._fun)
         return obj.__doc__ == ""
@@ -203,7 +211,7 @@ def add_note_about_abstract(app, what, name, obj, options, lines):
 
 
 def is_singledispatch_classmethod(obj):
-    return hasattr(obj, "register") and isclassmethod(getattr(obj, "__wrapped__"), None)
+    return hasattr(obj, "register") and isclassmethod(obj.__wrapped__, None)
 
 
 def patch_singledispatch_classmethod_signature(app, obj, bound_method):

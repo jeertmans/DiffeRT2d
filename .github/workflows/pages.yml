@@ -37,7 +37,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Ubuntu dependecies
+    - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
         sudo apt-get install freeglut3-dev

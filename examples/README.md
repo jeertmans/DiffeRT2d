@@ -15,7 +15,7 @@ Usage
 
 You can run each example as a Python script: ``python path_to_example.py``.
 
-To modifiy specific parameters, directly edit the corresponding file.
+To modify specific parameters, directly edit the corresponding file.
 
 Examples
 --------

@@ -38,7 +38,7 @@ With Poetry, installation becomes straightforward:
 poetry install
 ```
 
-Additionnally, DiffeRT2d comes with group dependencies for development purposes:
+Additionally, DiffeRT2d comes with group dependencies for development purposes:
 
 ```bash
 poetry install --with dev  # For linters and formatters
@@ -78,7 +78,7 @@ style stay constant across time.
 If a warning or an error is displayed, please fix it before going to next step.
 
 However, testing your code locally can still be a good idea if you do not plan
-to make a pull request soon. There are two test sets: thoses in the
+to make a pull request soon. There are two test sets: those in the
 `tests` folder, and the code in the docstring.
 
 Pytest is used to run the former tests:

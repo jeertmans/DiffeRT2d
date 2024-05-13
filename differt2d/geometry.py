@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -186,7 +187,8 @@ def normalize(vector: Array) -> Tuple[Array, Array]:
 @partial(jax.jit, inline=True)
 def closest_point(points: Array, target: Array) -> Tuple[Array, Array]:
     """
-    Returns the index of the closest point to some target, and the actual distance.
+    Returns the index of the closest point to some target, and the actual
+    distance.
 
     :param points: An array of 2D points, (N, 2).
     :param target: A target point, (2, ).
@@ -199,7 +201,7 @@ def closest_point(points: Array, target: Array) -> Tuple[Array, Array]:
     >>> target = jnp.array([.6, .3])
     >>> points = jnp.array([
     ...     [0., 0.],
-    ...     [1., 0.],  # This is the closests point
+    ...     [1., 0.],  # This is the closest point
     ...     [1., 1.],
     ...     [0., 1.]
     ... ])
@@ -354,8 +356,8 @@ class Wall(Ray, Interactable):
     @partial(jax.jit, inline=True)
     def normal(self) -> Array:
         """
-        Returns the normal to the current wall, expressed in cartesian coordinates and
-        normalized.
+        Returns the normal to the current wall, expressed in cartesian
+        coordinates and normalized.
 
         :return: The normal, (2,)
         """
@@ -432,8 +434,8 @@ class Wall(Ray, Interactable):
     @jax.jit
     def image_of(self, point: Array) -> Array:
         """
-        Returns the image of a point with respect to this mirror (wall), using specular
-        reflection.
+        Returns the image of a point with respect to this mirror (wall),
+        using specular reflection.
 
         :param point: The starting point, (2,).
         :return: The image of the point.
@@ -455,8 +457,8 @@ class RIS(Wall):
     """
     A very basic Reflective Intelligent Surface (RIS) object.
 
-    Here, we model a RIS such that the angle of reflection is constant with respect to
-    its normal, regardless of the incident vector.
+    Here, we model a RIS such that the angle of reflection is constant
+    with respect to its normal, regardless of the incident vector.
     """
 
     phi: Array = jnp.pi / 4
@@ -507,10 +509,10 @@ class Path(Plottable):
         tx: Array,
         objects: List[Interactable],
         rx: Array,
-    ) -> "Path":
+    ) -> Path:
         """
-        Returns a path from TX to RX, traversing each object in the list in the provided
-        order.
+        Returns a path from TX to RX, traversing each object in the list in
+        the provided order.
 
         The present implementation will sample a point at :python:`t = 0.5`
         on each object.
@@ -565,8 +567,8 @@ class Path(Plottable):
         """
         Returns whether the path correctly passes on the objects.
 
-        For each object i, it will check whether it contains the ith point in the path
-        (start and end points are ignored).
+        For each object i, it will check whether it contains the ith
+        point in the path (start and end points are ignored).
 
         :param objects: The list of objects to check against.
         :param approx: Whether approximation is enabled or not.
@@ -738,7 +740,7 @@ class ImagePath(Path):
         objects: List[Wall],
         rx: Array,
         **kwargs: Any,
-    ) -> "ImagePath":
+    ) -> ImagePath:
         """
         Returns a path with minimal length.
 
@@ -812,7 +814,10 @@ class ImagePath(Path):
 
 @dataclass
 class FermatPath(Path):
-    """A path object that was obtained with the Fermat's Principle Tracing method."""
+    """
+    A path object that was obtained with the Fermat's Principle Tracing
+    method.
+    """
 
     @classmethod
     @partial(jax.jit, static_argnames=["cls", "steps", "optimizer"])
@@ -824,7 +829,7 @@ class FermatPath(Path):
         key: Optional[Array] = None,
         seed: int = 1234,
         **kwargs: Any,
-    ) -> "FermatPath":
+    ) -> FermatPath:
         """
         Returns a path with minimal length.
 
@@ -912,7 +917,7 @@ class MinPath(Path):
         key: Optional[Array] = None,
         seed: int = 1234,
         **kwargs: Any,
-    ) -> "MinPath":
+    ) -> MinPath:
         """
         Returns a path that minimizes the sum of interactions.
 

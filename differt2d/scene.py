@@ -5,6 +5,7 @@ from __future__ import annotations
 __all__ = ["Scene", "SceneName"]
 
 import json
+from collections.abc import Iterator, Mapping, Sequence
 from functools import partial, singledispatchmethod
 from itertools import groupby, product
 from typing import (
@@ -12,12 +13,9 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterator,
     List,
     Literal,
-    Mapping,
     Protocol,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -61,8 +59,10 @@ class Readable(Protocol):
 
 @dataclass
 class Scene(Plottable):
-    """2D Scene made of objects, one or more transmitting node(s), and one or more
-    receiving node(s)."""
+    """
+    2D Scene made of objects, one or more transmitting node(s), and one or
+    more receiving node(s).
+    """
 
     transmitters: Dict[str, Point]
     """The transmitting nodes."""
@@ -75,10 +75,11 @@ class Scene(Plottable):
     @classmethod
     def from_geojson(
         cls, s_or_fp: Union[S, Readable], tx_loc: Loc = "NW", rx_loc: Loc = "SE"
-    ) -> "Scene":
+    ) -> Scene:
         r"""
-        Creates a scene from a GEOJSON file, generating one Wall per line segment. TX
-        and RX positions are located on the corner of the bounding box.
+        Creates a scene from a GEOJSON file, generating one Wall per line
+        segment. TX and RX positions are located on the corner of the bounding
+        box.
 
         :param s_or_fp: Source from which to read the GEOJSON object,
             either a string-like or a file-like object.
@@ -272,7 +273,7 @@ class Scene(Plottable):
     @from_geojson.register(bytes)
     @from_geojson.register(bytearray)
     @classmethod
-    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> "Scene":
+    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> Scene:
         dictionary = json.loads(s)
 
         features = dictionary.get("features", [])
@@ -308,7 +309,7 @@ class Scene(Plottable):
 
     @from_geojson.register(Readable)
     @classmethod
-    def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> "Scene":
+    def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> Scene:
         return cls.from_geojson(fp.read(), *args, **kwargs)
 
     def add_objects(self, objects: Sequence[Object]) -> None:
@@ -316,15 +317,15 @@ class Scene(Plottable):
         self.objects.extend(objects)
 
     @classmethod
-    def from_scene_name(
-        cls, scene_name: SceneName, *args: Any, **kwargs: Any
-    ) -> "Scene":
+    def from_scene_name(cls, scene_name: SceneName, *args: Any, **kwargs: Any) -> Scene:
         """
         Generates a new scene from the given scene name.
 
         :param scene_name: The name of the scene.
-        :param args: Positional arguments to be passed to the constructor.
-        :param kwargs: Keyword arguments to be passed to the constructor.
+        :param args: Positional arguments to be passed to the
+            constructor.
+        :param kwargs: Keyword arguments to be passed to the
+            constructor.
         :return: The scene.
         """
         return getattr(cls, scene_name)(*args, **kwargs)
@@ -337,9 +338,10 @@ class Scene(Plottable):
         n_transmitters: int = 1,
         n_walls: int = 1,
         n_receivers: int = 1,
-    ) -> "Scene":
+    ) -> Scene:
         """
-        Generates a random scene, drawing coordinates from a random distribution.
+        Generates a random scene, drawing coordinates from a random
+        distribution.
 
         :param key: The random key to be used.
         :param n_transmitters: The number of transmitters.
@@ -383,10 +385,10 @@ class Scene(Plottable):
         *,
         tx_coords: Array = jnp.array([0.1, 0.1]),
         rx_coords: Array = jnp.array([0.302, 0.2147]),
-    ) -> "Scene":
+    ) -> Scene:
         """
-        Instantiates a basic scene with a main room, and a second inner room in the
-        lower left corner, with a small entrance.
+        Instantiates a basic scene with a main room, and a second inner room
+        in the lower left corner, with a small entrance.
 
         :param tx_coords: The transmitter's coordinates, array-like, (2,).
         :param rx_coords: The receiver's coordinates, array-like, (2,).
@@ -438,7 +440,7 @@ class Scene(Plottable):
         *,
         tx_coords: Array = jnp.array([0.2, 0.2]),
         rx_coords: Array = jnp.array([0.5, 0.6]),
-    ) -> "Scene":
+    ) -> Scene:
         """
         Instantiates a square scene with one main room.
 
@@ -488,9 +490,10 @@ class Scene(Plottable):
         *,
         tx_coords: Array = jnp.array([0.2, 0.5]),
         rx_coords: Array = jnp.array([0.8, 0.5]),
-    ) -> "Scene":
+    ) -> Scene:
         """
-        Instantiates a square scene with one main room, and vertical wall in the middle.
+        Instantiates a square scene with one main room, and vertical wall in
+        the middle.
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
@@ -530,10 +533,10 @@ class Scene(Plottable):
         return scene
 
     @classmethod
-    def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> "Scene":
+    def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> Scene:
         """
-        Instantiates a square scene with one main room, and one square obstacle in the
-        center.
+        Instantiates a square scene with one main room, and one square
+        obstacle in the center.
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
@@ -681,7 +684,8 @@ class Scene(Plottable):
         Returns the closest transmitter to the given coordinates.
 
         :param coords: The x-y coordinates, (2,).
-        :return: The closet transmitter and its distance to the coordinates.
+        :return: The closet transmitter and its distance to the
+            coordinates.
         """
         transmitters = list(self.transmitters.values())
         points = jnp.vstack([tx.point for tx in transmitters])
@@ -693,7 +697,8 @@ class Scene(Plottable):
         Returns the closest receivers to the given coordinates.
 
         :param coords: The x-y coordinates, (2,).
-        :return: The closet receiver and its distance to the coordinates.
+        :return: The closet receiver and its distance to the
+            coordinates.
         """
         receivers = list(self.receivers.values())
         points = jnp.vstack([rx.point for rx in receivers])
@@ -722,15 +727,15 @@ class Scene(Plottable):
         self, min_order: int = 0, max_order: int = 1
     ) -> List[Array]:
         """
-        Returns all path candidates, from any of the :attr:`transmitters` to any of the
-        :attr:`receivers`, as a list of array of indices.
+        Returns all path candidates, from any of the :attr:`transmitters` to
+        any of the :attr:`receivers`, as a list of array of indices.
 
         Note that it only inclides indices for objects.
 
-        :param min_order: The minimum order of the path, i.e., the number of
-            interactions.
-        :param max_order: The maximum order of the path, i.e., the number of
-            interactions.
+        :param min_order: The minimum order of the path, i.e., the
+            number of interactions.
+        :param max_order: The maximum order of the path, i.e., the
+            number of interactions.
         :return: The list of list of indices.
         """
         num_primitives = len(self.objects)
@@ -767,7 +772,8 @@ class Scene(Plottable):
         """
         Returns all paths from any of the :attr:`transmitters` to any of the
         :attr:`receivers`, using the given method, see,
-        :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and
+        :class:`differt2d.geometry.ImagePath`
+        :class:`differt2d.geometry.FermatPath` and
         :class:`differt2d.geometry.MinPath`.
 
         :param path_cls: Method to be used to find the path coordinates.
@@ -811,8 +817,8 @@ class Scene(Plottable):
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Path, List[int]]]:
         """
-        Returns only valid paths as returned by :meth:`all_paths`, by filtering out
-        paths using :func:`is_true<differt2d.logic.is_true>`.
+        Returns only valid paths as returned by :meth:`all_paths`, by
+        filtering out paths using :func:`is_true<differt2d.logic.is_true>`.
 
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_paths`.
@@ -834,8 +840,8 @@ class Scene(Plottable):
         **kwargs: Any,
     ) -> Iterator[Tuple[str, str, Array]]:
         """
-        Repeatedly calls ``fun`` on all paths between each pair of (transmitter,
-        receiver) in the scene, and accumulates the results.
+        Repeatedly calls ``fun`` on all paths between each pair of
+        (transmitter, receiver) in the scene, and accumulates the results.
 
         Produces an iterator with each (transmitter, receiver) pair.
 
@@ -902,9 +908,10 @@ class Scene(Plottable):
         Union[Array, Tuple[Array, Array]],
     ]:
         """
-        Repeatedly calls ``fun`` on all paths between the receivers in the scene and
-        every transmitter coordinate in :python:`(X, Y)`, and accumulates the results
-        over one array that has the same shape a ``X`` and ``Y``.
+        Repeatedly calls ``fun`` on all paths between the receivers in the
+        scene and every transmitter coordinate in :python:`(X, Y)`, and
+        accumulates the results over one array that has the same shape a ``X``
+        and ``Y``.
 
         Produces an iterator with one element for each receiver location.
 
@@ -1022,9 +1029,10 @@ class Scene(Plottable):
         Union[Array, Tuple[Array, Array]],
     ]:
         """
-        Repeatedly calls ``fun`` on all paths between the transmitters in the scene and
-        every receiver coordinate in :python:`(X, Y)`, and accumulates the results over
-        one array that has the same shape a ``X`` and ``Y``.
+        Repeatedly calls ``fun`` on all paths between the transmitters in
+        the scene and every receiver coordinate in :python:`(X, Y)`, and
+        accumulates the results over one array that has the same shape a ``X``
+        and ``Y``.
 
         Produces an iterator with one element for each transmitter location.
 
