@@ -16,52 +16,24 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Poetry
-      run: pipx install poetry
+    - name: Setup Rye
+      env:
+        RYE_TOOLCHAIN_VERSION: ${{ matrix.pyversion}}
+        RYE_INSTALL_OPTION: --yes
+      run: |
+        curl -sSf https://rye-up.com/get | bash
+        echo "$HOME/.rye/shims" >> $GITHUB_PATH
 
-    - name: Install Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.pyversion }}
-        cache: poetry
+    - name: Configure Rye
+      run: |
+        rye config --set-bool behavior.use-uv=true
+        rye pin ${{ matrix.pyversion }}
 
     - name: Install Differt2D
-      run: |
-        poetry install --with test,github-action
+      run: rye sync
 
     - name: Run Pytest
-      run: |
-        poetry run pytest -n auto
-
-  byexample:
-    runs-on: ubuntu-latest
-    env:
-      JAX_PLATFORM_NAME: cpu
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Install Poetry
-      run: pipx install poetry
-
-    - name: Install Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: poetry
-
-    - name: Install Differt2D
-      run: |
-        poetry install --with test,github-action
-
-    - name: Install FilesFinder
-      uses: taiki-e/install-action@v2
-      with:
-        tool: filesfinder@latest
-
-    - name: Run ByExample
-      run: |
-        ff "differt2d/**py" README.md | xargs poetry run byexample -l python
+      run: rye run pytest -n auto
 
   benchmark:
     runs-on: ubuntu-latest
@@ -73,21 +45,24 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Poetry
-      run: pipx install poetry
+    - name: Setup Rye
+      env:
+        RYE_TOOLCHAIN_VERSION: '3.11'
+        RYE_INSTALL_OPTION: --yes
+      run: |
+        curl -sSf https://rye-up.com/get | bash
+        echo "$HOME/.rye/shims" >> $GITHUB_PATH
 
-    - name: Install Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: poetry
+    - name: Configure Rye
+      run: |
+        rye config --set-bool behavior.use-uv=true
+        rye pin '3.11'
 
     - name: Install Differt2D
-      run: |
-        poetry install --with test,github-action
+      run: rye sync
 
     - name: Run Benchmarks on changes
-      run: poetry run python benchmark.py -o changes.json
+      run: rye run python benchmark.py -o changes.json
 
     - uses: actions/checkout@v4
       with:
@@ -95,12 +70,12 @@ jobs:
         clean: false
 
     - name: Run Benchmarks before changes
-      run: poetry run python benchmark.py -o before.json
+      run: rye run python benchmark.py -o before.json
 
     - name: Compare benchmarks
       run: |
         echo 'results<<EOF' >> $GITHUB_OUTPUT
-        poetry run python -m pyperf compare_to --table --table-format md before.json changes.json >> $GITHUB_OUTPUT
+        rye run python -m pyperf compare_to --table --table-format md before.json changes.json >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
       id: compare
 

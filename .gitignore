@@ -1,5 +1,6 @@
 # Python artifacts
 __pycache__/
+.ipynb_checkpoints/
 
 # Docs build artifacts
 docs/build/

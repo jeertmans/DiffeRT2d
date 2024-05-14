@@ -16,9 +16,12 @@ import qtgallery
 from sphinx.ext.autodoc import between
 from sphinx.util.inspect import isclassmethod
 
+from differt2d.__version__ import __version__
+
 project = "DiffeRT2d"
-copyright = f"{date.today().year}, Jérome Eertmans"
+copyright = f"2023-{date.today().year}, Jérome Eertmans"
 author = "Jérome Eertmans"
+version = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -40,11 +43,15 @@ extensions = [
     "qtgallery",
 ]
 
+add_module_names = False
+add_function_parentheses = False
+
 rst_prolog = """
 .. role:: python(code)
     :language: python
 """
 
+autodoc_typehints = "description"
 typehints_defaults = "comma"
 typehints_use_signature = True
 typehints_use_signature_return = True
@@ -59,6 +66,12 @@ exclude_patterns = []
 
 # Removes the 'package.module' part from package.module.Class
 add_module_names = False
+
+show_warning_types = True
+suppress_warnings = [
+    # WARNING: cannot cache unpickable configuration value: 'sphinx_gallery_conf'
+    "config.cache",
+]
 
 extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
 
@@ -115,11 +128,14 @@ html_theme_options = {
 # -- Intersphinx mapping
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "matplotlib": ("https://matplotlib.org/stable", None),
+    "equinox": ("https://docs.kidger.site/equinox/", None),
     "jax": ("https://jax.readthedocs.io/en/latest", None),
+    "jaxtyping": ("https://docs.kidger.site/jaxtyping/", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
     "optax": ("https://optax.readthedocs.io/en/latest", None),
+    "python": ("https://docs.python.org/3", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
 }
 
 # -- OpenGraph settings
@@ -184,8 +200,10 @@ def merge_documentation_from_parent(app, what, name, obj, options, lines):
 
 
 def unskip_jitted(app, what, name, obj, skip, options):
-    """Methods that are both jitted and overloading (e.g., from a protocol) are skipped,
-    which should not be the case."""
+    """
+    Methods that are both jitted and overloading (e.g., from a protocol) are
+    skipped, which should not be the case.
+    """
     if skip and what == "class" and "Pjit" in repr(obj):
         obj.__doc__ = get_doc(obj._fun)
         return obj.__doc__ == ""
@@ -203,7 +221,7 @@ def add_note_about_abstract(app, what, name, obj, options, lines):
 
 
 def is_singledispatch_classmethod(obj):
-    return hasattr(obj, "register") and isclassmethod(getattr(obj, "__wrapped__"), None)
+    return hasattr(obj, "register") and isclassmethod(obj.__wrapped__, None)
 
 
 def patch_singledispatch_classmethod_signature(app, obj, bound_method):

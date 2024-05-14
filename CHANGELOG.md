@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.2.0...HEAD)
 
+(unreleased-chore)=
+### Chore
+
++ Changed to project to use modern tools like Rye, Ruff (discarding Black
+  and others), `bump-my-version`, ReadTheDocs documentation hosting, better
+  type hints, etc.
+  This is a **breaking change** because some functions parameters changed
+  (e.g., `minimize`), a type checker is used on many functions, and classes
+  are now frozen dataclasses (because PyTrees).
+  [#58](https://github.com/jeertmans/DiffeRT2d/pull/58)
+
 (v0.2.0)=
 ## [v0.2.0](https://github.com/jeertmans/DiffeRT2d/compare/v0.1.0...v0.2.0)
 
@@ -26,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (v0.2.0-changed)=
 ### Changed
 
-+ Renamed all occurences of `emitter*` to `transmitter*`.
++ Renamed all occurrences of `emitter*` to `transmitter*`.
   This is a **breaking change** regarding some function names.
   [#43](https://github.com/jeertmans/DiffeRT2d/pull/43)
 + Accumulate functions from `Scene` class now return an iterator by default,

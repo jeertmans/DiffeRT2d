@@ -1,12 +1,10 @@
 import chex
 import jax
 import jax.numpy as jnp
-import optax  # noqa: F401
 import pytest
 from jax import jit
 
 from differt2d.optimize import (
-    default_optimizer,
     minimize,
     minimize_many_random_uniform,
     minimize_random_uniform,
@@ -24,28 +22,6 @@ def non_convex_fun(x):
 
 jitted_convex_fun = jit(convex_fun)
 jitted_non_convex_fun = jit(non_convex_fun)
-
-
-@pytest.mark.parametrize(("fun",), [(convex_fun,), (jitted_convex_fun,)])
-@pytest.mark.parametrize(("x0",), [([0.0],), ([1.0, 2.0, 3.0, 4.0],)])
-def test_default_optimizer(fun, x0):
-    x0 = jnp.asarray(x0)
-    expected_opt = default_optimizer()
-    got_opt = eval(repr(expected_opt), globals())
-
-    default_x, default_loss = minimize(fun, x0, steps=10)
-    expected_x, expected_loss = minimize(fun, x0, steps=10, optimizer=expected_opt)
-    got_x, got_loss = minimize(fun, x0, steps=10, optimizer=got_opt)
-
-    chex.assert_trees_all_close(default_x, got_x)
-    chex.assert_trees_all_equal_shapes_and_dtypes(default_x, got_x)
-    chex.assert_trees_all_close(default_loss, got_loss)
-    chex.assert_trees_all_equal_shapes_and_dtypes(default_loss, got_loss)
-
-    chex.assert_trees_all_close(expected_x, got_x)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected_x, got_x)
-    chex.assert_trees_all_close(expected_loss, got_loss)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected_loss, got_loss)
 
 
 @pytest.mark.parametrize(("fun",), [(convex_fun,), (jitted_convex_fun,)])

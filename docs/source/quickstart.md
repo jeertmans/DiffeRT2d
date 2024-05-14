@@ -36,7 +36,7 @@ Modifying a scene
 
 Objects can easily be added to a scene, and we use :mod:`jax.numpy` for
 internal arrays storage. JAX provides the same API as :mod:`numpy`,
-with additionnal utilies regarding automatic differention, which is
+with additional utilities regarding automatic differention, which is
 pretty useful for optimization problems.
 
 .. code:: python
@@ -140,7 +140,7 @@ The above plot shows, for every possible receiver position in the scene,
 the received power transmitted by the transmitter.
 One can clearly see a shadowed region on the right of the scene, caused by
 the wall we just added. Of course, this region would receive some power
-if we were to simulate a higher order of interacion, e.g.:
+if we were to simulate a higher order of interaction, e.g.:
 
 .. plot::
     :include-source:
@@ -173,7 +173,7 @@ Power gradient
 ^^^^^^^^^^^^^^
 
 Because we use JAX almost everywhere in the code, taking gradient of functions
-becomes straighforward, with :func:`jax.grad` or :func:`jax.value_and_grad`.
+becomes straightforward, with :func:`jax.grad` or :func:`jax.value_and_grad`.
 
 To make it easy, we also provide ``grad`` and ``value_and_grad`` options in
 both

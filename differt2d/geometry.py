@@ -1,16 +1,21 @@
 """Geometrical objects to be placed in a :class:`differt2d.scene.Scene`."""
 
-from __future__ import annotations
-
+from collections.abc import Mapping, MutableSequence, Sequence
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Optional, TypeVar, Union
 
+import equinox as eqx
 import jax
 import jax.numpy as jnp
+from beartype import beartype as typechecker
+from jaxtyping import Array, Float, PRNGKeyArray, UInt, jaxtyped
+from matplotlib.artist import Artist
+from matplotlib.axes import Axes
 
-from .abc import Interactable, Plottable
+from .abc import Interactable, Object, Plottable
 from .defaults import DEFAULT_PATCH
 from .logic import (
+    Truthy,
     false_value,
     greater_equal,
     less,
@@ -22,28 +27,56 @@ from .logic import (
     true_value,
 )
 from .optimize import minimize_many_random_uniform
-from .utils import stack_leaves
 
-if TYPE_CHECKING:  # pragma: no cover
-    from dataclasses import dataclass
-
-    from jax import Array
-    from matplotlib.artist import Artist
-    from matplotlib.axes import Axes
-else:
-    from chex import dataclass
+Pytree = Union[list, tuple, dict]
+T = TypeVar("T")
 
 
-@partial(jax.jit, static_argnames=["approx", "function"])
+@eqx.filter_jit
+def stack_leaves(
+    pytrees: Pytree, axis: int = 0, is_leaf: Optional[Callable[..., Any]] = None
+) -> Pytree:
+    """
+    Stacks the leaves of one or more Pytrees along a new axis.
+
+    Solution inspired from:
+    https://github.com/google/jax/discussions/16882#discussioncomment-6638501.
+
+    :param pytress: One or more Pytrees.
+    :param axis: Axis along which leaves are stacked.
+    :param is_leaf: See eponym parameter from :func:`jax.tree_util.tree_map`.
+    :return: A new Pytree with leaves stacked along the new axis.
+    """
+    return jax.tree_util.tree_map(
+        lambda *xs: jnp.stack(xs, axis=axis), *pytrees, is_leaf=is_leaf
+    )
+
+
+@eqx.filter_jit
+def unstack_leaves(pytrees) -> MutableSequence[Pytree]:
+    """
+    Unstacks the leaves of a Pytree. Reciprocal of :func:`stack_leaves`.
+
+    :param pytrees: A Pytree.
+    :return: A list of Pytrees, where each Pytree has the same structure
+        as the input Pytree, but each leaf contains only one part of the
+        original leaf.
+    """
+    leaves, treedef = jax.tree_util.tree_flatten(pytrees)
+    return [treedef.unflatten(leaf) for leaf in zip(*leaves)]
+
+
+@eqx.filter_jit
+@jaxtyped(typechecker=typechecker)
 def segments_intersect(
-    P1: Array,
-    P2: Array,
-    P3: Array,
-    P4: Array,
-    tol: float = 0.005,
+    P1: Float[Array, "2"],
+    P2: Float[Array, "2"],
+    P3: Float[Array, "2"],
+    P4: Float[Array, "2"],
+    tol: Union[float, Float[Array, " "]] = 0.005,
     approx: Optional[bool] = None,
     **kwargs: Any,
-) -> Array:
+) -> Truthy:
     r"""
     Checks whether two line segments intersect.
 
@@ -87,14 +120,17 @@ def segments_intersect(
     :Examples:
 
     >>> from differt2d.geometry import segments_intersect
+    >>> from differt2d.logic import sigmoid
     >>> import jax.numpy as jnp
-    >>> P1 = jnp.array([+0., +0.]); P2 = jnp.array([+1., +0.])
-    >>> P3 = jnp.array([+.5, -1.]); P4 = jnp.array([+.5, +1.])
-    >>> segments_intersect(P1, P2, P3, P4)
+    >>> P1 = jnp.array([+0.0, +0.0])
+    >>> P2 = jnp.array([+1.0, +0.0])
+    >>> P3 = jnp.array([+0.5, -1.0])
+    >>> P4 = jnp.array([+0.5, +1.0])
+    >>> segments_intersect(P1, P2, P3, P4, approx=True)
     Array(1., dtype=float32)
     >>> segments_intersect(P1, P2, P3, P4, approx=False)
     Array(True, dtype=bool)
-    >>> segments_intersect(P1, P2, P3, P4, function="sigmoid")
+    >>> segments_intersect(P1, P2, P3, P4, approx=True, function=sigmoid)
     Array(1., dtype=float32)
 
 
@@ -105,6 +141,7 @@ def segments_intersect(
     https://www.realtimerendering.com/resources/GraphicsGems/gemsiii/insectc.c
     http://www.graphicsgems.org/
     """
+    tol = jnp.asarray(tol)
     A = P2 - P1
     B = P3 - P4
     C = P1 - P3
@@ -129,7 +166,8 @@ def segments_intersect(
 
 
 @partial(jax.jit, inline=True)
-def path_length(points: Array) -> Array:
+@jaxtyped(typechecker=typechecker)
+def path_length(points: Float[Array, "N 2"]) -> Float[Array, " "]:
     """
     Returns the length of the given path, with N points.
 
@@ -146,7 +184,7 @@ def path_length(points: Array) -> Array:
 
     >>> from differt2d.geometry import path_length
     >>> import jax.numpy as jnp
-    >>> points = jnp.array([[0., 0.], [1., 0.], [1., 1.], [0., 0.]])
+    >>> points = jnp.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 0.0]])
     >>> path_length(points)  # 1 + 1 + sqrt(2)
     Array(3.4142137, dtype=float32)
     """
@@ -158,7 +196,8 @@ def path_length(points: Array) -> Array:
 
 
 @partial(jax.jit, inline=True)
-def normalize(vector: Array) -> Tuple[Array, Array]:
+@jaxtyped(typechecker=typechecker)
+def normalize(vector: Float[Array, "2"]) -> tuple[Float[Array, "2"], Float[Array, " "]]:
     """
     Normalizes a vector, and also returns its length.
 
@@ -169,11 +208,11 @@ def normalize(vector: Array) -> Tuple[Array, Array]:
 
     >>> from differt2d.geometry import normalize
     >>> import jax.numpy as jnp
-    >>> vector = jnp.array([1., 1.])
+    >>> vector = jnp.array([1.0, 1.0])
     >>> normalize(vector)  # [1., 1.] / sqrt(2), sqrt(2)
     (Array([0.70710677, 0.70710677], dtype=float32),
      Array(1.4142135, dtype=float32))
-    >>> zero = jnp.array([0., 0.])
+    >>> zero = jnp.array([0.0, 0.0])
     >>> normalize(zero)  # Special behavior at 0.
     (Array([0., 0.], dtype=float32), Array(1., dtype=float32))
     """
@@ -184,38 +223,43 @@ def normalize(vector: Array) -> Tuple[Array, Array]:
 
 
 @partial(jax.jit, inline=True)
-def closest_point(points: Array, target: Array) -> Tuple[Array, Array]:
+@jaxtyped(typechecker=typechecker)
+def closest_point(
+    points: Float[Array, "N 2"], target: Float[Array, "2"]
+) -> tuple[UInt[Array, " "], Float[Array, " "]]:
     """
     Returns the index of the closest point to some target, and the actual distance.
 
     :param points: An array of 2D points, (N, 2).
-    :param target: A target point, (2, ).
+    :param target: A target point, (2,).
     :return: The index of the closest point and the distance to the target.
 
     :Examples:
 
     >>> from differt2d.geometry import closest_point
     >>> import jax.numpy as jnp
-    >>> target = jnp.array([.6, .3])
-    >>> points = jnp.array([
-    ...     [0., 0.],
-    ...     [1., 0.],  # This is the closests point
-    ...     [1., 1.],
-    ...     [0., 1.]
-    ... ])
+    >>> target = jnp.array([0.6, 0.3])
+    >>> points = jnp.array(
+    ...     [
+    ...         [0.0, 0.0],
+    ...         [1.0, 0.0],  # This is the closest point
+    ...         [1.0, 1.0],
+    ...         [0.0, 1.0],
+    ...     ]
+    ... )
     >>> closest_point(points, target)
-    (Array(1, dtype=int32), Array(0.49999997, dtype=float32))
+    (Array(1, dtype=uint32), Array(0.49999997, dtype=float32))
     >>> points[closest_point(points, target)[0]]
     Array([1., 0.], dtype=float32)
     """
     distances = jnp.linalg.norm(points - target.reshape(-1, 2), axis=1)
-    i_min = jnp.argmin(distances)
+    i_min = jnp.argmin(distances).astype(jnp.uint32)
 
     return i_min, distances[i_min]
 
 
-@dataclass
-class Ray(Plottable):
+@jaxtyped(typechecker=typechecker)
+class Ray(Plottable, eqx.Module):
     """
     A ray object with origin and destination points.
 
@@ -229,14 +273,16 @@ class Ray(Plottable):
         ax = plt.gca()
         ray = Ray(points=jnp.array([[0., 0.], [1., 1.]]))
         _ = ray.plot(ax)
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
-    points: Array  # a b
+    points: Float[Array, "2 2"] = eqx.field(converter=jnp.asarray)
     """Ray points (origin, dest)."""
 
     @partial(jax.jit, inline=True)
-    def origin(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def origin(self) -> Float[Array, "2"]:
         """
         Returns the origin of this object.
 
@@ -245,7 +291,8 @@ class Ray(Plottable):
         return self.points[0]
 
     @partial(jax.jit, inline=True)
-    def dest(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def dest(self) -> Float[Array, "2"]:
         """
         Returns the destination of this object.
 
@@ -254,7 +301,8 @@ class Ray(Plottable):
         return self.points[1]
 
     @partial(jax.jit, inline=True)
-    def t(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def t(self) -> Float[Array, "2"]:
         """
         Returns the direction vector of this object.
 
@@ -262,17 +310,20 @@ class Ray(Plottable):
         """
         return self.dest() - self.origin()
 
-    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> List[Artist]:
+    @jaxtyped(typechecker=typechecker)
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> MutableSequence[Artist]:  # noqa: D102
         kwargs.setdefault("color", "blue")
         x, y = self.points.T
         return ax.plot(x, y, *args, **kwargs)  # type: ignore[func-returns-value]
 
-    def bounding_box(self) -> Array:
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def bounding_box(self) -> Float[Array, "2 2"]:  # noqa: D102
         return jnp.vstack([jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)])
 
 
-@dataclass
-class Point(Plottable):
+@jaxtyped(typechecker=typechecker)
+class Point(Plottable, eqx.Module):
     """
     A point object defined by its coordinates.
 
@@ -288,29 +339,35 @@ class Point(Plottable):
         _ = p1.plot(ax)
         p2 = Point(point=jnp.array([1., 1.]))
         _ = p2.plot(ax, color="b", annotate="$p_2$")
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
-    point: Array
+    point: Float[Array, "2"] = eqx.field(converter=jnp.asarray)
     """Cartesian coordinates."""
 
+    @jaxtyped(typechecker=typechecker)
     def plot(
         self,
         ax: Axes,
         *args: Any,
         annotate: Optional[str] = None,
-        annotate_offset: Array = jnp.array([0.0, 0.0]),
-        annotate_kwargs: Mapping[str, Any] = {},
+        annotate_offset: Array = jnp.array([0.0, 0.0]),  # noqa: B008
+        annotate_kwargs: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
-    ) -> List[Artist]:
+    ) -> MutableSequence[Artist]:
         """
         :param annotate: Text to put next the the point.
+        :param annotate_offset:
         :param annotate_kwargs:
             Keyword arguments to be passed to
             :meth:`matplotlib.axes.Axes.annotate`.
-        """
+        """  # noqa: D205
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("color", "red")
+
+        if annotate_kwargs is None:
+            annotate_kwargs = {}
 
         x, y = self.point
 
@@ -329,12 +386,14 @@ class Point(Plottable):
 
         return artists
 
-    def bounding_box(self) -> Array:
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def bounding_box(self) -> Float[Array, "2 2"]:  # noqa: D102
         return jnp.vstack([self.point, self.point])
 
 
-@dataclass
-class Wall(Ray, Interactable):
+@jaxtyped(typechecker=typechecker)
+class Wall(Ray, Interactable, eqx.Module):
     """
     A wall object defined by its corners.
 
@@ -348,14 +407,15 @@ class Wall(Ray, Interactable):
         ax = plt.gca()
         wall = Wall(points=jnp.array([[0., 0.], [1., 0.]]))
         _ = wall.plot(ax)
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
     @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
     def normal(self) -> Array:
         """
-        Returns the normal to the current wall, expressed in cartesian coordinates and
-        normalized.
+        Returns the normal to the current wall, expressed in cartesian coordinates and normalized.
 
         :return: The normal, (2,)
         """
@@ -367,49 +427,59 @@ class Wall(Ray, Interactable):
 
     @staticmethod
     @partial(jax.jit, inline=True)
-    def parameters_count() -> int:
+    @jaxtyped(typechecker=typechecker)
+    def parameters_count() -> int:  # noqa: D102
         return 1
 
     @jax.jit
-    def parametric_to_cartesian(self, param_coords: Array) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def parametric_to_cartesian(  # noqa: D102
+        self, param_coords: Float[Array, " n"]
+    ) -> Float[Array, "2"]:
         return self.origin() + param_coords * self.t()
 
     @jax.jit
-    def cartesian_to_parametric(self, carte_coords: Array) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def cartesian_to_parametric(  # noqa: D102
+        self, carte_coords: Float[Array, "2"]
+    ) -> Float[Array, " n"]:
         other = carte_coords - self.origin()
         squared_length = jnp.dot(self.t(), self.t())
         squared_length = jnp.where(squared_length == 0.0, 1.0, squared_length)
-        return jnp.dot(self.t(), other) / squared_length
+        return jnp.dot(self.t(), other).reshape(-1) / squared_length
 
-    @partial(jax.jit, static_argnames=["approx", "function"])
-    def contains_parametric(
+    @partial(jax.jit, static_argnames=("approx", "function"))
+    @jaxtyped(typechecker=typechecker)
+    def contains_parametric(  # noqa: D102
         self,
-        param_coords: Array,
+        param_coords: Float[Array, " n"],
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Array:
+    ) -> Truthy:
+        param_coords = param_coords[0]
         ge = greater_equal(
             param_coords,
-            0.0,
+            jnp.array(0.0),
             approx=approx,
             **kwargs,
         )
         le = less_equal(
             param_coords,
-            1.0,
+            jnp.array(1.0),
             approx=approx,
             **kwargs,
         )
         return logical_and(ge, le, approx=approx)
 
-    @partial(jax.jit, static_argnames=["approx", "function"])
-    def intersects_cartesian(
+    @partial(jax.jit, static_argnames=("approx", "function"))
+    @jaxtyped(typechecker=typechecker)
+    def intersects_cartesian(  # noqa: D102
         self,
-        ray: Array,
-        patch: float = DEFAULT_PATCH,
+        ray: Float[Array, "2 2"],
+        patch: Union[float, Float[Array, " "]] = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Array:
+    ) -> Truthy:
         return segments_intersect(
             self.origin() - patch * self.t(),
             self.dest() + patch * self.t(),
@@ -420,7 +490,8 @@ class Wall(Ray, Interactable):
         )
 
     @jax.jit
-    def evaluate_cartesian(self, ray_path: Array) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:  # noqa: D102
         i = ray_path[1, :] - ray_path[0, :]  # Incident
         r = ray_path[2, :] - ray_path[1, :]  # Reflected
         n = self.normal()  # Normal
@@ -430,55 +501,61 @@ class Wall(Ray, Interactable):
         return jnp.dot(e, e)
 
     @jax.jit
-    def image_of(self, point: Array) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def image_of(self, point: Float[Array, "2"]) -> Float[Array, "2"]:
         """
-        Returns the image of a point with respect to this mirror (wall), using specular
-        reflection.
+        Returns the image of a point with respect to this mirror (wall), using specular reflection.
 
         :param point: The starting point, (2,).
-        :return: The image of the point.
+        :return: The image of the point, (2,).
 
         :Examples:
 
         >>> from differt2d.geometry import Wall
         >>> import jax.numpy as jnp
-        >>> wall = Wall(points=jnp.array([[0., 0.], [1., 0.]]))
-        >>> wall.image_of(jnp.array([0., 1.]))
+        >>> wall = Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]]))
+        >>> wall.image_of(jnp.array([0.0, 1.0]))
         Array([ 0., -1.], dtype=float32)
         """
         i = point - self.origin()
         return point - 2.0 * jnp.dot(i, self.normal()) * self.normal()
 
 
-@dataclass
-class RIS(Wall):
+@jaxtyped(typechecker=typechecker)
+class RIS(Wall, eqx.Module):
     """
     A very basic Reflective Intelligent Surface (RIS) object.
 
-    Here, we model a RIS such that the angle of reflection is constant with respect to
-    its normal, regardless of the incident vector.
+    Here, we model a RIS such that the angle of reflection is constant
+    with respect to its normal, regardless of the incident vector.
     """
 
-    phi: Array = jnp.pi / 4
+    phi: Float[Array, " "] = eqx.field(
+        converter=jnp.asarray, default_factory=lambda: jnp.array(jnp.pi / 4)
+    )
     """The constant angle of reflection."""
 
     @jax.jit
-    def evaluate_cartesian(self, ray_path: Array) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def evaluate_cartesian(  # noqa: D102
+        self, ray_path: Float[Array, "3 2"]
+    ) -> Float[Array, " "]:
         v2 = ray_path[2, :] - ray_path[1, :]
         n = self.normal()
         sinx = jnp.cross(n, v2)  # |v2| * sin(x)
         sina = jnp.linalg.norm(v2) * jnp.sin(self.phi)
         return (sinx - sina) ** 2  # + (cosx - cosa) ** 2
 
-    def plot(
+    @jaxtyped(typechecker=typechecker)
+    def plot(  # noqa: D102
         self, ax: Axes, *args: Any, **kwargs: Any
-    ) -> List[Artist]:  # pragma: no cover
+    ) -> MutableSequence[Artist]:  # pragma: no cover
         kwargs.setdefault("color", "green")
         return super().plot(ax, *args, **kwargs)
 
 
-@dataclass
-class Path(Plottable):
+@jaxtyped(typechecker=typechecker)
+class Path(Plottable, eqx.Module):
     """
     A path object with at least two points.
 
@@ -492,25 +569,26 @@ class Path(Plottable):
         ax = plt.gca()
         path = Path(points=jnp.array([[0., 0.], [.8, .2], [1., 1.]]))
         _ = path.plot(ax)
-        plt.show()
+        plt.show()  # doctest: +SKIP
+
     """
 
-    points: Array
+    points: Float[Array, "num_points 2"] = eqx.field(converter=jnp.asarray)
     """Array of cartesian coordinates."""
 
-    loss: float = 0.0
+    loss: Float[Array, " "] = eqx.field(default_factory=lambda: jnp.array(0.0))
     """The loss value for the given path."""
 
     @classmethod
+    @jaxtyped(typechecker=typechecker)
     def from_tx_objects_rx(
         cls,
-        tx: Array,
-        objects: List[Interactable],
-        rx: Array,
+        tx: Float[Array, "2"],
+        objects: Sequence[Interactable],
+        rx: Float[Array, "2"],
     ) -> "Path":
         """
-        Returns a path from TX to RX, traversing each object in the list in the provided
-        order.
+        Returns a path from TX to RX, traversing each object in the list in the provided order.
 
         The present implementation will sample a point at :python:`t = 0.5`
         on each object.
@@ -540,14 +618,16 @@ class Path(Plottable):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
-        points = [obj.parametric_to_cartesian(0.5) for obj in objects]
+        points = [obj.parametric_to_cartesian(jnp.array([0.5])) for obj in objects]
         points = jnp.vstack([tx, *points, rx])
         return cls(points=points)
 
     @jax.jit
-    def length(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def length(self) -> Float[Array, " "]:
         """
         Returns the length of this path.
 
@@ -555,18 +635,19 @@ class Path(Plottable):
         """
         return path_length(self.points)
 
-    @partial(jax.jit, static_argnames=["approx", "function"])
+    @partial(jax.jit, static_argnames=("approx", "function"))
+    @jaxtyped(typechecker=typechecker)
     def on_objects(
         self,
-        objects: List[Interactable],
+        objects: Sequence[Interactable],
         approx: Optional[bool] = None,
         **kwargs,
-    ) -> Array:
+    ) -> Truthy:
         """
         Returns whether the path correctly passes on the objects.
 
-        For each object i, it will check whether it contains the ith point in the path
-        (start and end points are ignored).
+        For each object i, it will check whether it contains the ith
+        point in the path (start and end points are ignored).
 
         :param objects: The list of objects to check against.
         :param approx: Whether approximation is enabled or not.
@@ -589,15 +670,16 @@ class Path(Plottable):
 
         return contains
 
-    @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+    @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+    @jaxtyped(typechecker=None)
     def intersects_with_objects(
         self,
-        objects: List[Interactable],
+        objects: Sequence[Interactable],
         path_candidate: Array,
-        patch: float = DEFAULT_PATCH,
+        patch: Union[float, Float[Array, " "]] = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Array:
+    ) -> Truthy:
         """
         Returns whether the path intersects with any of the objects.
 
@@ -614,7 +696,9 @@ class Path(Plottable):
         :return: Whether this path intersects any of the objects, ().
         """
         interacting_object_indices = [-1] + [i for i in path_candidate] + [-1]
-        intersects = false_value(approx=approx)
+        intersects = false_value(
+            approx=approx
+        )  # TODO(fixme): wtf this is a NumPy array?
 
         for i in range(self.points.shape[0] - 1):
             ray_path = self.points[i : i + 2, :]
@@ -640,20 +724,20 @@ class Path(Plottable):
 
         return intersects
 
-    @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+    @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+    @jaxtyped(typechecker=typechecker)
     def is_valid(
         self,
-        objects: List[Interactable],
-        path_candidate: Array,
-        interacting_objects: List[Interactable],
-        tol: float = 1e-2,
-        patch: float = DEFAULT_PATCH,
+        objects: Sequence[Interactable],
+        path_candidate: UInt[Array, " order"],
+        interacting_objects: Sequence[Interactable],
+        tol: Union[float, Float[Array, " "]] = 1e-2,
+        patch: Union[float, Float[Array, " "]] = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Array:
+    ) -> Truthy:
         """
-        Returns whether the current path is valid, according to
-        three criterions:
+        Returns whether the current path is valid, according to three criterions (see below).
 
         1. the path loss is below some tolerance;
         2. the coordinate points are correctly placed inside the corresponding
@@ -690,32 +774,47 @@ class Path(Plottable):
                     ),
                     approx=approx,
                 ),
-                less(self.loss, tol, approx=approx, **kwargs),
+                less(self.loss, jnp.asarray(tol), approx=approx, **kwargs),
                 approx=approx,
             )
         )
 
-    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> List[Artist]:
+    @jaxtyped(typechecker=typechecker)
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> MutableSequence[Artist]:  # noqa: D102
         kwargs.setdefault("color", "orange")
         x, y = self.points.T
         return ax.plot(x, y, *args, **kwargs)
 
-    def bounding_box(self) -> Array:
+    @jaxtyped(typechecker=typechecker)
+    def bounding_box(self) -> Float[Array, "2 2"]:  # noqa: D102
         return jnp.vstack([jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)])
 
 
-@partial(jax.jit, inline=True, static_argnames=["size"])
-def parametric_to_cartesian_from_slice(obj, parametric_coords, start, size):
+@partial(jax.jit, inline=True, static_argnames=("size",))
+@jaxtyped(typechecker=typechecker)
+def parametric_to_cartesian_from_slice(  # noqa: D103
+    obj: Interactable,
+    parametric_coords: Float[Array, " t"],
+    start: Union[int, UInt[Array, " "]],
+    size: Union[int, UInt[Array, " "]],
+) -> Float[Array, "2"]:
     parametric_coords = jax.lax.dynamic_slice(parametric_coords, (start,), (size,))
     return obj.parametric_to_cartesian(parametric_coords)
 
 
-@partial(jax.jit, inline=True, static_argnames=["n"])
-def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords):
+@partial(jax.jit, inline=True, static_argnames=("n",))
+@jaxtyped(typechecker=typechecker)
+def parametric_to_cartesian(  # noqa: D103
+    objects: Sequence[Interactable],
+    parametric_coords: Float[Array, " t"],
+    n: int,
+    tx_coords: Float[Array, "2"],
+    rx_coords: Float[Array, "2"],
+) -> Float[Array, "{n}+2 2"]:
     cartesian_coords = jnp.empty((n + 2, 2))
     cartesian_coords = cartesian_coords.at[0].set(tx_coords)
     cartesian_coords = cartesian_coords.at[-1].set(rx_coords)
-    j = 0
+    j = jnp.uint32(0)
     for i, obj in enumerate(objects):
         size = obj.parameters_count()
         cartesian_coords = cartesian_coords.at[i + 1].set(
@@ -726,17 +825,18 @@ def parametric_to_cartesian(objects, parametric_coords, n, tx_coords, rx_coords)
     return cartesian_coords
 
 
-@dataclass
-class ImagePath(Path):
+@jaxtyped(typechecker=typechecker)
+class ImagePath(Path, eqx.Module):
     """A path object that was obtained with the Image method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=["cls"])
+    @partial(jax.jit, static_argnames=("cls",))
+    @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,
-        tx: Array,
-        objects: List[Wall],
-        rx: Array,
+        tx: Float[Array, "2"],
+        objects: Sequence[Wall],
+        rx: Float[Array, "2"],
         **kwargs: Any,
     ) -> "ImagePath":
         """
@@ -767,7 +867,8 @@ class ImagePath(Path):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         n = len(objects)
 
@@ -810,18 +911,19 @@ class ImagePath(Path):
         return cls(points=points, loss=path_loss(points))
 
 
-@dataclass
-class FermatPath(Path):
+@jaxtyped(typechecker=typechecker)
+class FermatPath(Path, eqx.Module):
     """A path object that was obtained with the Fermat's Principle Tracing method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=["cls", "steps", "optimizer"])
+    @partial(jax.jit, static_argnames=("cls", "steps", "many", "optimizer"))
+    @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,
-        tx: Array,
-        objects: List[Interactable],
-        rx: Array,
-        key: Optional[Array] = None,
+        tx: Float[Array, "2"],
+        objects: Sequence[Interactable],
+        rx: Float[Array, "2"],
+        key: Optional[PRNGKeyArray] = None,
         seed: int = 1234,
         **kwargs: Any,
     ) -> "FermatPath":
@@ -860,7 +962,8 @@ class FermatPath(Path):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         n = len(objects)
 
@@ -898,18 +1001,19 @@ class FermatPath(Path):
         return cls(points=points, loss=path_loss(points))
 
 
-@dataclass
-class MinPath(Path):
+@jaxtyped(typechecker=typechecker)
+class MinPath(Path, eqx.Module):
     """A path object that was obtained with the Min-Path-Tracing method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=["cls", "steps", "optimizer"])
+    @partial(jax.jit, static_argnames=("cls", "steps", "many", "optimizer"))
+    @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,
-        tx: Array,
-        objects: List[Interactable],
-        rx: Array,
-        key: Optional[Array] = None,
+        tx: Float[Array, "2"],
+        objects: Sequence[Interactable],
+        rx: Float[Array, "2"],
+        key: Optional[PRNGKeyArray] = None,
         seed: int = 1234,
         **kwargs: Any,
     ) -> "MinPath":
@@ -948,7 +1052,7 @@ class MinPath(Path):
                 scene.receivers["rx"].point
             )
             _ = path.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
         """
         n = len(objects)
 
@@ -980,3 +1084,7 @@ class MinPath(Path):
         points = parametric_to_cartesian(objects, theta, n, tx, rx)
 
         return cls(points=points, loss=loss)
+
+
+Object.register(Wall)
+Object.register(RIS)

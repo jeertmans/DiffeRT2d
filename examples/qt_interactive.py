@@ -39,7 +39,7 @@ if you hover over them.
 
 from argparse import ArgumentParser, FileType
 from functools import partial
-from typing import List, get_args
+from typing import get_args
 
 import jax
 import jax.numpy as jnp
@@ -347,22 +347,23 @@ class PlotWidget(QWidget):
 
         self.picked = None
 
-        self.path_artists: List[Artist] = []
+        self.path_artists: list[Artist] = []
 
         def f(rx_coords):
-            receivers = self.scene.receivers
-            self.scene.receivers = {"rx": Point(point=rx_coords)}
+            receivers = self.scene.receivers.copy()
+            self.scene.receivers.clear()
+            self.scene.receivers.update({"rx": Point(point=rx_coords)})
 
             total_power = self.scene.accumulate_over_paths(
-                fun=received_power,
-                fun_kwargs=dict(r_coef=self.r_coef),
+                fun=partial(received_power, r_coef=self.r_coef),
                 reduce_all=True,
                 min_order=self.min_order,
                 max_order=self.max_order,
                 path_cls=self.path_cls,
             )
 
-            self.scene.receivers = receivers
+            self.scene.receivers.clear()
+            self.scene.receivers.update(receivers)
 
             return total_power
 
@@ -381,19 +382,28 @@ class PlotWidget(QWidget):
             self.picked = None
         else:
             artist = event.artist
-            coords = jnp.array(artist.get_xydata())
+            coords = jnp.array(artist.get_xydata()).reshape(-1)
             tx, dist_tx = self.scene.get_closest_transmitter(coords)
             rx, dist_rx = self.scene.get_closest_receiver(coords)
 
             if dist_tx < dist_rx:
                 self.picked = (event.artist, tx)
+                self.picked_tx = True
             else:
                 self.picked = (event.artist, rx)
+                self.picked_tx = False
 
     def on_motion_notify_event(self, event):
         if self.picked:
-            artist, point = self.picked
-            point.point = jnp.array([event.xdata, event.ydata])
+            artist, point_name = self.picked
+            if self.picked_tx:
+                self.scene.transmitters[point_name] = Point(
+                    point=jnp.array([event.xdata, event.ydata])
+                )
+            else:
+                self.scene.receivers[point_name] = Point(
+                    point=jnp.array([event.xdata, event.ydata])
+                )
             artist.set_xdata([event.xdata])
             artist.set_ydata([event.ydata])
             self.on_scene_change()
@@ -407,8 +417,7 @@ class PlotWidget(QWidget):
         P = self.scene.accumulate_on_receivers_grid_over_paths(
             self.X,
             self.Y,
-            fun=received_power,
-            fun_kwargs=dict(r_coef=self.r_coef),
+            fun=partial(received_power, r_coef=self.r_coef),
             reduce_all=True,
             min_order=self.min_order,
             max_order=self.max_order,
@@ -455,7 +464,7 @@ class PlotWidget(QWidget):
 # CLI options
 # -----------
 #
-# This part is not very intersting, and uses the builtin :mod:`argparse`
+# This part is not very interesting, and uses the builtin :mod:`argparse`
 # module to create a set of command-line options and parse them.
 
 

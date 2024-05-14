@@ -5,7 +5,8 @@ DEFAULT_ALPHA: float = 100.0
 :func:`activation<differt2d.logic.activation>`."""
 
 DEFAULT_PATCH: float = 0.0
-"""Default patch value applied to :meth:`Interactable.intersects_cartesian<differt2d.abc
+"""Default patch value applied to
+:meth:`Interactable.intersects_cartesian<differt2d.abc
 .Interactable.intersects_cartesian>`."""
 
 DEFAULT_R_COEF: float = 0.5

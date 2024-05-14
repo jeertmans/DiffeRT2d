@@ -1,12 +1,11 @@
 """
-Otimization toolbox.
+Optimization toolbox.
 
 All the functions present in this toolbox support
 Just-in-time compilation with :func:`jax.jit`.
 
 Examples
-========
-
+--------
 >>> from differt2d.optimize import minimize
 >>> import chex
 >>> import jax
@@ -22,69 +21,45 @@ Examples
 >>> x, y = parabola_min(2.0, 1.0, 1.0)
 >>> chex.assert_trees_all_close(x, -1.5, rtol=1e-2)
 >>> chex.assert_trees_all_close(y, +0.0, atol=1e-3)
+
 """
 
-from typing import Any, Callable, Mapping, Tuple, TypeVar
+import sys
+from functools import partial
+from typing import Any, Callable, Optional
 
 import jax
 import jax.numpy as jnp
 import optax
-from jax import Array, vmap
+from jaxtyping import Array, Float, PRNGKeyArray, jaxtyped
 
-X = TypeVar("X", bound=Array)
-Y = TypeVar("Y", bound=Array)
+if sys.version_info >= (3, 11):
+    from typing import TypeVarTuple, Unpack
+else:  # pragma: no cover
+    from typing_extensions import TypeVarTuple, Unpack
 
-
-class DefaultOptimizer(optax.GradientTransformationExtraArgs):
-    def __repr__(self):
-        return "optax.adam(learning_rate=0.1)"
-
-
-def default_optimizer() -> optax.GradientTransformation:
-    """
-    Returns the default optimizer.
-
-    Useful to override the :func:`repr` method in the documentation.
-
-    .. note::
-
-        This optimizer should be a good default choise when used by
-        :class:`MinPath<differt2d.geometry.MinPath>` as it gave the
-        best convergence results when compared to other optimizers
-        provided by `Optax <https://optax.readthedocs.io/>`_.
-
-    :return: The default optimizer.
-
-    :Examples:
-
-    >>> from differt2d.optimize import default_optimizer
-    >>> default_optimizer()
-    optax.adam(learning_rate=0.1)
-    """
-    optimizer = optax.adam(learning_rate=0.1)
-    optimizer.__class__ = DefaultOptimizer
-    return optimizer
+Ts = TypeVarTuple("Ts")
 
 
+@partial(jax.jit, static_argnames=("fun", "steps", "optimizer"))
+@jaxtyped(typechecker=None)
 def minimize(
-    fun: Callable[[X], Y],
-    x0: Array,
-    fun_args: Tuple = (),
-    fun_kwargs: Mapping[str, Any] = {},
+    fun: Callable[[Float[Array, " n"], *Ts], Float[Array, " "]],
+    x0: Float[Array, " n"],
+    args: tuple[Unpack[Ts]] = (),
     steps: int = 100,
-    optimizer: optax.GradientTransformation = default_optimizer(),
-) -> Tuple[X, Y]:
+    optimizer: Optional[optax.GradientTransformation] = None,
+) -> tuple[Float[Array, " n"], Float[Array, " "]]:
     """
     Minimizes a scalar function of one or more variables.
 
     :param fun: The objective function to be minimized.
     :param x0: The initial guess, (n,).
-    :param fun_args:
+    :param args:
         Positional arguments to be passed to ``fun``.
-    :param fun_kwargs:
-        Keyword arguments to be passed to ``fun``.
     :param steps: The number of steps to perform.
-    :param optimizer: The optimizer to use.
+    :param optimizer: The optimizer to use. If not provided,
+        uses :func:`optax.adam` with a learning rate of ``0.1``.
     :return: The solution array and the corresponding loss.
 
     :Examples:
@@ -92,7 +67,7 @@ def minimize(
     >>> from differt2d.optimize import minimize
     >>> import chex
     >>> import jax.numpy as jnp
-    >>> def f(x, offset = 1.0):
+    >>> def f(x, offset=1.0):
     ...     x = x - offset
     ...     return jnp.dot(x, x)
     >>>
@@ -101,21 +76,18 @@ def minimize(
     >>> chex.assert_trees_all_close(y, 0.0, atol=1e-4)
     >>>
     >>> # It is also possible to pass positional arguments
-    >>> x, y = minimize(f, jnp.zeros(10), fun_args=(2.0,))
+    >>> x, y = minimize(f, jnp.zeros(10), args=(2.0,))
     >>> chex.assert_trees_all_close(x, 2.0 * jnp.ones(10), rtol=1e-2)
     >>> chex.assert_trees_all_close(y, 0.0, atol=1e-3)
-    >>>
-    >>> # Or even keyword arguments
-    >>> x, y = minimize(f, jnp.zeros(10), fun_kwargs=dict(offset=3.0))
-    >>> chex.assert_trees_all_close(x, 3.0 * jnp.ones(10), rtol=1e-2)
-    >>> chex.assert_trees_all_close(y, 0.0, atol=1e-2)
     """
+    optimizer = optimizer if optimizer else optax.adam(learning_rate=0.1)
+
     f_and_df = jax.value_and_grad(fun)
     opt_state = optimizer.init(x0)
 
     def f(carry, x):
         x, opt_state = carry
-        loss, grads = f_and_df(x, *fun_args, **fun_kwargs)
+        loss, grads = f_and_df(x, *args)
         updates, opt_state = optimizer.update(grads, opt_state)
         x = x + updates
         carry = (x, opt_state)
@@ -125,15 +97,16 @@ def minimize(
     return x, losses[-1]
 
 
+@partial(jax.jit, static_argnames=("fun", "n", "steps", "optimizer"))
+@jaxtyped(typechecker=None)
 def minimize_random_uniform(
-    fun: Callable[[X], Y],
-    key: Array,
+    fun: Callable[[Float[Array, " {n}"], *Ts], Float[Array, " "]],
+    key: PRNGKeyArray,
     n: int,
     **kwargs: Any,
-) -> Tuple[X, Y]:
+) -> tuple[Float[Array, " {n}"], Float[Array, " "]]:
     """
-    Minimizes a scalar function of one or more variables, with initial guess drawn
-    randomly from a uniform distribution.
+    Minimizes a scalar function of one or more variables, with initial guess drawn randomly from a uniform distribution.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guess.
@@ -160,17 +133,17 @@ def minimize_random_uniform(
     return minimize(fun=fun, x0=x0, **kwargs)
 
 
+@partial(jax.jit, static_argnames=("fun", "n", "many", "steps", "optimizer"))
+@jaxtyped(typechecker=None)
 def minimize_many_random_uniform(
-    fun: Callable[[X], Y],
-    key: Array,
+    fun: Callable[[Float[Array, " {n}"], *Ts], Float[Array, " "]],
+    key: PRNGKeyArray,
     n: int,
     many: int = 10,
     **kwargs: Any,
-) -> Tuple[X, Y]:
+) -> tuple[Float[Array, " {n}"], Float[Array, " "]]:
     """
-    Minimizes many times a scalar function of one or more variables, with initial guess
-    drawn randomly from a uniform distribution, and returns the best minimum out of the
-    :code:`many` trials.
+    Minimizes many times a scalar function of one or more variables, with initial guess drawn randomly from a uniform distribution, and returns the best minimum out of the :code:`many` trials.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guesses.
@@ -203,7 +176,7 @@ def minimize_many_random_uniform(
     def _minimize(key):
         return minimize_random_uniform(fun=fun, key=key, n=n, **kwargs)
 
-    xs, losses = vmap(_minimize, in_axes=0)(keys)
+    xs, losses = jax.vmap(_minimize, in_axes=0)(keys)
 
     i_min = jnp.argmin(losses)
 

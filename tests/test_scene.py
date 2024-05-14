@@ -149,7 +149,10 @@ class TestScene:
         expected_point = Point(point=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
         scene.transmitters["closest"] = expected_point
-        got_point, got_distance = scene.get_closest_transmitter(expected_point.point)
+        got_point_name, got_distance = scene.get_closest_transmitter(
+            expected_point.point
+        )
+        got_point = scene.transmitters[got_point_name]
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
@@ -158,7 +161,8 @@ class TestScene:
         expected_point = Point(point=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
         scene.receivers["closest"] = expected_point
-        got_point, got_distance = scene.get_closest_receiver(expected_point.point)
+        got_point_name, got_distance = scene.get_closest_receiver(expected_point.point)
+        got_point = scene.receivers[got_point_name]
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
 

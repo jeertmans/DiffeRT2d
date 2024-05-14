@@ -50,7 +50,7 @@ scene = Scene.square_scene_with_obstacle()
 # In an optimization problem, one must first define an objective function.
 # Ideally, in a telecommunications scenario, we would like to serve all users,
 # i.e., receivers, with a good power. Because we want all users to receive the
-# maximum power possible, we will maximize the mininum received power among all
+# maximum power possible, we will maximize the minimum received power among all
 # users.
 #
 # Finally, we define a loss function that will take the opposite of the
@@ -58,8 +58,10 @@ scene = Scene.square_scene_with_obstacle()
 
 
 def objective_function(received_power_per_receiver):
-    """Objective function, that wants to maximize the received power by each
-    receiver."""
+    """
+    Objective function, that wants to maximize the received power by each
+    receiver.
+    """
     acc = jnp.inf
     for p in received_power_per_receiver:
         p = p / P0  # Normalize power
@@ -70,7 +72,7 @@ def objective_function(received_power_per_receiver):
 
 def loss(tx_coords, scene, *args, **kwargs):
     """Loss function, to be minimized."""
-    scene.transmitters["tx"].point = tx_coords
+    scene.transmitters["tx"] = Point(point=tx_coords)
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -98,13 +100,19 @@ fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
-scene.transmitters = dict(
-    tx=Point(point=jnp.array([0.5, 0.7])),
+scene.transmitters.clear()
+scene.transmitters.update(
+    {
+        "tx": Point(point=jnp.array([0.5, 0.7])),
+    }
 )
-scene.receivers = {
-    r"rx_0": Point(point=jnp.array([0.3, 0.1])),
-    r"rx_1": Point(point=jnp.array([0.5, 0.1])),
-}
+scene.receivers.clear()
+scene.receivers.update(
+    {
+        r"rx_0": Point(point=jnp.array([0.3, 0.1])),
+        r"rx_1": Point(point=jnp.array([0.5, 0.1])),
+    }
+)
 
 X, Y = scene.grid(n=300)
 
@@ -142,7 +150,7 @@ steps = 101  # In how many steps we hope to converge
 # Choosing the right alpha values
 # -------------------------------
 #
-# Theoritically, one should choose an infinitely big ``alpha`` value
+# Theoretically, one should choose an infinitely big ``alpha`` value
 # to reduce the approximation to zero.
 #
 # However, it can be observed that values above 100.0 are already high enough
@@ -173,7 +181,7 @@ carries = [(None, None), (None, None)]
 def init_func():
     tx_coords = jnp.array([0.5, 0.7])
     for i, scene in enumerate(scenes):
-        scene.transmitters["tx"].point = tx_coords
+        scene.transmitters["tx"] = Point(point=tx_coords)
         optimizers[i] = optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
@@ -183,7 +191,7 @@ def func(alpha):
         tx_coords, opt_state = carries[i]
 
         # Plotting prior to updating
-        scenes[i].transmitters["tx"].point = tx_coords
+        scenes[i].transmitters["tx"] = Point(point=tx_coords)
         transmitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
@@ -218,4 +226,4 @@ def func(alpha):
 
 
 anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)
-plt.show()
+plt.show()  # doctest: +SKIP

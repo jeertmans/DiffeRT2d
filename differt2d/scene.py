@@ -1,47 +1,35 @@
 """Scenes for tracing rays between transmitters and receivers."""
 
-from __future__ import annotations
-
-__all__ = ["Scene", "SceneName"]
+__all__ = ("Scene", "SceneName")
 
 import json
+from abc import abstractmethod
+from collections.abc import Iterator, Mapping, Sequence
 from functools import partial, singledispatchmethod
 from itertools import groupby, product
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
+    Optional,
     Protocol,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     runtime_checkable,
 )
 
 import differt_core
+import equinox as eqx
 import jax
 import jax.numpy as jnp
+from beartype import beartype as typechecker
+from jaxtyping import Array, Float, PRNGKeyArray, UInt, jaxtyped
+from matplotlib.artist import Artist
 
 from .abc import Interactable, Loc, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
-from .logic import is_true
+from .logic import Truthy, is_true
 
-if TYPE_CHECKING:  # pragma: no cover
-    from dataclasses import dataclass
-
-    from jax import Array
-    from matplotlib.artist import Artist
-
-    PathFun = Callable[[Point, Point, Path, List[Interactable]], Array]
-else:
-    from chex import dataclass
-
+PathFun = Callable[[Point, Point, Path, list[Interactable]], Float[Array, " "]]
 
 S = Union[str, bytes, bytearray]
 SceneName = Literal[
@@ -55,20 +43,18 @@ SceneName = Literal[
 
 @runtime_checkable
 class Readable(Protocol):
-    def read(self) -> S:
-        pass  # pragma: no cover
+    @abstractmethod
+    def read(self) -> S: ...
 
 
-@dataclass
-class Scene(Plottable):
-    """2D Scene made of objects, one or more transmitting node(s), and one or more
-    receiving node(s)."""
+class Scene(Plottable, eqx.Module):
+    """2D Scene made of objects, one or more transmitting node(s), and one or more receiving node(s)."""
 
-    transmitters: Dict[str, Point]
+    transmitters: dict[str, Point]
     """The transmitting nodes."""
-    receivers: Dict[str, Point]
+    receivers: dict[str, Point]
     """The receiving nodes."""
-    objects: List[Object]
+    objects: list[Object]
     """The list of objects in the scene."""
 
     @singledispatchmethod
@@ -77,8 +63,7 @@ class Scene(Plottable):
         cls, s_or_fp: Union[S, Readable], tx_loc: Loc = "NW", rx_loc: Loc = "SE"
     ) -> "Scene":
         r"""
-        Creates a scene from a GEOJSON file, generating one Wall per line segment. TX
-        and RX positions are located on the corner of the bounding box.
+        Creates a scene from a GEOJSON file, generating one Wall per line segment. TX and RX positions are located on the corner of the bounding box.
 
         :param s_or_fp: Source from which to read the GEOJSON object,
             either a string-like or a file-like object.
@@ -323,8 +308,10 @@ class Scene(Plottable):
         Generates a new scene from the given scene name.
 
         :param scene_name: The name of the scene.
-        :param args: Positional arguments to be passed to the constructor.
-        :param kwargs: Keyword arguments to be passed to the constructor.
+        :param args: Positional arguments to be passed to the
+            constructor.
+        :param kwargs: Keyword arguments to be passed to the
+            constructor.
         :return: The scene.
         """
         return getattr(cls, scene_name)(*args, **kwargs)
@@ -332,7 +319,7 @@ class Scene(Plottable):
     @classmethod
     def random_uniform_scene(
         cls,
-        key: Array,
+        key: PRNGKeyArray,
         *,
         n_transmitters: int = 1,
         n_walls: int = 1,
@@ -359,7 +346,8 @@ class Scene(Plottable):
             key = jax.random.PRNGKey(1234)
             scene = Scene.random_uniform_scene(key, n_walls=5)
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         points = jax.random.uniform(
             key, (n_transmitters + 2 * n_walls + n_receivers, 2)
@@ -371,7 +359,7 @@ class Scene(Plottable):
             f"rx_{i}": Point(point=points[-(i + 1), :]) for i in range(n_receivers)
         }
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             Wall(points=points[2 * i + n_transmitters : 2 * i + 2 + n_transmitters, :])
             for i in range(n_walls)
         ]
@@ -381,12 +369,11 @@ class Scene(Plottable):
     def basic_scene(
         cls,
         *,
-        tx_coords: Array = jnp.array([0.1, 0.1]),
-        rx_coords: Array = jnp.array([0.302, 0.2147]),
+        tx_coords: Float[Array, "2"] = jnp.array([0.1, 0.1]),  # noqa: B008
+        rx_coords: Float[Array, "2"] = jnp.array([0.302, 0.2147]),  # noqa: B008
     ) -> "Scene":
         """
-        Instantiates a basic scene with a main room, and a second inner room in the
-        lower left corner, with a small entrance.
+        Instantiates a basic scene with a main room, and a second inner room in the lower left corner, with a small entrance.
 
         :param tx_coords: The transmitter's coordinates, array-like, (2,).
         :param rx_coords: The receiver's coordinates, array-like, (2,).
@@ -402,8 +389,8 @@ class Scene(Plottable):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         7
-        >>> scene.transmitters["tx"]
-        Point(point=Array([0.1, 0.1], dtype=float32))
+        >>> scene.transmitters["tx"].point
+        Array([0.1, 0.1], dtype=float32)
 
         .. plot::
 
@@ -413,12 +400,13 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.basic_scene()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         tx = Point(point=jnp.asarray(tx_coords, dtype=float))
         rx = Point(point=jnp.asarray(rx_coords, dtype=float))
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             # Outer walls
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
             Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
@@ -436,8 +424,8 @@ class Scene(Plottable):
     def square_scene(
         cls,
         *,
-        tx_coords: Array = jnp.array([0.2, 0.2]),
-        rx_coords: Array = jnp.array([0.5, 0.6]),
+        tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.2]),  # noqa: B008
+        rx_coords: Float[Array, "2"] = jnp.array([0.5, 0.6]),  # noqa: B008
     ) -> "Scene":
         """
         Instantiates a square scene with one main room.
@@ -456,8 +444,8 @@ class Scene(Plottable):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         4
-        >>> scene.transmitters["tx"]
-        Point(point=Array([0.2, 0.2], dtype=float32))
+        >>> scene.transmitters["tx"].point
+        Array([0.2, 0.2], dtype=float32)
 
         .. plot::
 
@@ -467,12 +455,13 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         tx = Point(point=jnp.asarray(tx_coords, dtype=float))
         rx = Point(point=jnp.asarray(rx_coords, dtype=float))
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
             Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
             Wall(points=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
@@ -486,8 +475,8 @@ class Scene(Plottable):
         cls,
         ratio: float = 0.1,
         *,
-        tx_coords: Array = jnp.array([0.2, 0.5]),
-        rx_coords: Array = jnp.array([0.8, 0.5]),
+        tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.5]),  # noqa: B008
+        rx_coords: Float[Array, "2"] = jnp.array([0.8, 0.5]),  # noqa: B008
     ) -> "Scene":
         """
         Instantiates a square scene with one main room, and vertical wall in the middle.
@@ -508,8 +497,8 @@ class Scene(Plottable):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         5
-        >>> scene.transmitters["tx"]
-        Point(point=Array([0.2, 0.5], dtype=float32))
+        >>> scene.transmitters["tx"].point
+        Array([0.2, 0.5], dtype=float32)
 
         .. plot::
 
@@ -519,7 +508,8 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene_with_wall()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         scene = Scene.square_scene(tx_coords=tx_coords, rx_coords=rx_coords)
 
@@ -532,8 +522,7 @@ class Scene(Plottable):
     @classmethod
     def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> "Scene":
         """
-        Instantiates a square scene with one main room, and one square obstacle in the
-        center.
+        Instantiates a square scene with one main room, and one square obstacle in the center.
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
@@ -551,8 +540,8 @@ class Scene(Plottable):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         8
-        >>> scene.transmitters["tx"]
-        Point(point=Array([0.2, 0.2], dtype=float32))
+        >>> scene.transmitters["tx"].point
+        Array([0.2, 0.2], dtype=float32)
 
         .. plot::
 
@@ -562,7 +551,8 @@ class Scene(Plottable):
             ax = plt.gca()
             scene = Scene.square_scene()
             _ = scene.plot(ax)
-            plt.show()
+            plt.show()  # doctest: +SKIP
+
         """
         scene = Scene.square_scene(**kwargs)
 
@@ -571,7 +561,7 @@ class Scene(Plottable):
         x0, x1 = 0.5 - hl, 0.5 + hl
         y0, y1 = 0.5 - hl, 0.5 + hl
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             Wall(points=jnp.array([[x0, y0], [x1, y0]])),
             Wall(points=jnp.array([[x1, y0], [x1, y1]])),
             Wall(points=jnp.array([[x1, y1], [x0, y1]])),
@@ -587,17 +577,17 @@ class Scene(Plottable):
         ax,
         *args: Any,
         transmitters: bool = True,
-        transmitters_args: Sequence = (),
-        transmitters_kwargs: Dict[str, Any] = {},
+        transmitters_args: tuple = (),
+        transmitters_kwargs: Optional[Mapping[str, Any]] = None,
         objects: bool = True,
-        objects_args: Sequence = (),
-        objects_kwargs: Dict[str, Any] = {},
+        objects_args: tuple = (),
+        objects_kwargs: Optional[Mapping[str, Any]] = None,
         receivers: bool = True,
-        receivers_args: Sequence = (),
-        receivers_kwargs: Dict[str, Any] = {},
+        receivers_args: tuple = (),
+        receivers_kwargs: Optional[Mapping[str, Any]] = None,
         annotate: bool = True,
         **kwargs: Any,
-    ) -> List[Artist]:
+    ) -> list[Artist]:
         """
         :param transmitters:
             If set, includes transmitters in the plot.
@@ -621,7 +611,13 @@ class Scene(Plottable):
             If set, will annotate all transmitters and receivers with their name,
             and append the corresponding artists
             to the returned list.
-        """
+        """  # noqa: D205
+        if receivers_kwargs is None:
+            receivers_kwargs = {}
+        if objects_kwargs is None:
+            objects_kwargs = {}
+        if transmitters_kwargs is None:
+            transmitters_kwargs = {}
         transmitters_kwargs.setdefault("color", "blue")
         receivers_kwargs.setdefault("color", "green")
 
@@ -661,7 +657,7 @@ class Scene(Plottable):
 
         return artists
 
-    def bounding_box(self) -> Array:
+    def bounding_box(self) -> Float[Array, "2 2"]:  # noqa: D102
         bounding_boxes_list = (
             [transmitter.bounding_box() for transmitter in self.transmitters.values()]
             + [receiver.bounding_box() for receiver in self.receivers.values()]
@@ -676,33 +672,41 @@ class Scene(Plottable):
             ]
         )
 
-    def get_closest_transmitter(self, coords: Array) -> Tuple[Point, Array]:
+    @jaxtyped(typechecker=typechecker)
+    def get_closest_transmitter(
+        self, coords: Float[Array, "2"]
+    ) -> tuple[str, Float[Array, " "]]:
         """
         Returns the closest transmitter to the given coordinates.
 
         :param coords: The x-y coordinates, (2,).
-        :return: The closet transmitter and its distance to the coordinates.
+        :return: The closet transmitter (name) and its distance to the
+            coordinates.
         """
-        transmitters = list(self.transmitters.values())
-        points = jnp.vstack([tx.point for tx in transmitters])
+        transmitters = list(self.transmitters.items())
+        points = jnp.vstack([tx.point for _, tx in transmitters])
         i_min, distance = closest_point(points, coords)
-        return transmitters[i_min], distance
+        return transmitters[i_min][0], distance
 
-    def get_closest_receiver(self, coords: Array) -> Tuple[Point, Array]:
+    @jaxtyped(typechecker=typechecker)
+    def get_closest_receiver(
+        self, coords: Float[Array, "2"]
+    ) -> tuple[str, Float[Array, " "]]:
         """
         Returns the closest receivers to the given coordinates.
 
         :param coords: The x-y coordinates, (2,).
-        :return: The closet receiver and its distance to the coordinates.
+        :return: The closet receiver (name) and its distance to the
+            coordinates.
         """
-        receivers = list(self.receivers.values())
-        points = jnp.vstack([rx.point for rx in receivers])
+        receivers = list(self.receivers.items())
+        points = jnp.vstack([rx.point for _, rx in receivers])
         i_min, distance = closest_point(points, coords)
-        return receivers[i_min], distance
+        return receivers[i_min][0], distance
 
     def all_transmitter_receiver_pairs(
         self,
-    ) -> Iterator[Tuple[Tuple[str, Point], Tuple[str, Point]]]:
+    ) -> Iterator[tuple[tuple[str, Point], tuple[str, Point]]]:
         """
         Returns all possible pairs of (transmitter, receiver) in the scene.
 
@@ -717,20 +721,19 @@ class Scene(Plottable):
         """
         return product(self.transmitters.items(), self.receivers.items())
 
-    @partial(jax.jit, static_argnames=["min_order", "max_order"])
+    @partial(jax.jit, static_argnames=("min_order", "max_order"))
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
-    ) -> List[Array]:
+    ) -> list[UInt[Array, "num_path_candidates order"]]:
         """
-        Returns all path candidates, from any of the :attr:`transmitters` to any of the
-        :attr:`receivers`, as a list of array of indices.
+        Returns all path candidates, from any of the :attr:`transmitters` to any of the :attr:`receivers`, as a list of array of indices.
 
-        Note that it only inclides indices for objects.
+        Note that it only includes indices for objects.
 
-        :param min_order: The minimum order of the path, i.e., the number of
-            interactions.
-        :param max_order: The maximum order of the path, i.e., the number of
-            interactions.
+        :param min_order: The minimum order of the path, i.e., the
+            number of interactions.
+        :param max_order: The maximum order of the path, i.e., the
+            number of interactions.
         :return: The list of list of indices.
         """
         num_primitives = len(self.objects)
@@ -744,7 +747,9 @@ class Scene(Plottable):
             ).T
         ]
 
-    def get_interacting_objects(self, path_candidate: Array) -> List[Interactable]:
+    def get_interacting_objects(
+        self, path_candidate: UInt[Array, " order"]
+    ) -> list[Interactable]:
         """
         Returns the list of interacting objects from a path candidate.
 
@@ -759,16 +764,13 @@ class Scene(Plottable):
 
     def all_paths(
         self,
-        path_cls: Type[Path] = ImagePath,
+        path_cls: type[Path] = ImagePath,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Array, Path, List[int]]]:
+    ) -> Iterator[tuple[str, str, Truthy, Path, list[int]]]:
         """
-        Returns all paths from any of the :attr:`transmitters` to any of the
-        :attr:`receivers`, using the given method, see,
-        :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and
-        :class:`differt2d.geometry.MinPath`.
+        Returns all paths from any of the :attr:`transmitters` to any of the :attr:`receivers`, using the given method, see, :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and :class:`differt2d.geometry.MinPath`.
 
         :param path_cls: Method to be used to find the path coordinates.
         :param min_order:
@@ -797,9 +799,9 @@ class Scene(Plottable):
                     transmitter.point, interacting_objects, receiver.point
                 )
                 valid = path.is_valid(
-                    self.objects,  # type: ignore[arg-type]
+                    self.objects,
                     path_candidate,
-                    interacting_objects,  # type: ignore[arg-type]
+                    interacting_objects,
                     **kwargs,
                 )
 
@@ -807,12 +809,11 @@ class Scene(Plottable):
 
     def all_valid_paths(
         self,
-        approx=None,
+        approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Path, List[int]]]:
+    ) -> Iterator[tuple[str, str, Path, UInt[Array, " order"]]]:
         """
-        Returns only valid paths as returned by :meth:`all_paths`, by filtering out
-        paths using :func:`is_true<differt2d.logic.is_true>`.
+        Returns only valid paths as returned by :meth:`all_paths`, by filtering out paths using :func:`is_true<differt2d.logic.is_true>`.
 
         :param kwargs:
             Keyword arguments to be passed to :meth:`all_paths`.
@@ -828,14 +829,13 @@ class Scene(Plottable):
     def accumulate_over_paths(
         self,
         fun: PathFun,
-        fun_args: Tuple = (),
-        fun_kwargs: Mapping = {},
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
         reduce_all: bool = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Array]]:
+    ) -> Union[Iterator[tuple[str, str, Float[Array, " "]]], Float[Array, " "]]:
         """
-        Repeatedly calls ``fun`` on all paths between each pair of (transmitter,
-        receiver) in the scene, and accumulates the results.
+        Repeatedly calls ``fun`` on all paths between each pair of (transmitter, receiver) in the scene, and accumulates the results.
 
         Produces an iterator with each (transmitter, receiver) pair.
 
@@ -855,8 +855,10 @@ class Scene(Plottable):
             and the corresponding accumulated result, or the
             sum of accumulated results if :python:`reduce_all=True`.
         """
+        if fun_kwargs is None:
+            fun_kwargs = {}
 
-        def results() -> Iterator[Tuple[str, str, Array]]:
+        def results() -> Iterator[tuple[str, str, Float[Array, " "]]]:
             for (tx_key, rx_key), paths_group in groupby(
                 self.all_paths(**kwargs), lambda key: key[:2]
             ):
@@ -884,27 +886,36 @@ class Scene(Plottable):
 
     def accumulate_on_transmitters_grid_over_paths(
         self,
-        X: Array,
-        Y: Array,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
         fun: PathFun,
-        fun_args: Tuple = (),
-        fun_kwargs: Mapping = {},
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
-        path_cls: Type[Path] = ImagePath,
-        transmitter_cls: Type[Point] = Point,
+        path_cls: type[Path] = ImagePath,
+        transmitter_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
     ) -> Union[
-        Iterator[Tuple[str, Union[Array, Tuple[Array, Array]]]],
-        Union[Array, Tuple[Array, Array]],
+        Iterator[
+            tuple[
+                str,
+                Union[
+                    Union[Float[Array, "m n"], Float[Array, "m n 2"]],
+                    tuple[Float[Array, "m n"], Float[Array, "m n 2"]],
+                ],
+            ]
+        ],
+        Union[
+            Union[Float[Array, "m n"], Float[Array, "m n 2"]],
+            tuple[Float[Array, "m n"], Float[Array, "m n 2"]],
+        ],
     ]:
         """
-        Repeatedly calls ``fun`` on all paths between the receivers in the scene and
-        every transmitter coordinate in :python:`(X, Y)`, and accumulates the results
-        over one array that has the same shape a ``X`` and ``Y``.
+        Repeatedly calls ``fun`` on all paths between the receivers in the scene and every transmitter coordinate in :python:`(X, Y)`, and accumulates the results over one array that has the same shape a ``X`` and ``Y``.
 
         Produces an iterator with one element for each receiver location.
 
@@ -938,8 +949,12 @@ class Scene(Plottable):
             accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
-        transmitters = self.transmitters
-        self.transmitters = {"tx": Point(point=jnp.array([0.0, 0.0]))}
+        if fun_kwargs is None:
+            fun_kwargs = {}
+
+        transmitters = self.transmitters.copy()
+        self.transmitters.clear()
+        self.transmitters["tx"] = Point(point=jnp.array([0.0, 0.0]))
 
         path_candidates = self.all_path_candidates(
             min_order=min_order,
@@ -947,9 +962,10 @@ class Scene(Plottable):
         )
 
         pairs = list(self.all_transmitter_receiver_pairs())
-        self.transmitters = transmitters
+        self.transmitters.clear()
+        self.transmitters.update(transmitters)
 
-        def facc(tx_coords: Array, receiver: Point) -> Array:
+        def facc(tx_coords: Float[Array, "2"], receiver: Point) -> Float[Array, " "]:
             acc = 0.0
             for path_candidate in path_candidates:
                 interacting_objects = self.get_interacting_objects(path_candidate)
@@ -1004,37 +1020,32 @@ class Scene(Plottable):
 
     def accumulate_on_receivers_grid_over_paths(
         self,
-        X: Array,
-        Y: Array,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
         fun: PathFun,
-        fun_args: Tuple = (),
-        fun_kwargs: Mapping = {},
+        args: tuple = (),
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
-        path_cls: Type[Path] = ImagePath,
-        receiver_cls: Type[Point] = Point,
+        path_cls: type[Path] = ImagePath,
+        receiver_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
     ) -> Union[
-        Iterator[Tuple[str, Union[Array, Tuple[Array, Array]]]],
-        Union[Array, Tuple[Array, Array]],
+        Iterator[tuple[str, Union[Array, tuple[Array, Array]]]],
+        Union[Array, tuple[Array, Array]],
     ]:
         """
-        Repeatedly calls ``fun`` on all paths between the transmitters in the scene and
-        every receiver coordinate in :python:`(X, Y)`, and accumulates the results over
-        one array that has the same shape a ``X`` and ``Y``.
+        Repeatedly calls ``fun`` on all paths between the transmitters in the scene and every receiver coordinate in :python:`(X, Y)`, and accumulates the results over one array that has the same shape a ``X`` and ``Y``.
 
         Produces an iterator with one element for each transmitter location.
 
         :param X: The grid of x-coordinates, (m, n).
         :param Y: The grid of y-coordinates, (m, n).
         :param fun: The function to evaluate on each path.
-        :param fun_args:
+        :param args:
             Positional arguments to be passed to ``fun``.
-        :param fun_kwargs:
-            Keyword arguments to be passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
@@ -1058,8 +1069,9 @@ class Scene(Plottable):
             accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
-        receivers = self.receivers
-        self.receivers = {"rx": Point(point=jnp.array([0.0, 0.0]))}
+        receivers = self.receivers.copy()
+        self.receivers.clear()
+        self.receivers["rx"] = Point(point=jnp.array([0.0, 0.0]))
 
         path_candidates = self.all_path_candidates(
             min_order=min_order,
@@ -1067,7 +1079,8 @@ class Scene(Plottable):
         )
 
         pairs = list(self.all_transmitter_receiver_pairs())
-        self.receivers = receivers
+        self.receivers.clear()
+        self.receivers.update(receivers)
 
         def facc(transmitter: Point, rx_coords: Array) -> Array:
             acc = 0.0
@@ -1087,8 +1100,7 @@ class Scene(Plottable):
                     receiver_cls(point=rx_coords),
                     path,
                     interacting_objects,
-                    *fun_args,
-                    **fun_kwargs,
+                    *args,
                 )
 
             return acc
@@ -1105,7 +1117,7 @@ class Scene(Plottable):
 
         grid = jnp.dstack((X, Y))
 
-        def results() -> Iterator[Array]:
+        def results() -> Iterator[Float[Array, " "]]:
             return (
                 (tx_key, vfacc(transmitter, grid)) for (tx_key, transmitter), _ in pairs
             )
