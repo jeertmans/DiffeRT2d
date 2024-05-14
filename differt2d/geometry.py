@@ -258,6 +258,7 @@ def closest_point(
     return i_min, distances[i_min]
 
 
+@jaxtyped(typechecker=typechecker)
 class Ray(Plottable, eqx.Module):
     """
     A ray object with origin and destination points.
@@ -276,7 +277,7 @@ class Ray(Plottable, eqx.Module):
 
     """
 
-    points: Float[Array, "2 2"]
+    points: Float[Array, "2 2"] = eqx.field(convert=jnp.asarray)
     """Ray points (origin, dest)."""
 
     @partial(jax.jit, inline=True)
@@ -321,6 +322,7 @@ class Ray(Plottable, eqx.Module):
         return jnp.vstack([jnp.min(self.points, axis=0), jnp.max(self.points, axis=0)])
 
 
+@jaxtyped(typechecker=typechecker)
 class Point(Plottable, eqx.Module):
     """
     A point object defined by its coordinates.
@@ -341,7 +343,7 @@ class Point(Plottable, eqx.Module):
 
     """
 
-    point: Float[Array, "2"]
+    point: Float[Array, "2"] = eqx.field(converte=jnp.asarray)
     """Cartesian coordinates."""
 
     @jaxtyped(typechecker=typechecker)
@@ -390,6 +392,7 @@ class Point(Plottable, eqx.Module):
         return jnp.vstack([self.point, self.point])
 
 
+@jaxtyped(typechecker=typechecker)
 class Wall(Ray, Interactable, eqx.Module):
     """
     A wall object defined by its corners.
@@ -518,6 +521,7 @@ class Wall(Ray, Interactable, eqx.Module):
         return point - 2.0 * jnp.dot(i, self.normal()) * self.normal()
 
 
+@jaxtyped(typechecker=typechecker)
 class RIS(Wall, eqx.Module):
     """
     A very basic Reflective Intelligent Surface (RIS) object.
@@ -548,6 +552,7 @@ class RIS(Wall, eqx.Module):
         return super().plot(ax, *args, **kwargs)
 
 
+@jaxtyped(typechecker=typechecker)
 class Path(Plottable, eqx.Module):
     """
     A path object with at least two points.
@@ -566,7 +571,7 @@ class Path(Plottable, eqx.Module):
 
     """
 
-    points: Array
+    points: Float[Array, "num_points 2"] = eqx.field(converter=jnp.asarray)
     """Array of cartesian coordinates."""
 
     loss: Float[Array, " "] = eqx.field(default_factory=lambda: jnp.array(0.0))
@@ -717,8 +722,8 @@ class Path(Plottable, eqx.Module):
 
         return intersects
 
-    # @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
-    @eqx.filter_jit
+    @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+    #@eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def is_valid(
         self,
@@ -819,6 +824,7 @@ def parametric_to_cartesian(  # noqa: D103
     return cartesian_coords
 
 
+@jaxtyped(typechecker=typechecker)
 class ImagePath(Path, eqx.Module):
     """A path object that was obtained with the Image method."""
 
@@ -904,11 +910,11 @@ class ImagePath(Path, eqx.Module):
         return cls(points=points, loss=path_loss(points))
 
 
+@jaxtyped(typechecker=typechecker)
 class FermatPath(Path, eqx.Module):
     """A path object that was obtained with the Fermat's Principle Tracing method."""
 
     @classmethod
-    # @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
     @eqx.filter_jit
     @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
@@ -994,11 +1000,12 @@ class FermatPath(Path, eqx.Module):
         return cls(points=points, loss=path_loss(points))
 
 
+@jaxtyped(typechecker=typechecker)
 class MinPath(Path, eqx.Module):
     """A path object that was obtained with the Min-Path-Tracing method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=("cls", "steps", "optimizer"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,
