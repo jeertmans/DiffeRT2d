@@ -25,10 +25,6 @@ equinox==0.11.4
     # via differt2d
 fonttools==4.51.0
     # via matplotlib
-importlib-metadata==7.1.0
-    # via jax
-importlib-resources==6.4.0
-    # via matplotlib
 jax==0.4.28
     # via chex
     # via differt2d
@@ -74,6 +70,8 @@ python-dateutil==2.9.0.post0
 scipy==1.13.0
     # via jax
     # via jaxlib
+setuptools==69.5.1
+    # via chex
 six==1.16.0
     # via python-dateutil
 toolz==0.12.1
@@ -82,8 +80,4 @@ typeguard==2.13.3
     # via jaxtyping
 typing-extensions==4.11.0
     # via chex
-    # via differt2d
     # via equinox
-zipp==3.18.1
-    # via importlib-metadata
-    # via importlib-resources
