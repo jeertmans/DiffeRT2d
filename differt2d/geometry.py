@@ -530,7 +530,9 @@ class RIS(Wall, eqx.Module):
     with respect to its normal, regardless of the incident vector.
     """
 
-    phi: Float[Array, " "] = eqx.field(default_factory=lambda: jnp.array(jnp.pi / 4))
+    phi: Float[Array, " "] = eqx.field(
+        converter=jnp.asarray, default_factory=lambda: jnp.array(jnp.pi / 4)
+    )
     """The constant angle of reflection."""
 
     @jax.jit
