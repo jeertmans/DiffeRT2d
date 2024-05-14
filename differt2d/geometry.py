@@ -343,7 +343,7 @@ class Point(Plottable, eqx.Module):
 
     """
 
-    point: Float[Array, "2"] = eqx.field(converte=jnp.asarray)
+    point: Float[Array, "2"] = eqx.field(converter=jnp.asarray)
     """Cartesian coordinates."""
 
     @jaxtyped(typechecker=typechecker)
