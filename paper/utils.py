@@ -1,4 +1,4 @@
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -23,7 +23,7 @@ def create_fig_for_paper(
     column_width: float = 252.0,
     height_to_width_ratio: Optional[float] = None,
     **kwargs,
-) -> Tuple[Figure, Any]:
+) -> tuple[Figure, Any]:
     """
     Creates a new figure (and subplots), with a nice setup for IEEE papers.
 

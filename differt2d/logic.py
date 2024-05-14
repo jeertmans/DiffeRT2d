@@ -19,8 +19,6 @@ when :code:`approx` is set to :python:`False`.
     3. or :python:`False`: forces to disable approximation.
 """
 
-from __future__ import annotations
-
 __all__ = (
     "ENABLE_APPROX",
     "Truthy",

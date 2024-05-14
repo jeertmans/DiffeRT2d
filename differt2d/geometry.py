@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping
 from functools import partial
-from typing import Any, Callable, List, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import equinox as eqx
 import jax
@@ -12,7 +12,7 @@ from jaxtyping import Array, Float, jaxtyped
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 
-from .abc import Interactable, Plottable
+from .abc import Interactable, Object, Plottable
 from .defaults import DEFAULT_PATCH
 from .logic import (
     Truthy,
@@ -67,10 +67,10 @@ def unstack_leaves(pytrees) -> list[Pytree]:
 @eqx.filter_jit
 @jaxtyped(typechecker=typechecker)
 def segments_intersect(
-    P1: Float[Array, "2"],  # noqa: N803
-    P2: Float[Array, "2"],  # noqa: N803
-    P3: Float[Array, "2"],  # noqa: N803
-    P4: Float[Array, "2"],  # noqa: N803
+    P1: Float[Array, "2"],
+    P2: Float[Array, "2"],
+    P3: Float[Array, "2"],
+    P4: Float[Array, "2"],
     tol: float = 0.005,
     approx: Optional[bool] = None,
     **kwargs: Any,
@@ -120,8 +120,10 @@ def segments_intersect(
     >>> from differt2d.geometry import segments_intersect
     >>> from differt2d.logic import sigmoid
     >>> import jax.numpy as jnp
-    >>> P1 = jnp.array([+0., +0.]); P2 = jnp.array([+1., +0.])
-    >>> P3 = jnp.array([+.5, -1.]); P4 = jnp.array([+.5, +1.])
+    >>> P1 = jnp.array([+0.0, +0.0])
+    >>> P2 = jnp.array([+1.0, +0.0])
+    >>> P3 = jnp.array([+0.5, -1.0])
+    >>> P4 = jnp.array([+0.5, +1.0])
     >>> segments_intersect(P1, P2, P3, P4)
     Array(1., dtype=float32)
     >>> segments_intersect(P1, P2, P3, P4, approx=False)
@@ -179,7 +181,7 @@ def path_length(points: Float[Array, "N 2"]) -> Float[Array, " "]:
 
     >>> from differt2d.geometry import path_length
     >>> import jax.numpy as jnp
-    >>> points = jnp.array([[0., 0.], [1., 0.], [1., 1.], [0., 0.]])
+    >>> points = jnp.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 0.0]])
     >>> path_length(points)  # 1 + 1 + sqrt(2)
     Array(3.4142137, dtype=float32)
     """
@@ -203,11 +205,11 @@ def normalize(vector: Float[Array, "2"]) -> tuple[Float[Array, "2"], Float[Array
 
     >>> from differt2d.geometry import normalize
     >>> import jax.numpy as jnp
-    >>> vector = jnp.array([1., 1.])
+    >>> vector = jnp.array([1.0, 1.0])
     >>> normalize(vector)  # [1., 1.] / sqrt(2), sqrt(2)
     (Array([0.70710677, 0.70710677], dtype=float32),
      Array(1.4142135, dtype=float32))
-    >>> zero = jnp.array([0., 0.])
+    >>> zero = jnp.array([0.0, 0.0])
     >>> normalize(zero)  # Special behavior at 0.
     (Array([0., 0.], dtype=float32), Array(1., dtype=float32))
     """
@@ -232,13 +234,15 @@ def closest_point(points: Array, target: Array) -> tuple[Array, Array]:
 
     >>> from differt2d.geometry import closest_point
     >>> import jax.numpy as jnp
-    >>> target = jnp.array([.6, .3])
-    >>> points = jnp.array([
-    ...     [0., 0.],
-    ...     [1., 0.],  # This is the closest point
-    ...     [1., 1.],
-    ...     [0., 1.]
-    ... ])
+    >>> target = jnp.array([0.6, 0.3])
+    >>> points = jnp.array(
+    ...     [
+    ...         [0.0, 0.0],
+    ...         [1.0, 0.0],  # This is the closest point
+    ...         [1.0, 1.0],
+    ...         [0.0, 1.0],
+    ...     ]
+    ... )
     >>> closest_point(points, target)
     (Array(1, dtype=int32), Array(0.49999997, dtype=float32))
     >>> points[closest_point(points, target)[0]]
@@ -341,7 +345,7 @@ class Point(Plottable, eqx.Module):
         annotate_offset: Array = jnp.array([0.0, 0.0]),
         annotate_kwargs: Mapping[str, Any] = {},
         **kwargs: Any,
-    ) -> List[Artist]:
+    ) -> list[Artist]:
         """
         :param annotate: Text to put next the the point.
         :param annotate_offset:
@@ -482,8 +486,8 @@ class Wall(Ray, Interactable, eqx.Module):
 
         >>> from differt2d.geometry import Wall
         >>> import jax.numpy as jnp
-        >>> wall = Wall(points=jnp.array([[0., 0.], [1., 0.]]))
-        >>> wall.image_of(jnp.array([0., 1.]))
+        >>> wall = Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]]))
+        >>> wall.image_of(jnp.array([0.0, 1.0]))
         Array([ 0., -1.], dtype=float32)
         """
         i = point - self.origin()
@@ -511,7 +515,7 @@ class RIS(Wall, eqx.Module):
 
     def plot(
         self, ax: Axes, *args: Any, **kwargs: Any
-    ) -> List[Artist]:  # pragma: no cover
+    ) -> list[Artist]:  # pragma: no cover
         kwargs.setdefault("color", "green")
         return super().plot(ax, *args, **kwargs)
 
@@ -544,7 +548,7 @@ class Path(Plottable, eqx.Module):
     def from_tx_objects_rx(
         cls,
         tx: Array,
-        objects: List[Interactable],
+        objects: list[Interactable],
         rx: Array,
     ) -> "Path":
         """
@@ -598,7 +602,7 @@ class Path(Plottable, eqx.Module):
     @partial(jax.jit, static_argnames=["approx", "function"])
     def on_objects(
         self,
-        objects: List[Interactable],
+        objects: list[Interactable],
         approx: Optional[bool] = None,
         **kwargs,
     ) -> Array:
@@ -632,7 +636,7 @@ class Path(Plottable, eqx.Module):
     @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
     def intersects_with_objects(
         self,
-        objects: List[Interactable],
+        objects: list[Interactable],
         path_candidate: Array,
         patch: float = DEFAULT_PATCH,
         approx: Optional[bool] = None,
@@ -683,9 +687,9 @@ class Path(Plottable, eqx.Module):
     @partial(jax.jit, inline=True, static_argnames=["approx", "function"])
     def is_valid(
         self,
-        objects: List[Interactable],
+        objects: list[Interactable],
         path_candidate: Array,
-        interacting_objects: List[Interactable],
+        interacting_objects: list[Interactable],
         tol: float = 1e-2,
         patch: float = DEFAULT_PATCH,
         approx: Optional[bool] = None,
@@ -735,7 +739,7 @@ class Path(Plottable, eqx.Module):
             )
         )
 
-    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> List[Artist]:
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> list[Artist]:
         kwargs.setdefault("color", "orange")
         x, y = self.points.T
         return ax.plot(x, y, *args, **kwargs)
@@ -774,7 +778,7 @@ class ImagePath(Path, eqx.Module):
     def from_tx_objects_rx(
         cls,
         tx: Array,
-        objects: List[Wall],
+        objects: list[Wall],
         rx: Array,
         **kwargs: Any,
     ) -> "ImagePath":
@@ -861,7 +865,7 @@ class FermatPath(Path, eqx.Module):
     def from_tx_objects_rx(
         cls,
         tx: Array,
-        objects: List[Interactable],
+        objects: list[Interactable],
         rx: Array,
         key: Optional[Array] = None,
         seed: int = 1234,
@@ -949,7 +953,7 @@ class MinPath(Path, eqx.Module):
     def from_tx_objects_rx(
         cls,
         tx: Array,
-        objects: List[Interactable],
+        objects: list[Interactable],
         rx: Array,
         key: Optional[Array] = None,
         seed: int = 1234,
@@ -1022,3 +1026,7 @@ class MinPath(Path, eqx.Module):
         points = parametric_to_cartesian(objects, theta, n, tx, rx)
 
         return cls(points=points, loss=loss)
+
+
+Object.register(Wall)
+Object.register(RIS)

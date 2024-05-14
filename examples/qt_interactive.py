@@ -39,7 +39,7 @@ if you hover over them.
 
 from argparse import ArgumentParser, FileType
 from functools import partial
-from typing import List, get_args
+from typing import get_args
 
 import jax
 import jax.numpy as jnp
@@ -347,7 +347,7 @@ class PlotWidget(QWidget):
 
         self.picked = None
 
-        self.path_artists: List[Artist] = []
+        self.path_artists: list[Artist] = []
 
         def f(rx_coords):
             receivers = self.scene.receivers.copy()

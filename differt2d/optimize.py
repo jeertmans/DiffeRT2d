@@ -22,6 +22,7 @@ Examples
 >>> chex.assert_trees_all_close(x, -1.5, rtol=1e-2)
 >>> chex.assert_trees_all_close(y, +0.0, atol=1e-3)
 
+
 """
 
 import sys
@@ -67,7 +68,7 @@ def minimize(
     >>> from differt2d.optimize import minimize
     >>> import chex
     >>> import jax.numpy as jnp
-    >>> def f(x, offset = 1.0):
+    >>> def f(x, offset=1.0):
     ...     x = x - offset
     ...     return jnp.dot(x, x)
     >>>

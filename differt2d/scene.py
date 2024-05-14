@@ -1,8 +1,6 @@
 """Scenes for tracing rays between transmitters and receivers."""
 
-from __future__ import annotations
-
-__all__ = ["Scene", "SceneName"]
+__all__ = ("Scene", "SceneName")
 
 import json
 from abc import abstractmethod
@@ -12,12 +10,9 @@ from itertools import groupby, product
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
     Literal,
+    Optional,
     Protocol,
-    Tuple,
-    Type,
     Union,
     runtime_checkable,
 )
@@ -68,7 +63,7 @@ class Scene(Plottable, eqx.Module):
     @classmethod
     def from_geojson(
         cls, s_or_fp: Union[S, Readable], tx_loc: Loc = "NW", rx_loc: Loc = "SE"
-    ) -> Scene:
+    ) -> "Scene":
         r"""
         Creates a scene from a GEOJSON file, generating one Wall per line
         segment. TX and RX positions are located on the corner of the bounding
@@ -266,7 +261,7 @@ class Scene(Plottable, eqx.Module):
     @from_geojson.register(bytes)
     @from_geojson.register(bytearray)
     @classmethod
-    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> Scene:
+    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> "Scene":
         dictionary = json.loads(s)
 
         features = dictionary.get("features", [])
@@ -302,7 +297,7 @@ class Scene(Plottable, eqx.Module):
 
     @from_geojson.register(Readable)
     @classmethod
-    def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> Scene:
+    def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> "Scene":
         return cls.from_geojson(fp.read(), *args, **kwargs)
 
     def add_objects(self, objects: Sequence[Object]) -> None:
@@ -310,7 +305,9 @@ class Scene(Plottable, eqx.Module):
         self.objects.extend(objects)
 
     @classmethod
-    def from_scene_name(cls, scene_name: SceneName, *args: Any, **kwargs: Any) -> Scene:
+    def from_scene_name(
+        cls, scene_name: SceneName, *args: Any, **kwargs: Any
+    ) -> "Scene":
         """
         Generates a new scene from the given scene name.
 
@@ -331,7 +328,7 @@ class Scene(Plottable, eqx.Module):
         n_transmitters: int = 1,
         n_walls: int = 1,
         n_receivers: int = 1,
-    ) -> Scene:
+    ) -> "Scene":
         """
         Generates a random scene, drawing coordinates from a random
         distribution.
@@ -367,7 +364,7 @@ class Scene(Plottable, eqx.Module):
             f"rx_{i}": Point(point=points[-(i + 1), :]) for i in range(n_receivers)
         }
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             Wall(points=points[2 * i + n_transmitters : 2 * i + 2 + n_transmitters, :])
             for i in range(n_walls)
         ]
@@ -379,7 +376,7 @@ class Scene(Plottable, eqx.Module):
         *,
         tx_coords: Array = jnp.array([0.1, 0.1]),
         rx_coords: Array = jnp.array([0.302, 0.2147]),
-    ) -> Scene:
+    ) -> "Scene":
         """
         Instantiates a basic scene with a main room, and a second inner room
         in the lower left corner, with a small entrance.
@@ -415,7 +412,7 @@ class Scene(Plottable, eqx.Module):
         tx = Point(point=jnp.asarray(tx_coords, dtype=float))
         rx = Point(point=jnp.asarray(rx_coords, dtype=float))
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             # Outer walls
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
             Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
@@ -435,7 +432,7 @@ class Scene(Plottable, eqx.Module):
         *,
         tx_coords: Array = jnp.array([0.2, 0.2]),
         rx_coords: Array = jnp.array([0.5, 0.6]),
-    ) -> Scene:
+    ) -> "Scene":
         """
         Instantiates a square scene with one main room.
 
@@ -470,7 +467,7 @@ class Scene(Plottable, eqx.Module):
         tx = Point(point=jnp.asarray(tx_coords, dtype=float))
         rx = Point(point=jnp.asarray(rx_coords, dtype=float))
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
             Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
             Wall(points=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
@@ -486,7 +483,7 @@ class Scene(Plottable, eqx.Module):
         *,
         tx_coords: Array = jnp.array([0.2, 0.5]),
         rx_coords: Array = jnp.array([0.8, 0.5]),
-    ) -> Scene:
+    ) -> "Scene":
         """
         Instantiates a square scene with one main room, and vertical wall in
         the middle.
@@ -530,7 +527,7 @@ class Scene(Plottable, eqx.Module):
         return scene
 
     @classmethod
-    def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> Scene:
+    def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> "Scene":
         """
         Instantiates a square scene with one main room, and one square
         obstacle in the center.
@@ -572,7 +569,7 @@ class Scene(Plottable, eqx.Module):
         x0, x1 = 0.5 - hl, 0.5 + hl
         y0, y1 = 0.5 - hl, 0.5 + hl
 
-        walls: List[Object] = [
+        walls: list[Object] = [
             Wall(points=jnp.array([[x0, y0], [x1, y0]])),
             Wall(points=jnp.array([[x1, y0], [x1, y1]])),
             Wall(points=jnp.array([[x1, y1], [x0, y1]])),
@@ -589,16 +586,16 @@ class Scene(Plottable, eqx.Module):
         *args: Any,
         transmitters: bool = True,
         transmitters_args: Sequence = (),
-        transmitters_kwargs: Dict[str, Any] = {},
+        transmitters_kwargs: Optional[dict[str, Any]] = None,
         objects: bool = True,
         objects_args: Sequence = (),
-        objects_kwargs: Dict[str, Any] = {},
+        objects_kwargs: Optional[dict[str, Any]] = None,
         receivers: bool = True,
         receivers_args: Sequence = (),
-        receivers_kwargs: Dict[str, Any] = {},
+        receivers_kwargs: Optional[dict[str, Any]] = None,
         annotate: bool = True,
         **kwargs: Any,
-    ) -> List[Artist]:
+    ) -> list[Artist]:
         """
         :param transmitters:
             If set, includes transmitters in the plot.
@@ -623,6 +620,12 @@ class Scene(Plottable, eqx.Module):
             and append the corresponding artists
             to the returned list.
         """
+        if receivers_kwargs is None:
+            receivers_kwargs = {}
+        if objects_kwargs is None:
+            objects_kwargs = {}
+        if transmitters_kwargs is None:
+            transmitters_kwargs = {}
         transmitters_kwargs.setdefault("color", "blue")
         receivers_kwargs.setdefault("color", "green")
 
@@ -705,7 +708,7 @@ class Scene(Plottable, eqx.Module):
 
     def all_transmitter_receiver_pairs(
         self,
-    ) -> Iterator[Tuple[Tuple[str, Point], Tuple[str, Point]]]:
+    ) -> Iterator[tuple[tuple[str, Point], tuple[str, Point]]]:
         """
         Returns all possible pairs of (transmitter, receiver) in the scene.
 
@@ -723,7 +726,7 @@ class Scene(Plottable, eqx.Module):
     @partial(jax.jit, static_argnames=["min_order", "max_order"])
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
-    ) -> List[Array]:
+    ) -> list[Array]:
         """
         Returns all path candidates, from any of the :attr:`transmitters` to
         any of the :attr:`receivers`, as a list of array of indices.
@@ -747,7 +750,7 @@ class Scene(Plottable, eqx.Module):
             ).T
         ]
 
-    def get_interacting_objects(self, path_candidate: Array) -> List[Interactable]:
+    def get_interacting_objects(self, path_candidate: Array) -> list[Interactable]:
         """
         Returns the list of interacting objects from a path candidate.
 
@@ -762,11 +765,11 @@ class Scene(Plottable, eqx.Module):
 
     def all_paths(
         self,
-        path_cls: Type[Path] = ImagePath,
+        path_cls: type[Path] = ImagePath,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Array, Path, List[int]]]:
+    ) -> Iterator[tuple[str, str, Array, Path, list[int]]]:
         """
         Returns all paths from any of the :attr:`transmitters` to any of the
         :attr:`receivers`, using the given method, see,
@@ -813,7 +816,7 @@ class Scene(Plottable, eqx.Module):
         self,
         approx=None,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Path, List[int]]]:
+    ) -> Iterator[tuple[str, str, Path, list[int]]]:
         """
         Returns only valid paths as returned by :meth:`all_paths`, by
         filtering out paths using :func:`is_true<differt2d.logic.is_true>`.
@@ -832,11 +835,11 @@ class Scene(Plottable, eqx.Module):
     def accumulate_over_paths(
         self,
         fun: PathFun,
-        fun_args: Tuple = (),
+        fun_args: tuple = (),
         fun_kwargs: Mapping = {},
         reduce_all: bool = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[str, str, Array]]:
+    ) -> Iterator[tuple[str, str, Array]]:
         """
         Repeatedly calls ``fun`` on all paths between each pair of
         (transmitter, receiver) in the scene, and accumulates the results.
@@ -860,7 +863,7 @@ class Scene(Plottable, eqx.Module):
             sum of accumulated results if :python:`reduce_all=True`.
         """
 
-        def results() -> Iterator[Tuple[str, str, Array]]:
+        def results() -> Iterator[tuple[str, str, Array]]:
             for (tx_key, rx_key), paths_group in groupby(
                 self.all_paths(**kwargs), lambda key: key[:2]
             ):
@@ -891,19 +894,19 @@ class Scene(Plottable, eqx.Module):
         X: Array,
         Y: Array,
         fun: PathFun,
-        fun_args: Tuple = (),
+        fun_args: tuple = (),
         fun_kwargs: Mapping = {},
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
-        path_cls: Type[Path] = ImagePath,
-        transmitter_cls: Type[Point] = Point,
+        path_cls: type[Path] = ImagePath,
+        transmitter_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
     ) -> Union[
-        Iterator[Tuple[str, Union[Array, Tuple[Array, Array]]]],
-        Union[Array, Tuple[Array, Array]],
+        Iterator[tuple[str, Union[Array, tuple[Array, Array]]]],
+        Union[Array, tuple[Array, Array]],
     ]:
         """
         Repeatedly calls ``fun`` on all paths between the receivers in the
@@ -1011,21 +1014,21 @@ class Scene(Plottable, eqx.Module):
 
     def accumulate_on_receivers_grid_over_paths(
         self,
-        X: Float[Array, "m n"],  # noqa: N803
-        Y: Float[Array, "m n"],  # noqa: N803
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
         fun: PathFun,
         args: tuple = (),
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
-        path_cls: Type[Path] = ImagePath,
-        receiver_cls: Type[Point] = Point,
+        path_cls: type[Path] = ImagePath,
+        receiver_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
         **kwargs,
     ) -> Union[
-        Iterator[Tuple[str, Union[Array, Tuple[Array, Array]]]],
-        Union[Array, Tuple[Array, Array]],
+        Iterator[tuple[str, Union[Array, tuple[Array, Array]]]],
+        Union[Array, tuple[Array, Array]],
     ]:
         """
         Repeatedly calls ``fun`` on all paths between the transmitters in

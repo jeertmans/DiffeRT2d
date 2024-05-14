@@ -141,26 +141,25 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-line-length = 88
 target-version = "py39"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 extend-ignore = [
-  "D100",
-  "D101",
-  "D102",
-  "D103",
-  "D104",
-  "D105",
-  "D106",
-  "D107",
-  "D203",
-  "D205",
-  "D212",
-  "E501",
+  "D203",  # no-blank-line-before-class
+  "D212",  # multi-line-summary-second-line
+  "D401",  # first-line-imperative-mood
+  "D407",  # Missing dashed underline after section
+  "F722",  # Syntax error in forward annotation
+  "N802",  # lowercase function name
 ]
-extend-select = ["B", "C90", "D", "I", "N", "RUF", "UP", "T"]
-isort = {known-first-party = ["differt2d", "tests"]}
+extend-select = ["B", "C90", "D", "I", "RUF", "UP", "T"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/{docs,examples,paper,tests}/*" = ["D"]
+"benchmark.py" = ["D"]
 
 [tool.rye]
 dev-dependencies = [

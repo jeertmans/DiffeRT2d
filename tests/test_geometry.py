@@ -1,5 +1,3 @@
-from typing import Type
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -90,7 +88,7 @@ def test_stack_and_unstack_leaves(key: Array):
 
 def test_stack_and_unstack_different_pytrees(key: Array):
     scene = Scene.random_uniform_scene(key, n_walls=2)
-    walls: List[Wall] = scene.objects  # type: ignore[assignment]
+    walls: list[Wall] = scene.objects  # type: ignore[assignment]
     walls[0] = RIS(points=walls[0].points)
 
     assert all(isinstance(wall, Wall) for wall in walls)
@@ -309,7 +307,7 @@ class TestPath:
         chex.assert_trees_all_close(path.length(), 2.0 * jnp.sqrt(2.0))
 
     @path_cls
-    def test_from_tx_objects_rx_no_object(self, path_cls: Type[Path]):
+    def test_from_tx_objects_rx_no_object(self, path_cls: type[Path]):
         tx = Point(point=jnp.array([0.0, 1.0]))
         rx = Point(point=jnp.array([2.0, 1.0]))
         path = path_cls.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[])
@@ -369,7 +367,7 @@ class TestPath:
 
     @approx
     @path_cls
-    def test_is_valid(self, approx: bool, path_cls: Type[Path]):
+    def test_is_valid(self, approx: bool, path_cls: type[Path]):
         with enable_approx(approx), disable_jit():
             scene = Scene.square_scene()
             path = path_cls.from_tx_objects_rx(
