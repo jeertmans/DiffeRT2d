@@ -81,6 +81,20 @@ class Scene(Plottable, eqx.Module):
             transmitters=self.transmitters, receivers=receivers, objects=self.objects
         )
 
+    @jaxtyped(typechecker=typechecker)
+    def with_objects(self, *objects: Object) -> "Scene":
+        """
+        Returns a copy of this scene, with the given objects.
+
+        :param objects: A sequence of objects.
+        :return: The new scene.
+        """
+        return Scene(
+            transmitters=self.transmitters,
+            receivers=self.receivers,
+            objects=list(objects),
+        )
+
     @classmethod
     @jaxtyped(typechecker=typechecker)
     def from_walls_array(cls, walls: Float[Array, "num_walls 2 2"]) -> "Scene":
