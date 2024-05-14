@@ -55,7 +55,6 @@ jobs:
     - name: Configure Rye
       run: |
         rye config --set-bool behavior.use-uv=true
-        rye pin ${{ matrix.pyversion }}
 
     - name: Install Differt2D
       run: rye sync
