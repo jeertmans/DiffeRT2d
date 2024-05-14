@@ -277,7 +277,7 @@ class Ray(Plottable, eqx.Module):
 
     """
 
-    points: Float[Array, "2 2"] = eqx.field(convert=jnp.asarray)
+    points: Float[Array, "2 2"] = eqx.field(converter=jnp.asarray)
     """Ray points (origin, dest)."""
 
     @partial(jax.jit, inline=True)
@@ -723,7 +723,6 @@ class Path(Plottable, eqx.Module):
         return intersects
 
     @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
-    #@eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def is_valid(
         self,
