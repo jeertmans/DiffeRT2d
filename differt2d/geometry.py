@@ -830,7 +830,7 @@ class ImagePath(Path, eqx.Module):
     """A path object that was obtained with the Image method."""
 
     @classmethod
-    @eqx.filter_jit
+    @partial(jax.jit, static_argnames=("cls",))
     @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,
@@ -916,7 +916,7 @@ class FermatPath(Path, eqx.Module):
     """A path object that was obtained with the Fermat's Principle Tracing method."""
 
     @classmethod
-    @eqx.filter_jit
+    @partial(jax.jit, static_argnames=("cls", "steps", "many", "optimizer"))
     @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,
@@ -1006,7 +1006,7 @@ class MinPath(Path, eqx.Module):
     """A path object that was obtained with the Min-Path-Tracing method."""
 
     @classmethod
-    @eqx.filter_jit
+    @partial(jax.jit, static_argnames=("cls", "steps", "many", "optimizer"))
     @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,

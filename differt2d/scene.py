@@ -721,7 +721,7 @@ class Scene(Plottable, eqx.Module):
         """
         return product(self.transmitters.items(), self.receivers.items())
 
-    @partial(jax.jit, static_argnames=["min_order", "max_order"])
+    @partial(jax.jit, static_argnames=("min_order", "max_order"))
     def all_path_candidates(
         self, min_order: int = 0, max_order: int = 1
     ) -> list[UInt[Array, "num_path_candidates order"]]:

@@ -22,7 +22,6 @@ Examples
 >>> chex.assert_trees_all_close(x, -1.5, rtol=1e-2)
 >>> chex.assert_trees_all_close(y, +0.0, atol=1e-3)
 
-
 """
 
 import sys
@@ -36,7 +35,7 @@ from jaxtyping import Array, Float, PRNGKeyArray, jaxtyped
 
 if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
-else:
+else:  # pragma: no cover
     from typing_extensions import TypeVarTuple, Unpack
 
 Ts = TypeVarTuple("Ts")
