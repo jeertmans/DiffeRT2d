@@ -57,6 +57,45 @@ class Scene(Plottable, eqx.Module):
     objects: list[Object]
     """The list of objects in the scene."""
 
+    @jaxtyped(typechecker=typechecker)
+    def with_transmitters(self, **transmitters: Point) -> "Scene":
+        """
+        Returns a copy of this scene, with the given transmitters.
+
+        :param transmitters: A mapping a transmitter names and points.
+        :return: The new scene.
+        """
+        return Scene(
+            transmitters=transmitters, receivers=self.receivers, objects=self.objects
+        )
+
+    @jaxtyped(typechecker=typechecker)
+    def with_receivers(self, **receivers: Point) -> "Scene":
+        """
+        Returns a copy of this scene, with the given receivers.
+
+        :param receivers: A mapping a receiver names and points.
+        :return: The new scene.
+        """
+        return Scene(
+            transmitters=self.transmitters, receivers=receivers, objects=self.objects
+        )
+
+    @classmethod
+    @jaxtyped(typechecker=typechecker)
+    def from_walls_array(cls, walls: Float[Array, "num_walls 2 2"]) -> "Scene":
+        """
+        Creates an empty scene from an array of walls.
+
+        :param walls: An array of wall coordinates.
+        :return: The new scene.
+        """
+        return cls(
+            transmitters={},
+            receivers={},
+            objects=[Wall(points=points) for points in walls],
+        )
+
     @singledispatchmethod
     @classmethod
     def from_geojson(
