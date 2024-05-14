@@ -126,11 +126,11 @@ def segments_intersect(
     >>> P2 = jnp.array([+1.0, +0.0])
     >>> P3 = jnp.array([+0.5, -1.0])
     >>> P4 = jnp.array([+0.5, +1.0])
-    >>> segments_intersect(P1, P2, P3, P4)
+    >>> segments_intersect(P1, P2, P3, P4, approx=True)
     Array(1., dtype=float32)
     >>> segments_intersect(P1, P2, P3, P4, approx=False)
     Array(True, dtype=bool)
-    >>> segments_intersect(P1, P2, P3, P4, function=sigmoid)
+    >>> segments_intersect(P1, P2, P3, P4, approx=True, function=sigmoid)
     Array(1., dtype=float32)
 
 
