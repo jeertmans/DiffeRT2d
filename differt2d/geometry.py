@@ -569,7 +569,7 @@ class Path(Plottable, eqx.Module):
     points: Array
     """Array of cartesian coordinates."""
 
-    loss: Float[Array, " "] = jnp.array(0.0)
+    loss: Float[Array, " "] = eqx.field(default_factory=lambda: jnp.array(0.0))
     """The loss value for the given path."""
 
     @classmethod
