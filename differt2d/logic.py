@@ -49,7 +49,8 @@ from typing import Any, Callable, Optional, Union
 
 import jax
 import jax.numpy as jnp
-from jaxtyping import Array, Bool, Float
+from beartype import beartype as typechecker
+from jaxtyping import Array, Bool, Float, jaxtyped
 
 from .defaults import DEFAULT_ALPHA
 
@@ -91,8 +92,7 @@ def set_approx(enable: bool):
 @contextmanager
 def enable_approx(enable: bool = True):
     """
-    Context manager for enabling or disabling approximation of true/false
-    values with continuous numbers from 0 (false) to 1 (true).
+    Context manager for enabling or disabling approximation of true/false values with continuous numbers from 0 (false) to 1 (true).
 
     By default, approximation is enabled.
 
@@ -140,7 +140,7 @@ def enable_approx(enable: bool = True):
 
         Calling already-jitted functions after mutating ``ENABLE_APPROX``
         will not produce any visible change. This is because
-        ``differt2d.logic.ENABLE_APPROX`` is evaluated once, at compilation.
+        :py:data:`ENABLE_APPROX` is evaluated once, at compilation.
 
         For example:
 
@@ -197,8 +197,7 @@ def enable_approx(enable: bool = True):
 @contextmanager
 def disable_approx(disable: bool = True):  # pragma: no cover
     """
-    Context manager for disable or enabling approximation of true/false
-    values with continuous numbers from 0 (false) to 1 (true).
+    Context manager for disable or enabling approximation of true/false values with continuous numbers from 0 (false) to 1 (true).
 
     This function is an alias to :python:`enable_approx(not disable)`.
     For more details, refer to :py:func:`enable_approx`.
@@ -207,15 +206,18 @@ def disable_approx(disable: bool = True):  # pragma: no cover
 
     .. note::
 
-        Contrary to :py:func:`enable_approx`, there is no ``JAX_DISABLE_APPROX``
-        environ variable, nor ``jax.config.jax_disable_approx`` config variable.
+        Contrary to :py:func:`enable_approx`, there is no ``DISABLE_APPROX``
+        environ variable, nor ``differt2d.logic.DISABLE_APPROX`` config variable.
     """
     with enable_approx(not disable):
         yield
 
 
 @partial(jax.jit, inline=True)
-def sigmoid(x: Float[Array, " *batch"], alpha: float) -> Float[Array, " *batch"]:
+@jaxtyped(typechecker=typechecker)
+def sigmoid(
+    x: Union[float, Float[Array, " *batch"]], alpha: Union[float, Float[Array, " "]]
+) -> Float[Array, " *batch"]:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -234,7 +236,10 @@ def sigmoid(x: Float[Array, " *batch"], alpha: float) -> Float[Array, " *batch"]
 
 
 @partial(jax.jit, inline=True)
-def hard_sigmoid(x: Float[Array, " *batch"], alpha: float) -> Float[Array, " *batch"]:
+@jaxtyped(typechecker=typechecker)
+def hard_sigmoid(
+    x: Union[float, Float[Array, " *batch"]], alpha: Union[float, Float[Array, " "]]
+) -> Float[Array, " *batch"]:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -252,17 +257,18 @@ def hard_sigmoid(x: Float[Array, " *batch"], alpha: float) -> Float[Array, " *ba
     return jax.nn.hard_sigmoid(alpha * x)
 
 
-@partial(jax.jit, inline=True, static_argnames=["function"])
+@partial(jax.jit, inline=True, static_argnames=("function",))
+@jaxtyped(typechecker=None)
 def activation(
-    x: Float[Array, " *batch"],
-    alpha: float = DEFAULT_ALPHA,
+    x: Union[float, Float[Array, " *batch"]],
+    alpha: Union[float, Float[Array, " "]] = DEFAULT_ALPHA,
     function: Callable[
-        [Float[Array, " *batch"], float], Float[Array, " *batch"]
+        [Union[float, Float[Array, " *batch"]], Union[float, Float[Array, " "]]],
+        Float[Array, " *batch"],
     ] = hard_sigmoid,
 ) -> Float[Array, " *batch"]:
     r"""
-    Element-wise function for approximating a discrete transition between 0
-    and 1, with a smoothed transition centered at :python:`x = 0.0`.
+    Element-wise function for approximating a discrete transition between 0 and 1, with a smoothed transition centered at :python:`x = 0.0`.
 
     Depending on the ``function`` argument, the activation function has the
     different definition.
@@ -308,10 +314,11 @@ def activation(
     return function(x, alpha)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx"])
+@partial(jax.jit, inline=True, static_argnames=("approx",))
+@jaxtyped(typechecker=typechecker)
 def logical_or(
-    x: Float[Array, " *batch"],
-    y: Float[Array, " *batch"],
+    x: Union[Truthy, float, bool],
+    y: Union[Truthy, float, bool],
     approx: Optional[bool] = None,
 ) -> Truthy:
     """
@@ -330,8 +337,13 @@ def logical_or(
     return jnp.maximum(x, y) if approx else jnp.logical_or(x, y)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx"])
-def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=("approx",))
+@jaxtyped(typechecker=typechecker)
+def logical_and(
+    x: Union[Truthy, float, bool],
+    y: Union[Truthy, float, bool],
+    approx: Optional[bool] = None,
+) -> Truthy:
     """
     Element-wise logical :python:`x and y`.
 
@@ -348,8 +360,9 @@ def logical_and(x: Array, y: Array, approx: Optional[bool] = None) -> Array:
     return jnp.minimum(x, y) if approx else jnp.logical_and(x, y)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx"])
-def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=("approx",))
+@jaxtyped(typechecker=typechecker)
+def logical_not(x: Union[Truthy, float, bool], approx: Optional[bool] = None) -> Truthy:
     """
     Element-wise logical :python:`not x`.
 
@@ -366,13 +379,14 @@ def logical_not(x: Array, approx: Optional[bool] = None) -> Array:
     return jnp.subtract(1.0, x) if approx else jnp.logical_not(x)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+@partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+@jaxtyped(typechecker=typechecker)
 def greater(
-    x: Array,
-    y: Array,
+    x: Union[float, Float[Array, " *batch"]],
+    y: Union[float, Float[Array, " *batch"]],
     approx: Optional[bool] = None,
     **kwargs: Any,
-) -> Array:
+) -> Truthy:
     """
     Element-wise logical :python:`x > y`.
 
@@ -392,10 +406,14 @@ def greater(
     return activation(jnp.subtract(x, y), **kwargs) if approx else jnp.greater(x, y)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+@partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+@jaxtyped(typechecker=typechecker)
 def greater_equal(
-    x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any
-) -> Array:
+    x: Union[float, Float[Array, " *batch"]],
+    y: Union[float, Float[Array, " *batch"]],
+    approx: Optional[bool] = None,
+    **kwargs: Any,
+) -> Truthy:
     """
     Element-wise logical :python:`x >= y`.
 
@@ -417,8 +435,14 @@ def greater_equal(
     )
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
-def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Array:
+@partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+@jaxtyped(typechecker=typechecker)
+def less(
+    x: Union[float, Float[Array, " *batch"]],
+    y: Union[float, Float[Array, " *batch"]],
+    approx: Optional[bool] = None,
+    **kwargs: Any,
+) -> Truthy:
     """
     Element-wise logical :python:`x < y`.
 
@@ -438,13 +462,14 @@ def less(x: Array, y: Array, approx: Optional[bool] = None, **kwargs: Any) -> Ar
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less(x, y)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx", "function"])
+@partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+@jaxtyped(typechecker=typechecker)
 def less_equal(
-    x: Array,
-    y: Array,
+    x: Union[float, Float[Array, " *batch"]],
+    y: Union[float, Float[Array, " *batch"]],
     approx: Optional[bool] = None,
     **kwargs: Any,
-) -> Array:
+) -> Truthy:
     """
     Element-wise logical :python:`x <= y`.
 
@@ -464,12 +489,13 @@ def less_equal(
     return activation(jnp.subtract(y, x), **kwargs) if approx else jnp.less_equal(x, y)
 
 
-@partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
+@partial(jax.jit, inline=True, static_argnames=("axis", "approx"))
+@jaxtyped(typechecker=typechecker)
 def logical_all(
-    *x: Array,
+    *x: Union[Truthy, float, bool],
     axis: Optional[Union[int, tuple[int, ...]]] = None,
     approx: Optional[bool] = None,
-) -> Array:
+) -> Truthy:
     """
     Returns whether all values in ``x`` are true.
 
@@ -488,12 +514,13 @@ def logical_all(
     return jnp.min(arr, axis=axis) if approx else jnp.all(arr, axis=axis)
 
 
-@partial(jax.jit, inline=True, static_argnames=["axis", "approx"])
+@partial(jax.jit, inline=True, static_argnames=("axis", "approx"))
+@jaxtyped(typechecker=typechecker)
 def logical_any(
-    *x: Array,
+    *x: Union[Truthy, float, bool],
     axis: Optional[Union[int, tuple[int, ...]]] = None,
     approx: Optional[bool] = None,
-) -> Array:
+) -> Truthy:
     """
     Returns whether any value in ``x`` is true.
 
@@ -512,8 +539,13 @@ def logical_any(
     return jnp.max(arr, axis=axis) if approx else jnp.any(arr, axis=axis)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx"])
-def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=("approx",))
+@jaxtyped(typechecker=typechecker)
+def is_true(
+    x: Union[Truthy, float, bool],
+    tol: Union[float, Float[Array, " "]] = 0.5,
+    approx: Optional[bool] = None,
+) -> Bool[Array, " *batch"]:
     """
     Element-wise check if a given truth value can be considered to be true.
 
@@ -531,8 +563,13 @@ def is_true(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
     return jnp.greater(x, 1.0 - tol) if approx else jnp.asarray(x)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx"])
-def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=("approx",))
+@jaxtyped(typechecker=typechecker)
+def is_false(
+    x: Union[Truthy, float, bool],
+    tol: Union[float, Float[Array, " "]] = 0.5,
+    approx: Optional[bool] = None,
+) -> Bool[Array, " *batch"]:
     """
     Element-wise check if a given truth value can be considered to be false.
 
@@ -550,8 +587,9 @@ def is_false(x: Array, tol: float = 0.5, approx: Optional[bool] = None) -> Array
     return jnp.less(x, tol) if approx else jnp.logical_not(x)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx"])
-def true_value(approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=False, static_argnames=("approx",))
+@jaxtyped(typechecker=typechecker)
+def true_value(approx: Optional[bool] = None) -> Truthy:
     """
     Returns a scalar true value.
 
@@ -565,8 +603,9 @@ def true_value(approx: Optional[bool] = None) -> Array:
     return jnp.array(1.0) if approx else jnp.array(True)
 
 
-@partial(jax.jit, inline=True, static_argnames=["approx"])
-def false_value(approx: Optional[bool] = None) -> Array:
+@partial(jax.jit, inline=True, static_argnames=("approx",))
+@jaxtyped(typechecker=typechecker)
+def false_value(approx: Optional[bool] = None) -> Truthy:
     """
     Returns a scalar false value.
 

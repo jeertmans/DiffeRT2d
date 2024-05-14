@@ -24,8 +24,7 @@ def received_power(
     height: float = DEFAULT_HEIGHT,
 ) -> Float[Array, " "]:
     """
-    Returns the received power for a given path between some transmitter and
-    some receiver.
+    Returns the received power for a given path between some transmitter and some receiver.
 
     Here, the power decreases with the square of the path length, and
     each interaction introduces some reflection coefficient.

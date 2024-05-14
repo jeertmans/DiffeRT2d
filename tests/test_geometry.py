@@ -2,8 +2,8 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from chex import Array
 from jax import disable_jit
+from jaxtyping import PRNGKeyArray
 
 from differt2d.geometry import (
     RIS,
@@ -70,7 +70,7 @@ def steps():
     return 100
 
 
-def test_stack_and_unstack_leaves(key: Array):
+def test_stack_and_unstack_leaves(key: PRNGKeyArray):
     scene = Scene.random_uniform_scene(key, n_walls=10)
     walls = scene.objects
 
@@ -86,7 +86,7 @@ def test_stack_and_unstack_leaves(key: Array):
         chex.assert_trees_all_equal(w1, w2)
 
 
-def test_stack_and_unstack_different_pytrees(key: Array):
+def test_stack_and_unstack_different_pytrees(key: PRNGKeyArray):
     scene = Scene.random_uniform_scene(key, n_walls=2)
     walls: list[Wall] = scene.objects  # type: ignore[assignment]
     walls[0] = RIS(points=walls[0].points)
@@ -210,42 +210,42 @@ class TestWall:
     def test_parametric_to_cartesian(self):
         expected = jnp.array([2.0, 1.0])
         got = Wall(points=jnp.array([[0.0, 0.0], [4.0, 2.0]])).parametric_to_cartesian(
-            0.5
+            jnp.array([0.5])
         )
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2,))
 
     def test_cartesian_to_parametric(self):
         wall = Wall(points=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
-        expected = jnp.array(0.5)
+        expected = jnp.array([0.5])
         got = wall.cartesian_to_parametric(jnp.array([2.0, 1.0]))
         chex.assert_trees_all_equal(expected, got)
-        chex.assert_shape(got, ())
-        expected = jnp.array(0.0)
+        chex.assert_shape(got, (1,))
+        expected = jnp.array([0.0])
         got = wall.cartesian_to_parametric(jnp.array([0.0, 0.0]))
         chex.assert_trees_all_equal(expected, got)
-        chex.assert_shape(got, ())
-        expected = jnp.array(1.0)
+        chex.assert_shape(got, (1,))
+        expected = jnp.array([1.0])
         got = wall.cartesian_to_parametric(jnp.array([4.0, 2.0]))
         chex.assert_trees_all_equal(expected, got)
-        chex.assert_shape(got, ())
-        expected = jnp.array(2.0)
+        chex.assert_shape(got, (1,))
+        expected = jnp.array([2.0])
         got = wall.cartesian_to_parametric(jnp.array([8.0, 4.0]))
         chex.assert_trees_all_equal(expected, got)
-        chex.assert_shape(got, ())
-        expected = jnp.array(-1.0)
+        chex.assert_shape(got, (1,))
+        expected = jnp.array([-1.0])
         got = wall.cartesian_to_parametric(jnp.array([-4.0, -2.0]))
         chex.assert_trees_all_equal(expected, got)
-        chex.assert_shape(got, ())
+        chex.assert_shape(got, (1,))
 
     @approx
     def test_contains_parametric(self, approx: bool):
         wall = Wall(points=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
         with enable_approx(approx), disable_jit():
-            got = wall.contains_parametric(0.5)
+            got = wall.contains_parametric(jnp.array([0.5]))
             assert is_true(got)
             chex.assert_shape(got, ())
-            got = wall.contains_parametric(2.0)
+            got = wall.contains_parametric(jnp.array([2.0]))
             assert is_false(got)
             chex.assert_shape(got, ())
 
@@ -313,14 +313,14 @@ class TestPath:
         path = path_cls.from_tx_objects_rx(tx=tx.point, rx=rx.point, objects=[])
         chex.assert_trees_all_close(path.length(), jnp.array(2.0))
 
-    def test_path_length(self, key: Array):
+    def test_path_length(self, key: PRNGKeyArray):
         points = jax.random.uniform(key, (200, 2))
         expected = path_length(points)
         got = Path(points=points).length()
         chex.assert_trees_all_equal(expected, got)
 
     @approx
-    def test_on_objects(self, approx: bool, key: Array):
+    def test_on_objects(self, approx: bool, key: PRNGKeyArray):
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=5)
             path = Path.from_tx_objects_rx(
@@ -339,7 +339,7 @@ class TestPath:
             chex.assert_trees_all_close(expected, got, atol=1e-8)
 
     @approx
-    def test_intersects_with_objects(self, approx: bool, key: Array):
+    def test_intersects_with_objects(self, approx: bool, key: PRNGKeyArray):
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key, n_walls=10)
             path = Path.from_tx_objects_rx(
@@ -347,7 +347,7 @@ class TestPath:
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx_0"].point,
             )
-            path_candidate = jnp.arange(len(scene.objects), dtype=int)
+            path_candidate = jnp.arange(len(scene.objects), dtype=jnp.uint32)
             expected = true_value()
             # Very high probability that random paths intersect
             # at least one object in the scene.
@@ -360,7 +360,7 @@ class TestPath:
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
-            path_candidate = jnp.arange(len(scene.objects), dtype=int)
+            path_candidate = jnp.arange(len(scene.objects), dtype=jnp.uint32)
             expected = false_value()
             got = path.intersects_with_objects(scene.objects, path_candidate)
             chex.assert_trees_all_close(expected, got, atol=1e-8)
@@ -375,7 +375,7 @@ class TestPath:
                 scene.objects,  # type: ignore[arg-type]
                 scene.receivers["rx"].point,
             )
-            path_candidate = jnp.arange(len(scene.objects), dtype=int)
+            path_candidate = jnp.arange(len(scene.objects), dtype=jnp.uint32)
             interacting_objects = scene.get_interacting_objects(path_candidate)
             got = path.is_valid(scene.objects, path_candidate, interacting_objects)
             assert is_true(got)

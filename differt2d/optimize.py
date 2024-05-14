@@ -32,7 +32,7 @@ from typing import Any, Callable, Optional
 import jax
 import jax.numpy as jnp
 import optax
-from jaxtyping import Array, Float, jaxtyped
+from jaxtyping import Array, Float, PRNGKeyArray, jaxtyped
 
 if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
@@ -50,7 +50,7 @@ def minimize(
     args: tuple[Unpack[Ts]] = (),
     steps: int = 100,
     optimizer: Optional[optax.GradientTransformation] = None,
-) -> tuple[Float[Array, "*batch n"], Float[Array, " *batch"]]:
+) -> tuple[Float[Array, " n"], Float[Array, " "]]:
     """
     Minimizes a scalar function of one or more variables.
 
@@ -98,15 +98,16 @@ def minimize(
     return x, losses[-1]
 
 
+@partial(jax.jit, static_argnames=("fun", "n", "steps", "optimizer"))
+@jaxtyped(typechecker=None)
 def minimize_random_uniform(
-    fun: Callable[[Float[Array, " n"], *Ts], Float[Array, " "]],
-    key: Array,
+    fun: Callable[[Float[Array, " {n}"], *Ts], Float[Array, " "]],
+    key: PRNGKeyArray,
     n: int,
     **kwargs: Any,
-) -> tuple[Float[Array, "*batch n"], Float[Array, " *batch"]]:
+) -> tuple[Float[Array, " {n}"], Float[Array, " "]]:
     """
-    Minimizes a scalar function of one or more variables, with initial guess
-    drawn randomly from a uniform distribution.
+    Minimizes a scalar function of one or more variables, with initial guess drawn randomly from a uniform distribution.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guess.
@@ -133,17 +134,17 @@ def minimize_random_uniform(
     return minimize(fun=fun, x0=x0, **kwargs)
 
 
+@partial(jax.jit, static_argnames=("fun", "n", "many", "steps", "optimizer"))
+@jaxtyped(typechecker=None)
 def minimize_many_random_uniform(
-    fun: Callable[[Float[Array, " n"], *Ts], Float[Array, " "]],
-    key: Array,
+    fun: Callable[[Float[Array, " {n}"], *Ts], Float[Array, " "]],
+    key: PRNGKeyArray,
     n: int,
     many: int = 10,
     **kwargs: Any,
-) -> tuple[Float[Array, "*batch n"], Float[Array, " *batch"]]:
+) -> tuple[Float[Array, " {n}"], Float[Array, " "]]:
     """
-    Minimizes many times a scalar function of one or more variables, with
-    initial guess drawn randomly from a uniform distribution, and returns the
-    best minimum out of the :code:`many` trials.
+    Minimizes many times a scalar function of one or more variables, with initial guess drawn randomly from a uniform distribution, and returns the best minimum out of the :code:`many` trials.
 
     :param fun: The objective function to be minimized.
     :param key: The random key used to generate the initial guesses.

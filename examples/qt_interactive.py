@@ -382,7 +382,7 @@ class PlotWidget(QWidget):
             self.picked = None
         else:
             artist = event.artist
-            coords = jnp.array(artist.get_xydata())
+            coords = jnp.array(artist.get_xydata()).reshape(-1)
             tx, dist_tx = self.scene.get_closest_transmitter(coords)
             rx, dist_rx = self.scene.get_closest_receiver(coords)
 

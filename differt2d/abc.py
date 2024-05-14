@@ -8,6 +8,7 @@ __all__ = (
 )
 
 from abc import ABC, abstractmethod
+from collections.abc import MutableSequence
 from typing import Any, Literal, Optional
 
 import equinox as eqx
@@ -25,10 +26,10 @@ Loc = Literal["N", "E", "S", "W", "C", "NE", "NW", "SE", "SW"]
 
 
 class Plottable(ABC):
-    """Protocol for any object that can be plotted using matplotlib."""
+    """Abstract class for any object that can be plotted using matplotlib."""
 
     @abstractmethod
-    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> list[Artist]:
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> MutableSequence[Artist]:
         """
         Plot this object on the given axes and returns the results.
 
@@ -118,14 +119,13 @@ class Plottable(ABC):
 
 
 class Interactable(ABC):
-    """Protocol for any object that a ray path can interact with."""
+    """Abstract class for any object that a ray path can interact with."""
 
     @staticmethod
     @abstractmethod
     def parameters_count() -> int:
         """
-        Returns how many parameters (s, t, ...) are needed to define an
-        interaction point on this object.
+        Returns how many parameters (s, t, ...) are needed to define an interaction point on this object.
 
         Typically, this equals to one for 2D surfaces.
 
@@ -206,7 +206,9 @@ class Interactable(ABC):
     @abstractmethod
     def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:
         """
-        Evaluates the given interaction triplet, such that:
+        Evaluates the given interaction triplet.
+
+        Evaluation is performed such that:
 
         * incident vector is defined as :code:`v_in = b - a`;
         * bouncing vector is defined as :code:`v_out = c - b`;
@@ -225,12 +227,11 @@ class Interactable(ABC):
 
 class Object(Plottable, Interactable):
     """
-    Protocol for any object implementing both :class:`Plottable` and
-    :class:`Interactable`.
+    Abstract class for any object implementing both :class:`Plottable` and :class:`Interactable`.
 
     This type is actually needed to please Python type checkers, since
     using :python:`typing.Union[Plottable, Interactable]` is understood
-    as implementing one of either protocols, not both.
+    as implementing one of either classes, not both.
     """
 
     pass

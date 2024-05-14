@@ -3,6 +3,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 from jax import disable_jit
+from jaxtyping import TypeCheckError
 
 import differt2d.logic
 from differt2d.logic import (
@@ -84,27 +85,20 @@ def test_enable_approx():
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
-    with enable_approx(False), disable_jit():
-        expected = jnp.array(1.0)
-        got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(0.5)
-        got = is_true(0.5)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(0.0)
-        got = is_true(0.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(True)
-        got = is_true(True)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(False)
-        got = is_true(False)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    for value in [0.0, 0.5, 1.0]:
+        with (
+            enable_approx(False),
+            disable_jit(),
+            pytest.raises(TypeCheckError, match="Expected type: Bool"),
+        ):
+            got = is_true(value)
+
+    for value in [True, False]:
+        with enable_approx(False), disable_jit():
+            expected = jnp.array(value)
+            got = is_true(value)
+            chex.assert_trees_all_equal(expected, got)
+            chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
 
 def test_enable_approx_clear_cache():
@@ -116,11 +110,11 @@ def test_enable_approx_clear_cache():
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
     is_true.clear_cache()
-    with enable_approx(False):
-        expected = jnp.array(1.0)
+    with (
+        enable_approx(False),
+        pytest.raises(TypeCheckError, match="Expected type: Bool"),
+    ):
         got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
     is_true.clear_cache()
     with enable_approx(False):
@@ -157,27 +151,20 @@ def test_disable_approx():
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
-    with disable_approx(True), disable_jit():
-        expected = jnp.array(1.0)
-        got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(0.5)
-        got = is_true(0.5)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(0.0)
-        got = is_true(0.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(True)
-        got = is_true(True)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
-        expected = jnp.array(False)
-        got = is_true(False)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    for value in [0.0, 0.5, 1.0]:
+        with (
+            disable_approx(True),
+            disable_jit(),
+            pytest.raises(TypeCheckError, match="Expected type: Bool"),
+        ):
+            got = is_true(value)
+
+    for value in [True, False]:
+        with disable_approx(True), disable_jit():
+            expected = jnp.array(value)
+            got = is_true(value)
+            chex.assert_trees_all_equal(expected, got)
+            chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
 
 def test_disable_approx_clear_cache():
@@ -189,11 +176,11 @@ def test_disable_approx_clear_cache():
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
     is_true.clear_cache()
-    with disable_approx(True):
-        expected = jnp.array(1.0)
+    with (
+        disable_approx(True),
+        pytest.raises(TypeCheckError, match="Expected type: Bool"),
+    ):
         got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
     is_true.clear_cache()
     with disable_approx(True):
@@ -209,10 +196,8 @@ def test_enable_approx_with_keyword():
     chex.assert_trees_all_equal(expected, got)
     chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
-    expected = jnp.array(1.0)
-    got = is_true(1.0, approx=False)
-    chex.assert_trees_all_equal(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    with pytest.raises(TypeCheckError, match="Expected type: Bool"):
+        got = is_true(1.0, approx=False)
 
     expected = jnp.array(True)
     got = is_true(True, approx=False)
