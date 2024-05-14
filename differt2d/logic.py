@@ -1,22 +1,22 @@
 """
 A toolbox for logical operations.
 
-When approximation is enabled, a value close to 1 maps to :python:`True`,
-while a value close to 0 maps :python:`False`.
+When approximation is enabled, a value close to 1 maps to :py:data:`True`,
+while a value close to 0 maps :py:data:`False`.
 
 Otherwise, functions will call their JAX counterpart. E.g.,
 :py:func:`logical_or` calls :py:func:`jax.numpy.logical_or`
-when :code:`approx` is set to :python:`False`.
+when :code:`approx` is set to :py:data:`False`.
 
 .. note::
 
     Whenever a function takes an argument named ``approx``, it can take
     three different values:
 
-    1. :python:`None`: defaults to :py:data:`differt2d.logic.ENABLE_APPROX`,
+    1. :py:data:`None`: defaults to :py:data:`differt2d.logic.ENABLE_APPROX`,
        see :py:func:`enable_approx` for comments on that;
-    2. :python:`True`: forces to enable approximation;
-    3. or :python:`False`: forces to disable approximation.
+    2. :py:data:`True`: forces to enable approximation;
+    3. or :py:data:`False`: forces to disable approximation.
 """
 
 __all__ = (
@@ -103,7 +103,7 @@ def enable_approx(enable: bool = True):
     3. update the config with
        :py:func:`set_approx(False)`;
     4. or set, for specific logic functions only, the keyword argument
-       ``approx`` to :python:`False`.
+       ``approx`` to :py:data:`False`.
 
     :param enable: Whether to enable or not approximation.
 
@@ -554,7 +554,7 @@ def is_true(
 
     :param x: The input array.
     :param tol: The tolerance on how close it should be to 1.
-        Only used if :code:`approx` is set to :python:`True`.
+        Only used if :code:`approx` is set to :py:data:`True`.
     :param approx: Whether approximation is enabled or not.
     :return: True array if the value is considered to be true.
     """
@@ -578,7 +578,7 @@ def is_false(
 
     :param x: The input array.
     :param tol: The tolerance on how close it should be to 0.
-        Only used if :code:`approx` is set to :python:`True`.
+        Only used if :code:`approx` is set to :py:data:`True`.
     :param approx: Whether approximation is enabled or not.
     :return: True if the value is considered to be false.
     """
