@@ -13,15 +13,16 @@ jobs:
     - name: Setup Rye
       if: matrix.os != 'windows-latest'
       env:
+        RYE_TOOLCHAIN_VERSION: '3.11'
         RYE_INSTALL_OPTION: --yes
       run: |
         curl -sSf https://rye-up.com/get | bash
         echo "$HOME/.rye/shims" >> $GITHUB_PATH
 
     - name: Configure Rye
-      shell: bash
       run: |
         rye config --set-bool behavior.use-uv=true
+        rye pin '3.11'
 
     - name: Install Differt2D
       run: rye sync

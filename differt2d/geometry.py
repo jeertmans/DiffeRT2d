@@ -526,7 +526,7 @@ class RIS(Wall, eqx.Module):
     with respect to its normal, regardless of the incident vector.
     """
 
-    phi: Float[Array, " "] = jnp.array(jnp.pi / 4)
+    phi: Float[Array, " "] = eqx.field(default_factory=jnp.array(jnp.pi / 4))
     """The constant angle of reflection."""
 
     @jax.jit
@@ -664,7 +664,7 @@ class Path(Plottable, eqx.Module):
         return contains
 
     @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
-    @jaxtyped(typechecker=typechecker)
+    @jaxtyped(typechecker=None)
     def intersects_with_objects(
         self,
         objects: Sequence[Interactable],
@@ -689,7 +689,7 @@ class Path(Plottable, eqx.Module):
         :return: Whether this path intersects any of the objects, ().
         """
         interacting_object_indices = [-1] + [i for i in path_candidate] + [-1]
-        intersects = false_value(approx=approx)
+        intersects = false_value(approx=approx)  # TODO(fixme): wtf this is a NumPy array?
 
         for i in range(self.points.shape[0] - 1):
             ray_path = self.points[i : i + 2, :]
