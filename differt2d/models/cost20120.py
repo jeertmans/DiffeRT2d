@@ -6,50 +6,54 @@ import jax.numpy as jnp
 from beartype import beartype as typechecker
 from jaxtyping import Array, Float, PRNGKeyArray, jaxtyped
 
+from ..geometry import normalize
 
-class WallsEmbed(eqx.Module):
-    """A DeepSets model that extracts information about walls."""
 
+class DeepSets(eqx.Module):
+    """A MLP-based DeepSets model that returns a fixed sized vector from an arbitrary-sized sequence of fixed-sized objects."""
+
+    object_size: int
+    """The size of one object."""
+    output_size: int
+    """The size of the output vector."""
     phi: eqx.nn.Sequential
-    """The layer(s) applied to each wall in parallel."""
+    """The MLP applied to each object in parallel."""
     rho: eqx.nn.MLP
-    """The layer(s) applied to an permutation-invariant representation of all walls."""
+    """The MLP applied to an permutation-invariant representation (sum of phi's) of all objects."""
 
     def __init__(
         self,
+        object_size: int,
+        output_size: int,
+        phi_width_size: int = 500,
+        phi_depth: int = 3,
         intermediate_size: int = 500,
-        out_size: int = 100,
-        width_size: int = 500,
-        depth: int = 3,
+        rho_width_size: int = 500,
+        rho_depth: int = 3,
         *,
         key: PRNGKeyArray,
     ):
         key1, key2 = jax.random.split(key, 2)
-        self.phi = eqx.nn.Sequential(
-            [
-                eqx.nn.Lambda(jnp.ravel),
-                eqx.nn.MLP(
-                    in_size=4,
-                    out_size=intermediate_size,
-                    width_size=width_size,
-                    depth=depth,
-                    key=key1,
-                ),
-            ]
+        self.phi = eqx.nn.MLP(
+            in_size=object_size,
+            out_size=intermediate_size,
+            width_size=phi_width_size,
+            depth=phi_depth,
+            key=key1,
         )
         self.rho = eqx.nn.MLP(
             in_size=intermediate_size,
-            out_size=out_size,
-            width_size=width_size,
-            depth=depth,
+            out_size=output_size,
+            width_size=rho_width_size,
+            depth=rho_depth,
             key=key2,
         )
 
     @jax.jit
     @jaxtyped(typechecker=typechecker)
     def __call__(
-        self, walls: Float[Array, "num_walls 2 2"]
-    ) -> Float[Array, "{self.mpl_rho.out_size}"]:
+        self, walls: Float[Array, "num_objects {self.object_size}"]
+    ) -> Float[Array, "{self.output_size}"]:
         x = jax.vmap(self.phi)(walls)
         x = jnp.sum(x, axis=0)
         x = self.rho(x)
@@ -57,17 +61,26 @@ class WallsEmbed(eqx.Module):
         return x
 
 
+class LOL:
+    pass
+
+
 class PathGenerator(eqx.Module):
     """A recurrent model that returns a path of a given order."""
 
     order: int
-    cell: eqx.nn.GRUCell
-    state2xy: eqx.nn.MLP
+    """The path order."""
+    input_size: int
+    """The input size."""
+    cell: eqx.nn.LSTMCell
+    """The recurrent unit to generate subsequent paths."""
+    state_2_xy: eqx.nn.MLP
+    """The layer(s) that convert a (cell) state into xy-coordinates."""
 
     def __init__(
         self,
         order: int,
-        num_embeddings: int,
+        input_size: int,
         hidden_size: int = 10,
         width_size: int = 100,
         depth: int = 3,
@@ -77,11 +90,12 @@ class PathGenerator(eqx.Module):
         key1, key2 = jax.random.split(key, 2)
 
         self.order = order
+        self.input_size = input_size
         self.cell = eqx.nn.GRUCell(
-            input_size=num_embeddings, hidden_size=hidden_size, key=key1
+            input_size=input_size, hidden_size=hidden_size, key=key1
         )
-        self.state2xy = eqx.nn.MLP(
-            in_size=hidden_size,
+        self.state_2_xy = eqx.nn.MLP(
+            in_size=2 * hidden_size,
             out_size=2,
             width_size=width_size,
             depth=depth,
@@ -98,24 +112,29 @@ class PathGenerator(eqx.Module):
     ) -> Float[Array, "{self.order}+2 2"]:
         @jax.jit
         @jaxtyped(typechecker=typechecker)
-        def scan_fn(state: tuple[Float[Array, ""], ...], _: None):
-            state = self.cell(wall_embeddings)
-            xy = self.state2xy(state)
+        def scan_fn(
+            state: tuple[
+                Float[Array, "{self.cell.hidden_size}"],
+                Float[Array, "{self.cell.hidden_size}"],
+            ],
+            input_: Float[Array, "{self.input_size}"],
+        ):
+            state = self.cell(input_, state)
+            xy = self.state_2_xy(jnp.vstack(state))
             return self.cell(input_, state), xy
 
-        init_state = x
+        xs = jnp.tile(x, (self.order, 1))
+        init_state = (
+            jnp.zeros(self.cell.hidden_size),
+            jnp.zeros(self.cell.hidden_size),
+        )
 
-        def scan_fn(state: tuple[Float[Array, ""], ...], _: None = None):
-            state = self.cell(walls_embeddings)
-            xy = ...
-            self.cell(input_, state), state
-
-        _, path = jax.lax.scan(scan_fn, init_state, length=self.order)
+        _, path = jax.lax.scan(scan_fn, init_state, xs)
 
         return jnp.vstack((start, path, end))
 
 
-class EvaluatePath(eqx.Module):
+class PathEvaluator(eqx.Module):
     """A model that returns a probability that a path is valid."""
 
     order: int
@@ -147,7 +166,7 @@ class EvaluatePath(eqx.Module):
     def __call__(
         self,
         path: Float[Array, "{self.order}+2 2"],
-        scene_embeddings: Float[Array, " num_embeddings"],
+        scene_embeddings: Float[Array, "{self.num_embeddings}"],
     ) -> Float[Array, " "]:
         x = jnp.concatenate((jnp.ravel(path), scene_embeddings))
         x = self.mlp(x)
@@ -160,6 +179,9 @@ class Model(eqx.Module):
 
     # hyperparameters
     order: int
+    num_embeddings: int
+
+    # inference parameters
     num_paths: int
     threshold: float
     inference: bool
@@ -168,14 +190,15 @@ class Model(eqx.Module):
     walls_embed: WallsEmbed
     path_generator: PathGenerator
     path_evaluator: PathEvaluator
-    path_cell: eqx.nn.GRUCell
+    # path_cell: eqx.nn.GRUCell
 
-    @jax.jit
-    @jaxtyped(typechecker=typechecker)
     def __init__(
         self,
-        order: int,
-        num_paths: int,
+        # Hyperparameters
+        order: int = 1,
+        num_embeddings: int = 100,
+        # Inference parameters
+        num_paths: int = 100,
         threshold: float = 0.1,
         inference: bool = False,
         *,
@@ -187,18 +210,31 @@ class Model(eqx.Module):
         self.num_paths = num_paths
         self.threshold = threshold
         self.inference = inference
-        self.walls_embed = WallsEmbed(key=key1)
-        self.path_generator = PathGenerator(order=order, key=key2)
-        self.path_evaluator = PathEvaluator(order=order, key=key3)
-        self.path_cell = eqx.nn.GRUCell
+        self.walls_embed = WallsEmbed(num_embeddings=num_embeddings, key=key1)
+        self.path_generator = PathGenerator(
+            order=order, input_size=num_embeddings, key=key2
+        )
+        self.path_evaluator = PathEvaluator(
+            order=order, num_embeddings=num_embeddings, key=key3
+        )
+        # self.path_cell = eqx.nn.GRUCell(
 
+    @jax.jit
+    @jaxtyped(typechecker=typechecker)
     def __call__(
         self, x: Float[Array, "2+num_walls*2 2"]
     ) -> Float[Array, "num_paths {self.order}+2 2"]:
         # Processing input
+
+        # [2]
         tx = x[0, :]
         rx = x[1, :]
-        walls = x[2:, :].reshape(-1, 2, 2)  # [num_walls, 2, 2]
+
+        if self.order < 1:
+            return jnp.vstack((tx, rx))
+
+        # [num_walls, 2x2]
+        walls = x[2:, :].reshape(-1, 4)
         starts = walls[:, 0, :]
         ends = walls[:, 1, :]
 
@@ -207,9 +243,29 @@ class Model(eqx.Module):
         normals = directions.at[:, 0].set(directions[:, 1])
         normals = normals.at[:, 1].set(-directions[:, 0])
 
-        walls_embeddings = self.walls_emded(walls)
+        walls_embeddings = self.walls_embed(walls)
 
         # Generate paths
+
+        # Logic for one path:
+
+        state = ...
+
+        first_point_gen = ...
+
+        other_points_gen = ...
+
+        last_point_gen = ...
+
+        while True:
+            state = state_fun([state, tx, rx, walls_embeddings])
+
+            path = []
+
+            for _ in range(self.order):
+
+
+
 
         paths = []
 
@@ -235,30 +291,5 @@ class Model(eqx.Module):
                 paths = jnp.zeros((0, order + 2, 2))
 
             return paths, probibilities
-
-            while True:
-                pass
         else:
-            final_state, carries = jax.lax.scan(
-                scan_fn, init_state, length=self.num_paths
-            )
-
-            paths, probabilities = carries
-
-            return paths, probabilities
-
-        # question: how to properly handle a variable-sized output?
-        while True:
-            path = self.gen_path(state, tx, rx)
-
-            # question: how to combine both the path and the walls_embed
-            # i.e., the knowledge we have about the geometry
-            # do we just 'concat' the inputs altogether?
-            is_valid = self.val_path(path)
-
-            if is_valid < threshold:
-                break
-
-            paths.append(path)
-
-            # state = update_state(self)
+            raise NotImplementedError
