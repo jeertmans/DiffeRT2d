@@ -137,8 +137,11 @@ class PathGenerator(eqx.Module):
         scene_embeddings: Float[Array, "{self.num_embeddings}"],
     ) -> tuple[Float[Array, " "], Float[Array, "{self.order}+2 2"]]:
         # Generate new state with path starting at TX
+
+        #jax.debug.print("1. Initial state of path gen = {state}", state=init_state)
         init_state = self.cell(tx, init_state)
 
+        #jax.debug.print("2. Initial state of path gen = {state}", state=init_state)
         @jax.jit
         @jaxtyped(typechecker=typechecker)
         def scan_fn(
@@ -159,6 +162,8 @@ class PathGenerator(eqx.Module):
         final_state = self.cell(rx, final_state)
 
         p = self.state_2_probability(jnp.concatenate((*final_state, scene_embeddings)))
+
+        jax.debug.print("Path generated = {path}", path=path)
 
         return p, jnp.vstack((tx, path, rx))
 
@@ -188,10 +193,10 @@ class Model(eqx.Module):
         self,
         # Hyperparameters
         order: int = 1,
-        num_embeddings: int = 1000,
-        hidden_size: int = 1000,
+        num_embeddings: int = 100,
+        hidden_size: int = 5,
         # Training parameters
-        num_paths: int = 100,
+        num_paths: int = 5,
         # Inference parameters
         threshold: float = 0.5,
         inference: bool = False,
@@ -308,6 +313,7 @@ class Model(eqx.Module):
             ],
             tuple[Float[Array, " "], Float[Array, "order_plus_2 2"]],
         ]:
+            jax.debug.print("state = {state}", state=state)
             p, path = self.path_generator(state, tx, rx, scene, scene_embeddings)
             state = self.cell(jnp.ravel(path), state)
             return state, (p, path)
@@ -335,5 +341,7 @@ class Model(eqx.Module):
             _, (probabilities, paths) = jax.lax.scan(
                 scan_fn, init_state, length=self.num_paths
             )
+
+            # jax.debug.print("Probabilities = {p}", p=probabilities)
 
             return probabilities, paths
