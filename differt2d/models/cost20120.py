@@ -19,7 +19,18 @@ from ..geometry import normalize
 
 
 class DeepSets(eqx.Module):
-    """A MLP-based DeepSets model that returns a fixed sized vector from an arbitrary-sized sequence of fixed-sized objects."""
+    """
+    A MLP-based DeepSets model that returns a fixed sized vector from an arbitrary-sized sequence of fixed-sized objects.
+
+    :param object_size: The size of one object.
+    :param output_size: The size of the output vector.
+    :param phi_width_size: The width size of the phi (1st) MLP.
+    :param phi_depth: The depth of the phi (1st) MLP.
+    :param intermediate_size: The size of the vector between the two MLPs.
+    :param rho_width_size: The width size of the rho (2nd) MLP.
+    :param rho_depth: The depth of the rho (2nd) MLP.
+    :param key: The random key to be used.
+    """
 
     object_size: int
     """The size of one object."""
@@ -30,7 +41,7 @@ class DeepSets(eqx.Module):
     rho: eqx.nn.MLP
     """The MLP applied to an permutation-invariant representation (sum of phi's) of all objects."""
 
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         object_size: int,
         output_size: int,
@@ -62,9 +73,9 @@ class DeepSets(eqx.Module):
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
-    def __call__(
+    def __call__(  # noqa: D102
         self, walls: Float[Array, "num_objects {self.object_size}"]
-    ) -> Float[Array, "{self.output_size}"]:
+    ) -> Float[Array, " {self.output_size}"]:
         x = jax.vmap(self.phi)(walls)
         x = jnp.sum(x, axis=0)
         x = self.rho(x)
@@ -73,7 +84,16 @@ class DeepSets(eqx.Module):
 
 
 class PathGenerator(eqx.Module):
-    """A recurrent model that returns a path of a given order and a probability that this path is valid."""
+    """
+    A recurrent model that returns a path of a given order and a probability that this path is valid.
+
+    :param order: The order of the path.
+    :param num_embeddings: The number of embeddings to represent the scene.
+    :param hidden_size: The size of the hidden layers in the cells.
+    :param width_size: The width size of the MLPs.
+    :param depth: The depth of the MLPs.
+    :param key: The random key to be used.
+    """
 
     order: int
     """The path order."""
@@ -88,7 +108,7 @@ class PathGenerator(eqx.Module):
     state_2_probability: eqx.nn.MLP
     """The layer(s) that convert a (cell) state into probability that a path is valid."""
 
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         order: int,
         num_embeddings: int,
@@ -126,15 +146,15 @@ class PathGenerator(eqx.Module):
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
-    def __call__(
+    def __call__(  # noqa: D102
         self,
         init_state: tuple[
-            Float[Array, "{self.hidden_size}"], Float[Array, "{self.hidden_size}"]
+            Float[Array, " {self.hidden_size}"], Float[Array, " {self.hidden_size}"]
         ],
         tx: Float[Array, "2"],
         rx: Float[Array, "2"],
         scene: Float[Array, "num_walls 8"],
-        scene_embeddings: Float[Array, "{self.num_embeddings}"],
+        scene_embeddings: Float[Array, " {self.num_embeddings}"],
     ) -> tuple[Float[Array, " "], Float[Array, "{self.order}+2 2"]]:
         # Generate new state with path starting at TX
 
@@ -169,7 +189,17 @@ class PathGenerator(eqx.Module):
 
 
 class Model(eqx.Module):
-    """Global Deep-Learning model."""
+    """
+    Global Deep-Learning model.
+
+    :param order: The order of the path.
+    :param num_embeddings: The number of embeddings to represent the scene.
+    :param hidden_size: The size of the hidden layers.
+    :param num_paths: The number of paths to return during training.
+    :param inference: The threshold to use on paths during inference.
+    :param inference: Whether this model should be used for inference.
+    :param key: The random key to be used.
+    """
 
     # Hyperparameters
     order: int
@@ -189,7 +219,7 @@ class Model(eqx.Module):
     """Layer(s) that generate one path orde a specific order."""
     cell: eqx.nn.LSTMCell
 
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         # Hyperparameters
         order: int = 1,
@@ -249,11 +279,11 @@ class Model(eqx.Module):
 
     @eqx.filter_jit
     @jaxtyped(typechecker=None)
-    def __call__(
+    def __call__(  # noqa: D102
         self, xy: Float[Array, "2+num_walls*2 2"]
     ) -> Union[
         tuple[
-            Float[Array, "{self.num_paths}"],
+            Float[Array, " {self.num_paths}"],
             Float[Array, "{self.num_paths} {self.order}+2 2"],
         ],
         Float[Array, "num_paths {self.order}+2 2"],
