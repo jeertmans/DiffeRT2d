@@ -9,4 +9,4 @@ differt2d.models module
    :maxdepth: 1
    :titlesonly:
 
-   cost20120 <differt2d.model.cost20120>
+   cost20120 <differt2d.models.cost20120>
