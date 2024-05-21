@@ -138,10 +138,10 @@ class PathGenerator(eqx.Module):
     ) -> tuple[Float[Array, " "], Float[Array, "{self.order}+2 2"]]:
         # Generate new state with path starting at TX
 
-        #jax.debug.print("1. Initial state of path gen = {state}", state=init_state)
+        # jax.debug.print("1. Initial state of path gen = {state}", state=init_state)
         init_state = self.cell(tx, init_state)
 
-        #jax.debug.print("2. Initial state of path gen = {state}", state=init_state)
+        # jax.debug.print("2. Initial state of path gen = {state}", state=init_state)
         @jax.jit
         @jaxtyped(typechecker=typechecker)
         def scan_fn(
