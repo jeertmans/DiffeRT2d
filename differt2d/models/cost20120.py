@@ -156,12 +156,10 @@ class PathGenerator(eqx.Module):
         scene: Float[Array, "num_walls 8"],
         scene_embeddings: Float[Array, " {self.num_embeddings}"],
     ) -> tuple[Float[Array, " "], Float[Array, "{self.order}+2 2"]]:
-        # Generate new state with path starting at TX
 
-        # jax.debug.print("1. Initial state of path gen = {state}", state=init_state)
+        # Generate new state with path starting at TX
         init_state = self.cell(tx, init_state)
 
-        # jax.debug.print("2. Initial state of path gen = {state}", state=init_state)
         @jax.jit
         @jaxtyped(typechecker=typechecker)
         def scan_fn(
@@ -183,8 +181,6 @@ class PathGenerator(eqx.Module):
 
         p = self.state_2_probability(jnp.concatenate((*final_state, scene_embeddings)))
 
-        jax.debug.print("Path generated = {path}", path=path)
-
         return p, jnp.vstack((tx, path, rx))
 
 
@@ -192,7 +188,7 @@ class Model(eqx.Module):
     """
     Global Deep-Learning model.
 
-    :param order: The order of the path.
+    :param order: The order of the path(s).
     :param num_embeddings: The number of embeddings to represent the scene.
     :param hidden_size: The size of the hidden layers.
     :param num_paths: The number of paths to return during training.
@@ -203,14 +199,19 @@ class Model(eqx.Module):
 
     # Hyperparameters
     order: int
+    """The order of the path(s)."""
     num_embeddings: int
+    """ The number of embeddings to represent the scene."""
 
     # Training parameters
     num_paths: int
+    """The number of paths to return during training."""
 
     # Inference parameters
     threshold: float
+    """The threshold to use on paths during inference."""
     inference: bool
+    """Whether this model should be used for inference."""
 
     # Trainable
     scene_embed: DeepSets
@@ -228,7 +229,7 @@ class Model(eqx.Module):
         # Training parameters
         num_paths: int = 5,
         # Inference parameters
-        threshold: float = 0.5,
+        threshold: float = eqx.field(default=0.5, static=True),
         inference: bool = False,
         *,
         key: PRNGKeyArray,
@@ -266,10 +267,11 @@ class Model(eqx.Module):
             raise ValueError(
                 f"Number of paths must be greater than 0, got {self.num_paths}."
             )
-        if self.threshold < 0 or self.threshold > 1:
-            raise ValueError(
-                f"Threshold must be between 0 and 1, got {self.threshold}."
-            )
+        # TODO: fixme, Field error at the moment
+        # if self.threshold < 0 or self.threshold > 1:
+        #     raise ValueError(
+        #         f"Threshold must be between 0 and 1, got {self.threshold}."
+        #     )
         if self.order == 0 and self.num_paths > 1:
             warnings.warn(
                 "Consider setting 'num_paths = 1' when order is 0.",
@@ -278,9 +280,9 @@ class Model(eqx.Module):
             )
 
     @eqx.filter_jit
-    @jaxtyped(typechecker=None)
+    @jaxtyped(typechecker=None)  # TODO: fixme
     def __call__(  # noqa: D102
-        self, xy: Float[Array, "2+num_walls*2 2"]
+        self, xy: Float[Array, "two_plus_num_walls_times_two 2"]
     ) -> Union[
         tuple[
             Float[Array, " {self.num_paths}"],
@@ -343,7 +345,6 @@ class Model(eqx.Module):
             ],
             tuple[Float[Array, " "], Float[Array, "order_plus_2 2"]],
         ]:
-            jax.debug.print("state = {state}", state=state)
             p, path = self.path_generator(state, tx, rx, scene, scene_embeddings)
             state = self.cell(jnp.ravel(path), state)
             return state, (p, path)
@@ -354,7 +355,6 @@ class Model(eqx.Module):
         )
 
         if self.inference:
-            jax.debug.print("Inference mode, do not use for training!")
             paths = jnp.zeros((0, self.order + 2, 2))
             state = init_state
 
@@ -371,7 +371,5 @@ class Model(eqx.Module):
             _, (probabilities, paths) = jax.lax.scan(
                 scan_fn, init_state, length=self.num_paths
             )
-
-            # jax.debug.print("Probabilities = {p}", p=probabilities)
 
             return probabilities, paths
