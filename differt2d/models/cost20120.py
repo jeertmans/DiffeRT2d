@@ -1,4 +1,13 @@
-"""Deep Learning model presented at the 8th COST ACTION CA20120 meeting in Helsinki."""
+"""
+Deep Learning model presented at the 8th COST ACTION CA20120 meeting in Helsinki.
+
+The model takes as input a scene made of (tx, rx, walls...) in 2D
+and returns a sequence of paths that link tx and rx, while
+undergoing a fixed number (= model.order) of reflections.
+"""
+
+import warnings
+from typing import Union
 
 import equinox as eqx
 import jax
@@ -16,7 +25,7 @@ class DeepSets(eqx.Module):
     """The size of one object."""
     output_size: int
     """The size of the output vector."""
-    phi: eqx.nn.Sequential
+    phi: eqx.nn.MLP
     """The MLP applied to each object in parallel."""
     rho: eqx.nn.MLP
     """The MLP applied to an permutation-invariant representation (sum of phi's) of all objects."""
@@ -34,6 +43,8 @@ class DeepSets(eqx.Module):
         key: PRNGKeyArray,
     ):
         key1, key2 = jax.random.split(key, 2)
+        self.object_size = object_size
+        self.output_size = output_size
         self.phi = eqx.nn.MLP(
             in_size=object_size,
             out_size=intermediate_size,
@@ -49,7 +60,7 @@ class DeepSets(eqx.Module):
             key=key2,
         )
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def __call__(
         self, walls: Float[Array, "num_objects {self.object_size}"]
@@ -61,28 +72,28 @@ class DeepSets(eqx.Module):
         return x
 
 
-class LOL:
-    pass
-
-
 class PathGenerator(eqx.Module):
-    """A recurrent model that returns a path of a given order."""
+    """A recurrent model that returns a path of a given order and a probability that this path is valid."""
 
     order: int
     """The path order."""
-    input_size: int
-    """The input size."""
+    num_embeddings: int
+    """Number of embedding points to represent the scene (used for path validation)."""
+    hidden_size: int
+    """The hidden size of the LSTM cell."""
     cell: eqx.nn.LSTMCell
     """The recurrent unit to generate subsequent paths."""
     state_2_xy: eqx.nn.MLP
     """The layer(s) that convert a (cell) state into xy-coordinates."""
+    state_2_probability: eqx.nn.MLP
+    """The layer(s) that convert a (cell) state into probability that a path is valid."""
 
     def __init__(
         self,
         order: int,
-        input_size: int,
-        hidden_size: int = 10,
-        width_size: int = 100,
+        num_embeddings: int,
+        hidden_size: int,
+        width_size: int = 3,
         depth: int = 3,
         *,
         key: PRNGKeyArray,
@@ -90,116 +101,99 @@ class PathGenerator(eqx.Module):
         key1, key2 = jax.random.split(key, 2)
 
         self.order = order
-        self.input_size = input_size
-        self.cell = eqx.nn.GRUCell(
-            input_size=input_size, hidden_size=hidden_size, key=key1
+        self.num_embeddings = num_embeddings
+        self.hidden_size = hidden_size
+        self.cell = eqx.nn.LSTMCell(
+            input_size=2,  # The newly generated xy-coordinates
+            hidden_size=hidden_size,
+            key=key1,
         )
         self.state_2_xy = eqx.nn.MLP(
-            in_size=2 * hidden_size,
-            out_size=2,
+            in_size=2 * hidden_size,  # Input is hidden state from cell
+            out_size=2,  # Output is xy-coordinates
             width_size=width_size,
             depth=depth,
             key=key2,
         )
+        self.state_2_probability = eqx.nn.MLP(
+            in_size=2 * hidden_size + num_embeddings,
+            out_size="scalar",  # Output is probability that path is valid
+            width_size=width_size,
+            depth=depth,
+            final_activation=jax.nn.sigmoid,  # Output must be between 0 and 1
+            key=key2,
+        )
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def __call__(
         self,
-        x: Float[Array, "{self.input_size}"],
-        start: Float[Array, "2"],
-        end: Float[Array, "2"],
-    ) -> Float[Array, "{self.order}+2 2"]:
+        init_state: tuple[
+            Float[Array, "{self.hidden_size}"], Float[Array, "{self.hidden_size}"]
+        ],
+        tx: Float[Array, "2"],
+        rx: Float[Array, "2"],
+        scene: Float[Array, "num_walls 8"],
+        scene_embeddings: Float[Array, "{self.num_embeddings}"],
+    ) -> tuple[Float[Array, " "], Float[Array, "{self.order}+2 2"]]:
+        # Generate new state with path starting at TX
+        init_state = self.cell(tx, init_state)
+
         @jax.jit
         @jaxtyped(typechecker=typechecker)
         def scan_fn(
             state: tuple[
-                Float[Array, "{self.cell.hidden_size}"],
-                Float[Array, "{self.cell.hidden_size}"],
+                Float[Array, " hidden_size"],
+                Float[Array, " hidden_size"],
             ],
-            input_: Float[Array, "{self.input_size}"],
+            _: None,
         ):
-            state = self.cell(input_, state)
-            xy = self.state_2_xy(jnp.vstack(state))
-            return self.cell(input_, state), xy
+            # TODO: use scene.normals and others to force specular reflection
+            xy = self.state_2_xy(jnp.concatenate(state))
+            state = self.cell(xy, state)
+            return state, xy
 
-        xs = jnp.tile(x, (self.order, 1))
-        init_state = (
-            jnp.zeros(self.cell.hidden_size),
-            jnp.zeros(self.cell.hidden_size),
-        )
+        final_state, path = jax.lax.scan(scan_fn, init_state, length=self.order)
 
-        _, path = jax.lax.scan(scan_fn, init_state, xs)
+        # Generate final state with path ending at RX
+        final_state = self.cell(rx, final_state)
 
-        return jnp.vstack((start, path, end))
+        p = self.state_2_probability(jnp.concatenate((*final_state, scene_embeddings)))
 
-
-class PathEvaluator(eqx.Module):
-    """A model that returns a probability that a path is valid."""
-
-    order: int
-    num_embeddings: int
-    mlp: eqx.nn.MLP
-
-    def __init__(
-        self,
-        order: int,
-        num_embeddings: int,
-        width_size: int = 500,
-        depth: int = 3,
-        *,
-        key: PRNGKeyArray,
-    ):
-        self.order = order
-
-        self.mlp = eqx.nn.MLP(
-            in_size=2 + order * 2 + num_embeddings,
-            out_size=1,
-            width_size=width_size,
-            depth=depth,
-            final_activation=jax.nn.sigmoid,
-            key=key,
-        )
-
-    @jax.jit
-    @jaxtyped(typechecker=typechecker)
-    def __call__(
-        self,
-        path: Float[Array, "{self.order}+2 2"],
-        scene_embeddings: Float[Array, "{self.num_embeddings}"],
-    ) -> Float[Array, " "]:
-        x = jnp.concatenate((jnp.ravel(path), scene_embeddings))
-        x = self.mlp(x)
-
-        return x
+        return p, jnp.vstack((tx, path, rx))
 
 
 class Model(eqx.Module):
     """Global Deep-Learning model."""
 
-    # hyperparameters
+    # Hyperparameters
     order: int
     num_embeddings: int
 
-    # inference parameters
+    # Training parameters
     num_paths: int
+
+    # Inference parameters
     threshold: float
     inference: bool
 
-    # trainable
-    walls_embed: WallsEmbed
+    # Trainable
+    scene_embed: DeepSets
+    """Layer(s) that extract information about the scene."""
     path_generator: PathGenerator
-    path_evaluator: PathEvaluator
-    # path_cell: eqx.nn.GRUCell
+    """Layer(s) that generate one path orde a specific order."""
+    cell: eqx.nn.LSTMCell
 
     def __init__(
         self,
         # Hyperparameters
         order: int = 1,
-        num_embeddings: int = 100,
-        # Inference parameters
+        num_embeddings: int = 1000,
+        hidden_size: int = 1000,
+        # Training parameters
         num_paths: int = 100,
-        threshold: float = 0.1,
+        # Inference parameters
+        threshold: float = 0.5,
         inference: bool = False,
         *,
         key: PRNGKeyArray,
@@ -207,89 +201,139 @@ class Model(eqx.Module):
         key1, key2, key3 = jax.random.split(key, 3)
 
         self.order = order
+        self.num_embeddings = num_embeddings
         self.num_paths = num_paths
         self.threshold = threshold
         self.inference = inference
-        self.walls_embed = WallsEmbed(num_embeddings=num_embeddings, key=key1)
+        self.scene_embed = DeepSets(
+            object_size=2 + 2 + 2 + 2,  # start, end, normal, direction
+            output_size=num_embeddings,
+            key=key1,
+        )
         self.path_generator = PathGenerator(
-            order=order, input_size=num_embeddings, key=key2
+            order=order,
+            num_embeddings=num_embeddings,
+            hidden_size=hidden_size,
+            key=key2,
         )
-        self.path_evaluator = PathEvaluator(
-            order=order, num_embeddings=num_embeddings, key=key3
+        self.cell = eqx.nn.LSTMCell(
+            input_size=(2 + order) * 2, hidden_size=hidden_size, key=key3
         )
-        # self.path_cell = eqx.nn.GRUCell(
 
-    @jax.jit
-    @jaxtyped(typechecker=typechecker)
+    def __check_init__(self):  # noqa: D105
+        if self.order < 0:
+            raise ValueError(f"Order must be greater or equal to 0, got {self.order}.")
+        if self.num_embeddings <= 0:
+            raise ValueError(
+                f"Number of embeddings must be greater than 0, got {self.num_embeddings}."
+            )
+        if self.num_paths <= 0:
+            raise ValueError(
+                f"Number of paths must be greater than 0, got {self.num_paths}."
+            )
+        if self.threshold < 0 or self.threshold > 1:
+            raise ValueError(
+                f"Threshold must be between 0 and 1, got {self.threshold}."
+            )
+        if self.order == 0 and self.num_paths > 1:
+            warnings.warn(
+                "Consider setting 'num_paths = 1' when order is 0.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+    @eqx.filter_jit
+    @jaxtyped(typechecker=None)
     def __call__(
-        self, x: Float[Array, "2+num_walls*2 2"]
-    ) -> Float[Array, "num_paths {self.order}+2 2"]:
-        # Processing input
+        self, xy: Float[Array, "2+num_walls*2 2"]
+    ) -> Union[
+        tuple[
+            Float[Array, "{self.num_paths}"],
+            Float[Array, "{self.num_paths} {self.order}+2 2"],
+        ],
+        Float[Array, "num_paths {self.order}+2 2"],
+    ]:
+        assert xy.shape[0] >= 2, "Scene must at least have two points: tx and rx."
+
+        # -- Step 1: Processing input
 
         # [2]
-        tx = x[0, :]
-        rx = x[1, :]
-
-        if self.order < 1:
-            return jnp.vstack((tx, rx))
+        tx = xy[0, :]
+        rx = xy[1, :]
 
         # [num_walls, 2x2]
-        walls = x[2:, :].reshape(-1, 4)
-        starts = walls[:, 0, :]
-        ends = walls[:, 1, :]
+        walls = xy[2:, :].reshape(-1, 4)
 
-        # todo: pass those as parameters to force using specular reflection
+        # Handle empty scene
+        if walls.size == 0:
+            if self.order == 0:
+                paths = jnp.vstack((tx, rx))
+                probabilities = jnp.ones((1,))
+            else:
+                paths = jnp.empty((0, self.order + 2, 2))
+                probabilities = jnp.empty((0,))
+
+            if self.inference:
+                return paths
+            else:
+                return probabilities, paths
+
+        # Let's extract walls' normal and direction vectors, both normalized
+        starts = walls[:, 0:2]
+        ends = walls[:, 2:4]
         directions, _ = jax.vmap(normalize)(ends - starts)
         normals = directions.at[:, 0].set(directions[:, 1])
         normals = normals.at[:, 1].set(-directions[:, 0])
 
-        walls_embeddings = self.walls_embed(walls)
+        # [num_walls, 4x2]
+        scene = jnp.hstack((walls, normals, directions))
 
-        # Generate paths
+        # [self.num_embeddings]
+        scene_embeddings = self.scene_embed(scene)
 
-        # Logic for one path:
+        # -- Step 2: Generating paths
 
-        state = ...
+        @jax.jit
+        @jaxtyped(typechecker=typechecker)
+        def scan_fn(
+            state: tuple[
+                Float[Array, " hidden_size"],
+                Float[Array, " hidden_size"],
+            ],
+            _: None,
+        ) -> tuple[
+            tuple[
+                Float[Array, " hidden_size"],
+                Float[Array, " hidden_size"],
+            ],
+            tuple[Float[Array, " "], Float[Array, "order_plus_2 2"]],
+        ]:
+            p, path = self.path_generator(state, tx, rx, scene, scene_embeddings)
+            state = self.cell(jnp.ravel(path), state)
+            return state, (p, path)
 
-        first_point_gen = ...
-
-        other_points_gen = ...
-
-        last_point_gen = ...
-
-        while True:
-            state = state_fun([state, tx, rx, walls_embeddings])
-
-            path = []
-
-            for _ in range(self.order):
-
-
-
-
-        paths = []
-
-        # paths = list_of_paths
-        # probs = probab(paths)
-        # paths = jnp.where(probs > threshold, paths, -1)
-
-        def scan_fn(state: tuple[Float[Array, ""], ...], _: None = None):
-            state = self.cell(walls_embeddings)
-            xy = ...
-            self.cell(input_, state), state
+        init_state = (
+            jnp.zeros(self.cell.hidden_size),
+            jnp.zeros(self.cell.hidden_size),
+        )
 
         if self.inference:
-            paths = []
-            probabilities = []
+            jax.debug.print("Inference mode, do not use for training!")
+            paths = jnp.zeros((0, self.order + 2, 2))
+            state = init_state
 
             while True:
-                pass
+                state, (p, path) = scan_fn(state, None)
 
-            if len(paths) > 0:
-                paths = jnp.stack(paths)
-            else:
-                paths = jnp.zeros((0, order + 2, 2))
+                if p >= self.threshold:
+                    paths = jnp.vstack((paths, path[None, ...]))
+                else:
+                    break
 
-            return paths, probibilities
+            return paths
         else:
-            raise NotImplementedError
+            _, (probabilities, paths) = jax.lax.scan(
+                scan_fn, init_state, length=self.num_paths
+            )
+
+            return probabilities, paths
