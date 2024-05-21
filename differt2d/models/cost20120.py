@@ -156,7 +156,6 @@ class PathGenerator(eqx.Module):
         scene: Float[Array, "num_walls 8"],
         scene_embeddings: Float[Array, " {self.num_embeddings}"],
     ) -> tuple[Float[Array, " "], Float[Array, "{self.order}+2 2"]]:
-
         # Generate new state with path starting at TX
         init_state = self.cell(tx, init_state)
 
