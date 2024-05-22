@@ -217,14 +217,17 @@ class Model(eqx.Module):
     """Layer(s) that extract information about the scene."""
     path_generator: PathGenerator
     """Layer(s) that generate one path orde a specific order."""
+    embeddings_2_state: eqx.nn.MLP
+    """Layer(s) that map embedding to one of the cell states."""
     cell: eqx.nn.LSTMCell
+    """Layer(s) that provide some memory over generated paths."""
 
     def __init__(  # noqa: D107
         self,
         # Hyperparameters
         order: int = 1,
         num_embeddings: int = 100,
-        hidden_size: int = 5,
+        hidden_size: int = 100,
         # Training parameters
         num_paths: int = 5,
         # Inference parameters
@@ -233,7 +236,7 @@ class Model(eqx.Module):
         *,
         key: PRNGKeyArray,
     ):
-        key1, key2, key3 = jax.random.split(key, 3)
+        key1, key2, key3, key4 = jax.random.split(key, 4)
 
         self.order = order
         self.num_embeddings = num_embeddings
@@ -251,8 +254,15 @@ class Model(eqx.Module):
             hidden_size=hidden_size,
             key=key2,
         )
+        self.embeddings_2_state = eqx.nn.MLP(
+            in_size=num_embeddings,
+            out_size=hidden_size,
+            width_size=200,
+            depth=3,
+            key=key3,
+        )
         self.cell = eqx.nn.LSTMCell(
-            input_size=(2 + order) * 2, hidden_size=hidden_size, key=key3
+            input_size=(2 + order) * 2, hidden_size=hidden_size, key=key4
         )
 
     def __check_init__(self):  # noqa: D105
@@ -349,7 +359,7 @@ class Model(eqx.Module):
             return state, (p, path)
 
         init_state = (
-            jnp.zeros(self.cell.hidden_size),
+            self.embeddings_2_state(scene_embeddings),
             jnp.zeros(self.cell.hidden_size),
         )
 
