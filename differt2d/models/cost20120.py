@@ -7,7 +7,7 @@ undergoing a fixed number (= model.order) of reflections.
 """
 
 import warnings
-from typing import Union
+from typing import Optional, Union
 
 import equinox as eqx
 import jax
@@ -100,8 +100,8 @@ class PathGenerator(eqx.Module):
     num_embeddings: int = eqx.field(static=True)
     """Number of embedding points to represent the scene (used for path validation)."""
     hidden_size: int = eqx.field(static=True)
-    """The hidden size of the LSTM cell."""
-    cell: eqx.nn.LSTMCell
+    """The hidden size of the GRU cell."""
+    cell: eqx.nn.GRUCell
     """The recurrent unit to generate subsequent paths."""
     state_2_xy: eqx.nn.MLP
     """The layer(s) that convert a (cell) state into xy-coordinates."""
@@ -123,20 +123,20 @@ class PathGenerator(eqx.Module):
         self.order = order
         self.num_embeddings = num_embeddings
         self.hidden_size = hidden_size
-        self.cell = eqx.nn.LSTMCell(
+        self.cell = eqx.nn.GRUCell(
             input_size=2,  # The newly generated xy-coordinates
             hidden_size=hidden_size,
             key=key1,
         )
         self.state_2_xy = eqx.nn.MLP(
-            in_size=2 * hidden_size,  # Input is hidden state from cell
+            in_size=hidden_size,  # Input is hidden state from cell
             out_size=2,  # Output is xy-coordinates
             width_size=width_size,
             depth=depth,
             key=key2,
         )
         self.state_2_probability = eqx.nn.MLP(
-            in_size=2 * hidden_size + num_embeddings,
+            in_size=hidden_size + num_embeddings,
             out_size="scalar",  # Output is probability that path is valid
             width_size=width_size,
             depth=depth,
@@ -148,9 +148,7 @@ class PathGenerator(eqx.Module):
     @jaxtyped(typechecker=typechecker)
     def __call__(  # noqa: D102
         self,
-        init_state: tuple[
-            Float[Array, " {self.hidden_size}"], Float[Array, " {self.hidden_size}"]
-        ],
+        init_state: Float[Array, " {self.hidden_size}"],
         tx: Float[Array, "2"],
         rx: Float[Array, "2"],
         scene: Float[Array, "num_walls 8"],
@@ -162,14 +160,11 @@ class PathGenerator(eqx.Module):
         @jax.jit
         @jaxtyped(typechecker=typechecker)
         def scan_fn(
-            state: tuple[
-                Float[Array, " hidden_size"],
-                Float[Array, " hidden_size"],
-            ],
+            state: Float[Array, " hidden_size"],
             _: None,
         ):
             # TODO: use scene.normals and others to force specular reflection
-            xy = self.state_2_xy(jnp.concatenate(state))
+            xy = self.state_2_xy(state)
             state = self.cell(xy, state)
             return state, xy
 
@@ -178,7 +173,7 @@ class PathGenerator(eqx.Module):
         # Generate final state with path ending at RX
         final_state = self.cell(rx, final_state)
 
-        p = self.state_2_probability(jnp.concatenate((*final_state, scene_embeddings)))
+        p = self.state_2_probability(jnp.concatenate((final_state, scene_embeddings)))
 
         return p, jnp.vstack((tx, path, rx))
 
@@ -191,7 +186,7 @@ class Model(eqx.Module):
     :param num_embeddings: The number of embeddings to represent the scene.
     :param hidden_size: The size of the hidden layers.
     :param num_paths: The number of paths to return during training.
-    :param inference: The threshold to use on paths during inference.
+    :param threshold: The threshold to use on paths during inference.
     :param inference: Whether this model should be used for inference.
     :param key: The random key to be used.
     """
@@ -209,7 +204,7 @@ class Model(eqx.Module):
     # Inference parameters
     threshold: float = eqx.field(static=True)
     """The threshold to use on paths during inference."""
-    inference: bool = eqx.field(static=True)
+    inference: bool
     """Whether this model should be used for inference."""
 
     # Trainable
@@ -219,7 +214,7 @@ class Model(eqx.Module):
     """Layer(s) that generate one path orde a specific order."""
     embeddings_2_state: eqx.nn.MLP
     """Layer(s) that map embedding to one of the cell states."""
-    cell: eqx.nn.LSTMCell
+    cell: eqx.nn.GRUCell
     """Layer(s) that provide some memory over generated paths."""
 
     def __init__(  # noqa: D107
@@ -256,13 +251,14 @@ class Model(eqx.Module):
         )
         self.embeddings_2_state = eqx.nn.MLP(
             in_size=num_embeddings,
-            out_size=2 * hidden_size,
+            out_size=hidden_size,
             width_size=200,
             depth=3,
             key=key3,
         )
-        self.cell = eqx.nn.LSTMCell(
-            input_size=(2 + order) * 2, hidden_size=hidden_size, key=key4
+        self.cell = eqx.nn.GRUCell(
+            input_size=(2 + order) * 2,  # number of points per path x 2
+            hidden_size=hidden_size, key=key4
         )
 
     def __check_init__(self):  # noqa: D105
@@ -290,7 +286,11 @@ class Model(eqx.Module):
     @eqx.filter_jit
     @jaxtyped(typechecker=None)  # TODO: fixme
     def __call__(  # noqa: D102
-        self, xy: Float[Array, "two_plus_num_walls_times_two 2"]
+        self,
+        xy: Float[Array, "two_plus_num_walls_times_two 2"],
+        *,
+        key: Optional[PRNGKeyArray] = None,
+        inference: Optional[bool] = None,
     ) -> Union[
         tuple[
             Float[Array, " {self.num_paths}"],
@@ -341,39 +341,29 @@ class Model(eqx.Module):
         @jax.jit
         @jaxtyped(typechecker=typechecker)
         def scan_fn(
-            state: tuple[
-                Float[Array, " hidden_size"],
-                Float[Array, " hidden_size"],
-            ],
+            state: Float[Array, " hidden_size"],
             _: None,
         ) -> tuple[
-            tuple[
-                Float[Array, " hidden_size"],
-                Float[Array, " hidden_size"],
-            ],
+            Float[Array, " hidden_size"],
             tuple[Float[Array, " "], Float[Array, "order_plus_2 2"]],
         ]:
             p, path = self.path_generator(state, tx, rx, scene, scene_embeddings)
             state = self.cell(jnp.ravel(path), state)
             return state, (p, path)
 
-        hidden_state, cell_state = jnp.split(
-            self.embeddings_2_state(scene_embeddings), 2
-        )
+        init_state = self.embeddings_2_state(scene_embeddings)
 
-        init_state = (
-            hidden_state,
-            cell_state,
-        )
+        if inference is None:
+            inference = self.inference
 
-        if self.inference:
+        if inference:
             paths = jnp.zeros((0, self.order + 2, 2))
             state = init_state
 
             while True:
                 state, (p, path) = scan_fn(state, None)
 
-                if p >= self.threshold:
+                if float(p) >= self.threshold:
                     paths = jnp.vstack((paths, path[None, ...]))
                 else:
                     break
