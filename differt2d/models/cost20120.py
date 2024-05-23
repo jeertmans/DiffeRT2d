@@ -32,9 +32,9 @@ class DeepSets(eqx.Module):
     :param key: The random key to be used.
     """
 
-    object_size: int
+    object_size: int = eqx.field(static=True)
     """The size of one object."""
-    output_size: int
+    output_size: int = eqx.field(static=True)
     """The size of the output vector."""
     phi: eqx.nn.MLP
     """The MLP applied to each object in parallel."""
@@ -95,11 +95,11 @@ class PathGenerator(eqx.Module):
     :param key: The random key to be used.
     """
 
-    order: int
+    order: int = eqx.field(static=True)
     """The path order."""
-    num_embeddings: int
+    num_embeddings: int = eqx.field(static=True)
     """Number of embedding points to represent the scene (used for path validation)."""
-    hidden_size: int
+    hidden_size: int = eqx.field(static=True)
     """The hidden size of the LSTM cell."""
     cell: eqx.nn.LSTMCell
     """The recurrent unit to generate subsequent paths."""
@@ -197,19 +197,19 @@ class Model(eqx.Module):
     """
 
     # Hyperparameters
-    order: int
+    order: int = eqx.field(static=True)
     """The order of the path(s)."""
-    num_embeddings: int
+    num_embeddings: int = eqx.field(static=True)
     """ The number of embeddings to represent the scene."""
 
     # Training parameters
-    num_paths: int
+    num_paths: int = eqx.field(static=True)
     """The number of paths to return during training."""
 
     # Inference parameters
-    threshold: float
+    threshold: float = eqx.field(static=True)
     """The threshold to use on paths during inference."""
-    inference: bool
+    inference: bool = eqx.field(static=True)
     """Whether this model should be used for inference."""
 
     # Trainable
@@ -231,7 +231,7 @@ class Model(eqx.Module):
         # Training parameters
         num_paths: int = 5,
         # Inference parameters
-        threshold: float = eqx.field(default=0.5, static=True),
+        threshold: float = 0.5,
         inference: bool = False,
         *,
         key: PRNGKeyArray,
@@ -256,7 +256,7 @@ class Model(eqx.Module):
         )
         self.embeddings_2_state = eqx.nn.MLP(
             in_size=num_embeddings,
-            out_size=hidden_size,
+            out_size=2 * hidden_size,
             width_size=200,
             depth=3,
             key=key3,
@@ -276,11 +276,10 @@ class Model(eqx.Module):
             raise ValueError(
                 f"Number of paths must be greater than 0, got {self.num_paths}."
             )
-        # TODO: fixme, Field error at the moment
-        # if self.threshold < 0 or self.threshold > 1:
-        #     raise ValueError(
-        #         f"Threshold must be between 0 and 1, got {self.threshold}."
-        #     )
+        if self.threshold < 0 or self.threshold > 1:
+            raise ValueError(
+                f"Threshold must be between 0 and 1, got {self.threshold}."
+            )
         if self.order == 0 and self.num_paths > 1:
             warnings.warn(
                 "Consider setting 'num_paths = 1' when order is 0.",
@@ -358,9 +357,13 @@ class Model(eqx.Module):
             state = self.cell(jnp.ravel(path), state)
             return state, (p, path)
 
+        hidden_state, cell_state = jnp.split(
+            self.embeddings_2_state(scene_embeddings), 2
+        )
+
         init_state = (
-            self.embeddings_2_state(scene_embeddings),
-            jnp.zeros(self.cell.hidden_size),
+            hidden_state,
+            cell_state,
         )
 
         if self.inference:
