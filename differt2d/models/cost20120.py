@@ -258,7 +258,8 @@ class Model(eqx.Module):
         )
         self.cell = eqx.nn.GRUCell(
             input_size=(2 + order) * 2,  # number of points per path x 2
-            hidden_size=hidden_size, key=key4
+            hidden_size=hidden_size,
+            key=key4,
         )
 
     def __check_init__(self):  # noqa: D105
