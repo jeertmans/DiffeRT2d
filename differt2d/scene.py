@@ -1132,14 +1132,14 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         if fun_kwargs is None:
             fun_kwargs = {}
 
-        self = self.with_transmitters(tx=Point(xy=jnp.array([0.0, 0.0])))
+        scene = self.with_transmitters(tx=Point(xy=jnp.array([0.0, 0.0])))
 
-        path_candidates = self.all_path_candidates(
+        path_candidates = scene.all_path_candidates(
             min_order=min_order,
             max_order=max_order,
         )
 
-        pairs = list(self.all_transmitter_receiver_pairs())
+        pairs = list(scene.all_transmitter_receiver_pairs())
 
         if key is not None:
             keys = list(jax.random.split(key, len(pairs)))
@@ -1149,7 +1149,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         def facc(tx_coords: Float[Array, "2"], receiver: Point) -> Float[Array, " "]:
             acc = jnp.array(0.0)
             for path_candidate, key in zip(path_candidates, keys):
-                interacting_objects = self.get_interacting_objects(path_candidate)
+                interacting_objects = scene.get_interacting_objects(path_candidate)
                 path = path_cls.from_tx_objects_rx(
                     tx_coords,
                     interacting_objects,
@@ -1157,7 +1157,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     key=key,
                 )
                 valid = path.is_valid(
-                    self.objects,
+                    scene.objects,
                     path_candidate,
                     interacting_objects,
                     **kwargs,
@@ -1263,14 +1263,14 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
-        self = self.with_receivers(rx=Point(xy=jnp.array([0.0, 0.0])))
+        scene = self.with_receivers(rx=Point(xy=jnp.array([0.0, 0.0])))
 
-        path_candidates = self.all_path_candidates(
+        path_candidates = scene.all_path_candidates(
             min_order=min_order,
             max_order=max_order,
         )
 
-        pairs = list(self.all_transmitter_receiver_pairs())
+        pairs = list(scene.all_transmitter_receiver_pairs())
 
         if key is not None:
             keys = list(jax.random.split(key, len(pairs)))
@@ -1280,7 +1280,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         def facc(transmitter: Point, rx_coords: Float[Array, "2"]) -> Float[Array, " "]:
             acc = jnp.array(0.0)
             for path_candidate, key in zip(path_candidates, keys):
-                interacting_objects = self.get_interacting_objects(path_candidate)
+                interacting_objects = scene.get_interacting_objects(path_candidate)
                 path = path_cls.from_tx_objects_rx(
                     transmitter,
                     interacting_objects,
@@ -1288,7 +1288,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     key=key,
                 )
                 valid = path.is_valid(
-                    self.objects,
+                    scene.objects,
                     path_candidate,
                     interacting_objects,
                     **kwargs,
