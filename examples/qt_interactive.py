@@ -403,11 +403,11 @@ class PlotWidget(QWidget):
             artist, point_name = self.picked
             if self.picked_tx:
                 self.scene = self.scene.update_transmitters(
-                        **{point_name:Point(xy=jnp.array([event.xdata, event.ydata]))}
+                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))}
                 )
             else:
                 self.scene = self.scene.update_receivers(
-                        **{point_name:Point(xy=jnp.array([event.xdata, event.ydata]))}
+                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))}
                 )
             artist.set_xdata([event.xdata])  # type: ignore
             artist.set_ydata([event.ydata])  # type: ignore
