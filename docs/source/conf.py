@@ -51,10 +51,9 @@ rst_prolog = """
     :language: python
 """
 
+autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 typehints_defaults = "comma"
-typehints_use_signature = True
-typehints_use_signature_return = True
 
 myst_enable_extensions = [
     "colon_fence",
