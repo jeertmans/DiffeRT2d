@@ -17,9 +17,10 @@ see :mod:`defaults<differt2d.defaults>`).
 #
 # First, we need to import the necessary modules.
 
+import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
-from chex import Array
+from jaxtyping import Array, Float
 
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
@@ -46,6 +47,7 @@ fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
 
+key = jax.random.PRNGKey(1234)
 X, Y = scene.grid(n=300)
 
 for ax, approx in zip(axes, [False, True]):
@@ -55,9 +57,9 @@ for ax, approx in zip(axes, [False, True]):
         receivers=False,
     )
 
-    P: Array = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, reduce_all=True, approx=approx
-    )
+    P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
+        X, Y, fun=received_power, reduce_all=True, approx=approx, key=key
+    )  # type: ignore
 
     PdB = 10.0 * jnp.log10(P / P0)
 

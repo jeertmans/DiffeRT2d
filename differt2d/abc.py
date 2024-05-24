@@ -9,7 +9,7 @@ __all__ = (
 
 from abc import ABC, abstractmethod
 from collections.abc import MutableSequence
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import equinox as eqx
 import jax.numpy as jnp
@@ -181,7 +181,7 @@ class Interactable(ABC):
     def intersects_cartesian(
         self,
         ray: Float[Array, "2 2"],
-        patch: float = DEFAULT_PATCH,
+        patch: Union[float, Float[Array, " "]] = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:

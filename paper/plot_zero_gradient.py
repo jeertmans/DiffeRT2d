@@ -1,14 +1,14 @@
 from pathlib import Path
 
 import jax.numpy as jnp
-from chex import Array
+from jaxtyping import Array, Float
 from utils import create_fig_for_paper
 
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
-scene.transmitters["Tx"] = scene.transmitters.pop("tx")
+scene = scene.with_transmitters(Tx=scene.transmitters["tx"])
 
 fig, ax = create_fig_for_paper(1, 1, height_to_width_ratio=0.6, tight_layout=True)
 
@@ -25,9 +25,9 @@ scene.plot(
     receivers=False,
 )
 
-P: Array = scene.accumulate_on_receivers_grid_over_paths(
+P: Float[Array, "600 600"] = scene.accumulate_on_receivers_grid_over_paths(
     X, Y, fun=received_power, max_order=0, reduce_all=True, approx=False
-)
+)  # type: ignore
 
 PdB = 10.0 * jnp.log10(P / P0)
 

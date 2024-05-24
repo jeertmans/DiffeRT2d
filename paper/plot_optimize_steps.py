@@ -1,9 +1,12 @@
+from collections.abc import Iterator
 from copy import deepcopy as copy
 from pathlib import Path
+from typing import Any
 
 import jax
 import jax.numpy as jnp
 import optax
+from jaxtyping import Array, Float
 from matplotlib.colors import LogNorm
 from utils import create_fig_for_paper
 
@@ -14,8 +17,10 @@ from differt2d.utils import P0, received_power
 scene = Scene.square_scene_with_obstacle()
 
 
-def objective_function(received_power_per_receiver):
-    acc = jnp.inf
+def objective_function(
+    received_power_per_receiver: Iterator[Float[Array, " *batch"]],
+) -> Float[Array, " *batch"]:
+    acc = jnp.array(jnp.inf)
     for p in received_power_per_receiver:
         p = p / P0  # Normalize power
         acc = jnp.minimum(acc, p)
@@ -23,8 +28,10 @@ def objective_function(received_power_per_receiver):
     return acc
 
 
-def loss(tx_coords, scene, *args, **kwargs):
-    scene.transmitters["Tx"] = Point(point=tx_coords)
+def loss(
+    tx_coords: Float[Array, "2"], scene: Scene, *args: Any, **kwargs: Any
+) -> Float[Array, " "]:
+    scene = scene.with_transmitters(tx=Point(xy=tx_coords))
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -51,13 +58,11 @@ point_kwargs = dict(
     markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
 )
 
-scene.transmitters.clear()
-scene.transmitters.update({"Tx": Point(point=jnp.array([0.5, 0.7]))})
-scene.receivers.clear()
-scene.receivers.update(
-    {
-        r"Rx$_0$": Point(point=jnp.array([0.3, 0.1])),
-        r"Rx$_1$": Point(point=jnp.array([0.5, 0.1])),
+scene = scene.with_transmitters(Tx=Point(xy=jnp.array([0.5, 0.7])))
+scene = scene.with_receivers(
+    **{
+        r"Rx$_0$": Point(xy=jnp.array([0.3, 0.1])),
+        r"Rx$_1$": Point(xy=jnp.array([0.5, 0.1])),
     }
 )
 
@@ -72,15 +77,15 @@ alphas = jnp.logspace(0, 2, steps)  # Values between 1.0 and 100.0
 tx_coords = jnp.array([0.5, 0.7])
 optimizers = []
 carries = []
-for i, scene in enumerate(scenes):
-    scene.transmitters["Tx"] = Point(point=tx_coords)
+for i in range(2):
+    scenes[i] = scene.with_transmitters(Tx=Point(xy=tx_coords))
     optimizers.append(optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans()))
     carries.append((tx_coords, optimizers[i].init(tx_coords)))
 
 for frame, alpha in enumerate(alphas):
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
-        scenes[i].transmitters["Tx"] = Point(point=tx_coords)
+        scenes[i] = scene.with_transmitters(Tx=Point(xy=tx_coords))
 
         # Plotting prior to updating
         if frame % 20 == 0:
@@ -113,17 +118,17 @@ for frame, alpha in enumerate(alphas):
             )
             rx_kwargs = point_kwargs.copy()
             rx_kwargs.update(
-                color="black",
-                marker="x",
-                annotate="Rx$_0$",
-                annotate_offset=(-0.1 * factor, 0.0),
+                color="black",  # type: ignore[arg-type]
+                marker="x",  # type: ignore[arg-type]
+                annotate="Rx$_0$",  # type: ignore[arg-type]
+                annotate_offset=(-0.1 * factor, 0.0),  # type: ignore[arg-type]
             )
             scenes[i].receivers["Rx$_0$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
-            rx_kwargs.update(annotate="Rx$_1$", annotate_offset=(+0.1 * factor, 0.0))
+            rx_kwargs.update(annotate="Rx$_1$", annotate_offset=(+0.1 * factor, 0.0))  # type: ignore[arg-type]
             scenes[i].receivers["Rx$_1$"].plot(ax, **rx_kwargs)  # type: ignore[arg-type]
 
             F = objective_function(
-                power
+                power  # type: ignore
                 for _, power in scenes[i].accumulate_on_transmitters_grid_over_paths(
                     X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
                 )

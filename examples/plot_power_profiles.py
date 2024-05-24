@@ -24,7 +24,7 @@ As shown, the higher ``alpha``, the closer it gets to the `Without approx.` case
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
-from chex import Array
+from jaxtyping import Array, Float
 
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
@@ -68,7 +68,7 @@ scene.plot(
 )
 
 X, Y = scene.grid(n=300)
-P: Array = scene.accumulate_on_receivers_grid_over_paths(
+P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
     X,
     Y,
     fun=received_power,
@@ -76,7 +76,7 @@ P: Array = scene.accumulate_on_receivers_grid_over_paths(
     approx=False,
     min_order=0,
     max_order=0,
-)
+)  # type: ignore
 
 PdB = 10.0 * jnp.log10(P / P0)
 
@@ -101,16 +101,16 @@ y = jnp.array([0.5])
 
 X, Y = jnp.meshgrid(x, y)
 
-P = scene.accumulate_on_receivers_grid_over_paths(
+P: Float[Array, "200 1"] = scene.accumulate_on_receivers_grid_over_paths(
     X, Y, fun=received_power, reduce_all=True, approx=False, min_order=0, max_order=0
-)
+)  # type: ignore
 
 PdB = 10.0 * jnp.log10(P.reshape(-1) / P0)
 
 axes[1].plot(x, PdB, label="Without")
 
 for alpha in [1.0, 10.0, 100.0, 1000.0]:
-    P = scene.accumulate_on_receivers_grid_over_paths(
+    P: Float[Array, "200 1"] = scene.accumulate_on_receivers_grid_over_paths(
         X,
         Y,
         fun=received_power,
@@ -119,7 +119,7 @@ for alpha in [1.0, 10.0, 100.0, 1000.0]:
         alpha=alpha,
         min_order=0,
         max_order=0,
-    )
+    )  # type: ignore
 
     PdB = 10.0 * jnp.log10(P.reshape(-1) / P0)
 

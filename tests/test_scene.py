@@ -6,7 +6,7 @@ import chex
 import jax.numpy as jnp
 import pytest
 
-from differt2d.geometry import Point
+from differt2d.geometry import Point, Wall
 from differt2d.logic import is_true
 from differt2d.scene import Scene, SceneName
 
@@ -19,6 +19,67 @@ def geojson_file():
 
 
 class TestScene:
+    def test_empty_scene(self):
+        scene = Scene()
+
+        assert len(scene.transmitters) == 0
+        assert len(scene.receivers) == 0
+        assert len(scene.objects) == 0
+
+    def test_with_transmitters(self):
+        scene = Scene(transmitters={"a": Point(), "b": Point()})
+
+        assert len(scene.transmitters) == 2
+
+        scene = scene.with_transmitters(c=Point())
+
+        assert len(scene.transmitters) == 1
+
+    def test_with_receivers(self):
+        scene = Scene(receivers={"a": Point(), "b": Point()})
+
+        assert len(scene.receivers) == 2
+
+        scene = scene.with_receivers(c=Point())
+
+        assert len(scene.receivers) == 1
+
+    def test_with_objects(self):
+        scene = Scene(objects=[Wall(), Wall()])
+
+        assert len(scene.objects) == 2
+
+        scene = scene.with_objects(Wall())
+
+        assert len(scene.objects) == 1
+
+    def test_update_transmitters(self):
+        scene = Scene(transmitters={"a": Point(), "b": Point()})
+
+        assert len(scene.transmitters) == 2
+
+        scene = scene.update_transmitters(c=Point())
+
+        assert len(scene.transmitters) == 3
+
+    def test_update_receivers(self):
+        scene = Scene(receivers={"a": Point(), "b": Point()})
+
+        assert len(scene.receivers) == 2
+
+        scene = scene.update_receivers(c=Point())
+
+        assert len(scene.receivers) == 3
+
+    def test_add_objects(self):
+        scene = Scene(objects=[Wall(), Wall()])
+
+        assert len(scene.objects) == 2
+
+        scene = scene.add_objects(Wall())
+
+        assert len(scene.objects) == 3
+
     @pytest.mark.parametrize(
         ("transform",),
         [
@@ -39,8 +100,15 @@ class TestScene:
         assert len(scene.transmitters) == 1
         assert len(scene.objects) == 28
         assert len(scene.receivers) == 1
-        chex.assert_trees_all_equal(scene.transmitters["tx"].point, bounding_box[0, :])
-        chex.assert_trees_all_equal(scene.receivers["rx"].point, bounding_box[1, :])
+        chex.assert_trees_all_equal(scene.transmitters["tx"].xy, bounding_box[0, :])
+        chex.assert_trees_all_equal(scene.receivers["rx"].xy, bounding_box[1, :])
+
+    def test_from_empty_geojson(self):
+        scene = Scene.from_geojson('{"features": []}')
+
+        assert len(scene.transmitters) == 1
+        assert len(scene.receivers) == 1
+        assert len(scene.objects) == 0
 
     def test_from_geojson_unimplemented(self, geojson_file):
         with pytest.raises(NotImplementedError):
@@ -130,8 +198,8 @@ class TestScene:
         scene = Scene.random_uniform_scene(key, n_walls=10)
 
         points = jnp.vstack(
-            [scene.transmitters["tx_0"].point, scene.receivers["rx_0"].point]
-            + [obj.points for obj in scene.objects]
+            [scene.transmitters["tx_0"].xy, scene.receivers["rx_0"].xy]
+            + [obj.xys for obj in scene.objects]
         )
 
         expected = jnp.array(
@@ -146,22 +214,20 @@ class TestScene:
 
     def test_get_closest_transmitter(self, key):
         scene = Scene.random_uniform_scene(key, n_transmitters=10)
-        expected_point = Point(point=jnp.array([0.5, 0.5]))
+        expected_point = Point(xy=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
-        scene.transmitters["closest"] = expected_point
-        got_point_name, got_distance = scene.get_closest_transmitter(
-            expected_point.point
-        )
+        scene = scene.update_transmitters(closest=expected_point)
+        got_point_name, got_distance = scene.get_closest_transmitter(expected_point.xy)
         got_point = scene.transmitters[got_point_name]
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
     def test_get_closest_receiver(self, key):
         scene = Scene.random_uniform_scene(key, n_receivers=10)
-        expected_point = Point(point=jnp.array([0.5, 0.5]))
+        expected_point = Point(xy=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
-        scene.receivers["closest"] = expected_point
-        got_point_name, got_distance = scene.get_closest_receiver(expected_point.point)
+        scene = scene.update_receivers(closest=expected_point)
+        got_point_name, got_distance = scene.get_closest_receiver(expected_point.xy)
         got_point = scene.receivers[got_point_name]
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
@@ -188,7 +254,7 @@ class TestScene:
             assert tx_key == "tx"
             assert rx_key == "rx"
 
-            assert min_order <= expected_path.points.shape[0] - 2 <= max_order
+            assert min_order <= expected_path.xys.shape[0] - 2 <= max_order
             assert min_order <= len(path_candidate) <= max_order
 
             interacting_objects = scene.get_interacting_objects(path_candidate)
@@ -209,10 +275,10 @@ class TestScene:
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
-        tx0 = Point(point=jnp.array([0.0, 0.0]))
-        tx1 = Point(point=jnp.array([1.0, 0.0]))
-        rx0 = Point(point=jnp.array([1.0, 1.0]))
-        rx1 = Point(point=jnp.array([0.0, 1.0]))
+        tx0 = Point(xy=jnp.array([0.0, 0.0]))
+        tx1 = Point(xy=jnp.array([1.0, 0.0]))
+        rx0 = Point(xy=jnp.array([1.0, 1.0]))
+        rx1 = Point(xy=jnp.array([0.0, 1.0]))
         scene = Scene(
             transmitters=dict(tx0=tx0, tx1=tx1),
             objects=[],
@@ -221,22 +287,22 @@ class TestScene:
 
         got = scene.accumulate_over_paths(fun=fun, max_order=1, approx=False)
 
-        tx_key, rx_key, acc = next(got)
+        tx_key, rx_key, acc = next(got)  # type: ignore
         assert tx_key == "tx0"
         assert rx_key == "rx0"
         chex.assert_trees_all_close(acc, jnp.array(2.0))
 
-        tx_key, rx_key, acc = next(got)
+        tx_key, rx_key, acc = next(got)  # type: ignore
         assert tx_key == "tx0"
         assert rx_key == "rx1"
         chex.assert_trees_all_close(acc, jnp.array(1.0))
 
-        tx_key, rx_key, acc = next(got)
+        tx_key, rx_key, acc = next(got)  # type: ignore
         assert tx_key == "tx1"
         assert rx_key == "rx0"
         chex.assert_trees_all_close(acc, jnp.array(1.0))
 
-        tx_key, rx_key, acc = next(got)
+        tx_key, rx_key, acc = next(got)  # type: ignore
         assert tx_key == "tx1"
         assert rx_key == "rx1"
         chex.assert_trees_all_close(acc, jnp.array(2.0))
@@ -250,8 +316,8 @@ class TestScene:
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
-        rx0 = Point(point=jnp.array([0.0, 0.0]))
-        rx1 = Point(point=jnp.array([0.0, 1.0]))
+        rx0 = Point(xy=jnp.array([0.0, 0.0]))
+        rx1 = Point(xy=jnp.array([0.0, 1.0]))
         scene = Scene(transmitters={}, objects=[], receivers=dict(rx0=rx0, rx1=rx1))
 
         x = y = jnp.linspace(-3, 3, 10)
@@ -260,10 +326,10 @@ class TestScene:
             X, Y, fun=fun, max_order=1, approx=False
         )
 
-        rx_key, got_Z0 = next(got_Z)
+        rx_key, got_Z0 = next(got_Z)  # type: ignore
         assert rx_key == "rx0"
 
-        rx_key, got_Z1 = next(got_Z)
+        rx_key, got_Z1 = next(got_Z)  # type: ignore
         assert rx_key == "rx1"
 
         chex.assert_trees_all_equal_shapes_and_dtypes(X, got_Z0)
@@ -305,8 +371,8 @@ class TestScene:
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
-        tx0 = Point(point=jnp.array([0.0, 0.0]))
-        tx1 = Point(point=jnp.array([1.0, 0.0]))
+        tx0 = Point(xy=jnp.array([0.0, 0.0]))
+        tx1 = Point(xy=jnp.array([1.0, 0.0]))
         scene = Scene(transmitters=dict(tx0=tx0, tx1=tx1), objects=[], receivers={})
 
         x = y = jnp.linspace(-3, 3, 10)
@@ -315,10 +381,10 @@ class TestScene:
             X, Y, fun=fun, max_order=1, approx=False
         )
 
-        tx_key, got_Z0 = next(got_Z)
+        tx_key, got_Z0 = next(got_Z)  # type: ignore
         assert tx_key == "tx0"
 
-        tx_key, got_Z1 = next(got_Z)
+        tx_key, got_Z1 = next(got_Z)  # type: ignore
         assert tx_key == "tx1"
 
         chex.assert_trees_all_equal_shapes_and_dtypes(X, got_Z0)

@@ -20,19 +20,23 @@ To compare multiple benchmark results, you can use
 import inspect
 from functools import partial
 
+import jax
 import pyperf
+from jaxtyping import Array, Float
 
-from differt2d.geometry import FermatPath, ImagePath, MinPath
+from differt2d.geometry import FermatPath, ImagePath, MinPath, Path
 from differt2d.scene import Scene
 from differt2d.utils import received_power
 
 METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
 
+key = jax.random.PRNGKey(1234)
 scene = Scene.basic_scene()
-X, Y = scene.grid(n=100)
+n = 100
+X, Y = scene.grid(n=n)
 
 
-def make_benchmark_name(*args):
+def make_benchmark_name(*args: str) -> str:
     caller_name = inspect.stack()[1].function
 
     if caller_name.startswith("bench_"):
@@ -41,11 +45,12 @@ def make_benchmark_name(*args):
     return "_".join([caller_name, *args])
 
 
-def bench_accumulate_on_transmitters_grid_over_paths(runner):
-    def bench(approx):
-        scene.accumulate_on_transmitters_grid_over_paths(
-            X, Y, fun=received_power, reduce_all=True, approx=approx
-        ).block_until_ready()
+def bench_accumulate_on_transmitters_grid_over_paths(runner: pyperf.Runner) -> None:
+    def bench(approx: bool) -> None:
+        array: Float[Array, "n n"] = scene.accumulate_on_transmitters_grid_over_paths(  # type: ignore[reportGeneralTypeIssues]
+            X, Y, fun=received_power, reduce_all=True, approx=approx, key=key
+        )
+        array.block_until_ready()
 
     for approx in [False, True]:
         bench_name = make_benchmark_name("approx" if approx else "noapprox")
@@ -53,10 +58,13 @@ def bench_accumulate_on_transmitters_grid_over_paths(runner):
         runner.bench_func(bench_name, func)
 
 
-def bench_path_method(runner):
-    def bench(path_cls):
+def bench_path_method(runner: pyperf.Runner) -> None:
+    def bench(path_cls: type[Path]) -> None:
         path = path_cls.from_tx_objects_rx(
-            scene.transmitters["tx"].point, scene.objects, scene.receivers["rx"].point
+            scene.transmitters["tx"],
+            scene.objects,
+            scene.receivers["rx"],
+            key=key,
         )
         path.loss.block_until_ready()
 

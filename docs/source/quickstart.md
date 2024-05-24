@@ -45,8 +45,14 @@ pretty useful for optimization problems.
 
     from differt2d.geometry import Wall
 
-    wall = Wall(points=jnp.array([[0.8, 0.2], [0.8, 0.8]]))
-    scene.add_objects([wall])
+    wall = Wall(xys=jnp.array([[0.8, 0.2], [0.8, 0.8]]))
+    scene = scene.add_objects(wall)
+
+.. warning::
+
+    Most classes are immutable
+    `PyTrees <https://jax.readthedocs.io/en/latest/pytrees.html>`_,
+    meaning that *mutation* is performed by returning a new class instance.
 
 Plotting utils
 ^^^^^^^^^^^^^^
@@ -66,8 +72,8 @@ you can easily plot a scene (and other objects) to see how it renders:
 
     ax = plt.gca()
     scene = Scene.square_scene()
-    wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
-    scene.add_objects([wall])
+    wall = Wall(xys=jnp.array([[.8, .2], [.8, .8]]))
+    scene = scene.add_objects(wall)
     scene.plot(ax)
     plt.show()
 
@@ -93,8 +99,8 @@ The easiest way to trace all paths from every transmitter to every receiver is t
 
     ax = plt.gca()
     scene = Scene.square_scene()
-    wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
-    scene.add_objects([wall])
+    wall = Wall(xys=jnp.array([[.8, .2], [.8, .8]]))
+    scene = scene.add_objects(wall)
     scene.plot(ax)
 
     for _, _, path, _ in scene.all_valid_paths():
@@ -122,8 +128,8 @@ like the received power, on a grid and plot it:
 
     ax = plt.gca()
     scene = Scene.square_scene()
-    wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
-    scene.add_objects([wall])
+    wall = Wall(xys=jnp.array([[.8, .2], [.8, .8]]))
+    scene = scene.add_objects(wall)
     scene.plot(ax, receivers=True)
 
     X, Y = scene.grid(n=300)
@@ -154,8 +160,8 @@ if we were to simulate a higher order of interaction, e.g.:
 
     ax = plt.gca()
     scene = Scene.square_scene()
-    wall = Wall(points=jnp.array([[.8, .2], [.8, .8]]))
-    scene.add_objects([wall])
+    wall = Wall(xys=jnp.array([[.8, .2], [.8, .8]]))
+    scene = scene.add_objects(wall)
     scene.plot(ax, receivers=True)
 
     X, Y = scene.grid(n=300)
@@ -195,8 +201,8 @@ both
 
     fig, ax = plt.subplots()
     scene = Scene.square_scene()
-    wall = Wall(points=jnp.array([[0.8, 0.2], [0.8, 0.8]]))
-    scene.add_objects([wall])
+    wall = Wall(xys=jnp.array([[0.8, 0.2], [0.8, 0.8]]))
+    scene = scene.add_objects(wall)
     scene.plot(ax, receivers=True)
 
     X, Y = scene.grid(n=300)
