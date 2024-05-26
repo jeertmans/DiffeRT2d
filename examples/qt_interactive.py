@@ -5,6 +5,17 @@ Interactive example with Qt interface
 This example provides an interactive experience to most of the features
 proposed by this module.
 
+.. warning::
+    As of writing this, the ``FPT`` and ``MPT`` path methods
+    will not show the expected covarage (which ``image`` usually
+    does). This is mainly an issue caused by the use of `only`
+    100 steps for the minimization, which may not be necessary
+    to properly converge.
+
+    Also, you will observe that the coverage map changes a lot between two
+    position, this is because the random key used to initialize
+    the minimization process changes on each update.
+
 Requirements
 ------------
 
@@ -139,7 +150,7 @@ class PlotWidget(QWidget):
         self.min_order = 0
         self.max_order = 1
         self.patch = DEFAULT_PATCH
-        self.approx = True
+        self.approx = False
         self.alpha = DEFAULT_ALPHA
         self.function = hard_sigmoid
         self.r_coef = 0.5
@@ -165,7 +176,7 @@ class PlotWidget(QWidget):
         # Approx. parameters
         approx_box = QGroupBox("Enable approx.")
         approx_box.setCheckable(True)
-        approx_box.setChecked(True)
+        approx_box.setChecked(False)
         approx_box.setToolTip(
             "Click to enable/disable approximation. "
             "When enabled, you can specify further parameters below."

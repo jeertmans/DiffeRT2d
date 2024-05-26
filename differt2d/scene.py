@@ -1142,9 +1142,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         pairs = list(scene.all_transmitter_receiver_pairs())
 
         if key is not None:
-            keys = list(jax.random.split(key, len(pairs)))
+            keys = list(jax.random.split(key, len(path_candidates)))
         else:
-            keys = [None] * len(pairs)
+            keys = [None] * len(path_candidates)
 
         def facc(tx_coords: Float[Array, "2"], receiver: Point) -> Float[Array, " "]:
             acc = jnp.array(0.0)
@@ -1273,9 +1273,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         pairs = list(scene.all_transmitter_receiver_pairs())
 
         if key is not None:
-            keys = list(jax.random.split(key, len(pairs)))
+            keys = list(jax.random.split(key, len(path_candidates)))
         else:
-            keys = [None] * len(pairs)
+            keys = [None] * len(path_candidates)
 
         def facc(transmitter: Point, rx_coords: Float[Array, "2"]) -> Float[Array, " "]:
             acc = jnp.array(0.0)

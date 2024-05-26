@@ -856,7 +856,7 @@ class ImagePath(Path, eqx.Module):
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls",))
-    @jaxtyped(typechecker=None)
+    @jaxtyped(typechecker=typechecker)
     def from_tx_objects_rx(  # type: ignore
         cls,
         tx: Union[Float[Array, "2"], Point],
