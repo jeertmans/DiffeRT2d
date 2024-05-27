@@ -74,4 +74,4 @@ class TestPlottable:
         chex.assert_trees_all_equal(got, expected)
 
         with pytest.raises(TypeCheckError):
-            _ = wall.get_location("L")
+            _ = wall.get_location("L")  # type: ignore

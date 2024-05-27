@@ -45,7 +45,7 @@ def stack_leaves(
     Solution inspired from:
     https://github.com/google/jax/discussions/16882#discussioncomment-6638501.
 
-    :param pytress: One or more Pytrees.
+    :param pytrees: One or more Pytrees.
     :param axis: Axis along which leaves are stacked.
     :param is_leaf: See eponym parameter from :func:`jax.tree_util.tree_map`.
     :return: A new Pytree with leaves stacked along the new axis.
@@ -101,6 +101,17 @@ def segments_intersect(
     For :math:`P` to exist, both :math:`\alpha` and :math:`\beta`
     must be in the range :math:`[0;1]`.
 
+    .. warning::
+
+        Division by zero may occur if the two segments are colinear.
+
+    :References:
+
+    Code inspired from "Graphics Gems III - 1st Edition", section IV.6.
+
+    https://www.realtimerendering.com/resources/GraphicsGems/gemsiii/insectc.c
+    http://www.graphicsgems.org/
+
     :param P1:
         The coordinates of the first point of the first segment.
     :param P2:
@@ -115,10 +126,6 @@ def segments_intersect(
     :param kwargs:
         Keyword arguments to be passed to :func:`activation<differt2d.logic.activation>`.
     :return: Whether the two segments intersect.
-
-    .. warning::
-
-        Division by zero may occur if the two segments are colinear.
 
     :Examples:
 
@@ -135,14 +142,6 @@ def segments_intersect(
     Array(True, dtype=bool)
     >>> segments_intersect(P1, P2, P3, P4, approx=True, function=sigmoid)
     Array(1., dtype=float32)
-
-
-    :References:
-
-    Code inspired from "Graphics Gems III - 1st Edition", section IV.6.
-
-    https://www.realtimerendering.com/resources/GraphicsGems/gemsiii/insectc.c
-    http://www.graphicsgems.org/
     """
     tol = jnp.asarray(tol)
     A = P2 - P1
@@ -174,14 +173,14 @@ def path_length(points: Float[Array, "N 2"]) -> Float[Array, " "]:
     """
     Returns the length of the given path, with N points.
 
-    :param points: An array of points.
-    :return: The path length.
-
     .. note::
 
         Currently, some epsilon value is added to each path segment to avoid
         division by zero in the gradient of this function. Hopefully, this
         should not be perceived by the user.
+
+    :param points: An array of points.
+    :return: The path length.
 
     :Examples:
 

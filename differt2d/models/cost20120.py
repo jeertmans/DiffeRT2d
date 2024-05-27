@@ -231,6 +231,12 @@ class Model(eqx.Module):
         *,
         key: PRNGKeyArray,
     ):
+        if order < 0:
+            raise ValueError(f"Order must be greater or equal to 0, got {order}.")
+        if num_embeddings <= 0:
+            raise ValueError(
+                f"Number of embeddings must be greater than 0, got {num_embeddings}."
+            )
         key1, key2, key3, key4 = jax.random.split(key, 4)
 
         self.order = order
@@ -263,12 +269,6 @@ class Model(eqx.Module):
         )
 
     def __check_init__(self):  # noqa: D105
-        if self.order < 0:
-            raise ValueError(f"Order must be greater or equal to 0, got {self.order}.")
-        if self.num_embeddings <= 0:
-            raise ValueError(
-                f"Number of embeddings must be greater than 0, got {self.num_embeddings}."
-            )
         if self.num_paths <= 0:
             raise ValueError(
                 f"Number of paths must be greater than 0, got {self.num_paths}."
@@ -314,6 +314,7 @@ class Model(eqx.Module):
         if walls.size == 0:
             if self.order == 0:
                 paths = jnp.vstack((tx, rx))
+                paths = jnp.expand_dims(paths, axis=0)
                 probabilities = jnp.ones((1,))
             else:
                 paths = jnp.empty((0, self.order + 2, 2))
@@ -357,7 +358,7 @@ class Model(eqx.Module):
         if inference is None:
             inference = self.inference
 
-        if inference:
+        if inference:  # pragma: no cover
             paths = jnp.zeros((0, self.order + 2, 2))
             state = init_state
 
