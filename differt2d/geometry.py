@@ -642,7 +642,6 @@ class Path(Plottable, eqx.Module):
             )
             _ = path.plot(ax)
             plt.show()  # doctest: +SKIP
-
         """
         if isinstance(tx, Point):
             tx = tx.xy
@@ -907,7 +906,6 @@ class ImagePath(Path, eqx.Module):
             )
             _ = path.plot(ax)
             plt.show()  # doctest: +SKIP
-
         """
         n = len(objects)
 
@@ -1017,7 +1015,6 @@ class FermatPath(Path, eqx.Module):
             )
             _ = path.plot(ax)
             plt.show()  # doctest: +SKIP
-
         """
         n = len(objects)
 
