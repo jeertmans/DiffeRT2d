@@ -40,7 +40,7 @@ class Plottable(ABC):
             function.
         :return: The artist(s).
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def bounding_box(self) -> Float[Array, "2 2"]:
@@ -51,11 +51,13 @@ class Plottable(ABC):
 
         :return: The min. and max. coordinates of this object.
         """
-        pass
+        pass  # pragma: no cover
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
-    def grid(self, n: int = 50) -> tuple[Float[Array, "n n"], Float[Array, "n n"]]:
+    def grid(
+        self, n: int = 50
+    ) -> tuple[Float[Array, "{n} {n}"], Float[Array, "{n} {n}"]]:
         """
         Returns a (mesh) grid that overlays the current object.
 
@@ -100,23 +102,19 @@ class Plottable(ABC):
         xavg = 0.5 * (xmin + xmax)
         yavg = 0.5 * (ymin + ymax)
 
-        try:
-            x, y = dict(
-                N=(xavg, ymax),
-                E=(xmax, yavg),
-                S=(xavg, ymin),
-                W=(xmin, yavg),
-                C=(xavg, yavg),
-                NE=(xmax, ymax),
-                NW=(xmin, ymax),
-                SE=(xmax, ymin),
-                SW=(xmin, ymin),
-            )[location]
+        x, y = dict(
+            N=(xavg, ymax),
+            E=(xmax, yavg),
+            S=(xavg, ymin),
+            W=(xmin, yavg),
+            C=(xavg, yavg),
+            NE=(xmax, ymax),
+            NW=(xmin, ymax),
+            SE=(xmax, ymin),
+            SW=(xmin, ymin),
+        )[location]
 
-            return jnp.array([x, y])
-
-        except KeyError as e:
-            raise ValueError(f"Invalid location '{location}'") from e
+        return jnp.array([x, y])
 
 
 class Interactable(ABC):
@@ -132,7 +130,7 @@ class Interactable(ABC):
 
         :return: The number of parameters.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def parametric_to_cartesian(
@@ -145,7 +143,7 @@ class Interactable(ABC):
         :param param_coords: Parametric coordinates.
         :return: Cartesian coordinates.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def cartesian_to_parametric(
@@ -157,7 +155,7 @@ class Interactable(ABC):
         :param carte_coords: Cartesian coordinates.
         :return: Parametric coordinates.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def contains_parametric(
@@ -175,7 +173,7 @@ class Interactable(ABC):
             :func:`activation<differt2d.logic.activation>`.
         :return: True if object contains these coordinates.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def intersects_cartesian(
@@ -201,7 +199,7 @@ class Interactable(ABC):
             :func:`activation<differt2d.logic.activation>`.
         :return: True if it intersects.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:
@@ -222,7 +220,7 @@ class Interactable(ABC):
         :param ray_path: Ray path coordinates.
         :return: Interaction score.
         """
-        pass
+        pass  # pragma: no cover
 
 
 class Object(Plottable, Interactable):

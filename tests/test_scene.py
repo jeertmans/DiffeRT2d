@@ -6,9 +6,9 @@ import chex
 import jax.numpy as jnp
 import pytest
 
-from differt2d.geometry import Point, Wall
+from differt2d.geometry import Point, Wall, stack_leaves
 from differt2d.logic import is_true
-from differt2d.scene import Scene, SceneName
+from differt2d.scene import PyTreeDict, Scene, SceneName
 
 
 @pytest.fixture
@@ -16,6 +16,39 @@ def geojson_file():
     file = Path(__file__).parent / "example.geojson"
     assert file.exists()
     yield file
+
+
+class TestPyTreeDict:
+    def test_check_init(self):
+        with pytest.raises(
+            ValueError, match="Number of keys must match number of values"
+        ):
+            _ = PyTreeDict(_keys=("a", "b"), _values=("key_a",))
+
+    def test_from_mapping(self):
+        m = {"a": 1, "b": 2}
+        d = PyTreeDict.from_mapping(m)
+
+        for a, b in zip(m, d):
+            assert a == b
+
+    def test_get_items(self):
+        m = {"a": 1, "b": 2}
+        d = PyTreeDict.from_mapping(m)
+
+        assert d["a"] == 1
+        assert d["b"] == 2
+
+        with pytest.raises(KeyError):
+            _ = d["c"]
+
+    def test_contains(self):
+        m = {"a": 1, "b": 2}
+        d = PyTreeDict.from_mapping(m)
+
+        assert "a" in d
+        assert "b" in d
+        assert "c" not in d
 
 
 class TestScene:
@@ -79,6 +112,22 @@ class TestScene:
         scene = scene.add_objects(Wall())
 
         assert len(scene.objects) == 3
+
+    def test_from_walls_array(self, key):
+        scene = Scene.random_uniform_scene(
+            n_transmitters=0, n_receivers=0, n_walls=30, key=key
+        )
+
+        walls = scene.objects
+        walls = stack_leaves(walls)
+
+        walls_array = walls.xys
+
+        assert walls_array.shape == (30, 2, 2)
+
+        new_scene = Scene.from_walls_array(walls_array)
+
+        chex.assert_trees_all_equal(scene, new_scene)
 
     @pytest.mark.parametrize(
         ("transform",),
@@ -241,15 +290,20 @@ class TestScene:
     @pytest.mark.parametrize(
         ("min_order", "max_order"), [(0, 0), (1, 1), (2, 2), (0, 2)]
     )
-    def test_all_paths_and_valid_paths(self, min_order, max_order):
+    def test_all_paths_and_valid_paths(self, min_order, max_order, key):
         scene = Scene.square_scene()
 
         valid_paths = scene.all_valid_paths(
-            approx=False, min_order=min_order, max_order=max_order
+            approx=False,
+            min_order=min_order,
+            max_order=max_order,
+            key=key,  # Key is unused here
         )
 
         for tx_key, rx_key, got_valid, expected_path, path_candidate in scene.all_paths(
-            min_order=min_order, max_order=max_order, approx=False
+            min_order=min_order,
+            max_order=max_order,
+            approx=False,
         ):
             assert tx_key == "tx"
             assert rx_key == "rx"
@@ -312,7 +366,7 @@ class TestScene:
         )
         chex.assert_trees_all_close(got, jnp.array(6.0))
 
-    def test_accumulate_on_transmitters_grid_over_paths(self):
+    def test_accumulate_on_transmitters_grid_over_paths(self, key):
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
@@ -323,7 +377,7 @@ class TestScene:
         x = y = jnp.linspace(-3, 3, 10)
         X, Y = jnp.meshgrid(x, y)
         got_Z = scene.accumulate_on_transmitters_grid_over_paths(
-            X, Y, fun=fun, max_order=1, approx=False
+            X, Y, fun=fun, max_order=1, approx=False, key=key
         )
 
         rx_key, got_Z0 = next(got_Z)  # type: ignore
@@ -367,7 +421,7 @@ class TestScene:
         chex.assert_trees_all_close(got_Z, expected_Z)
         chex.assert_trees_all_close(got_dZ, expected_dZ)
 
-    def test_accumulate_on_receivers_grid_over_paths(self):
+    def test_accumulate_on_receivers_grid_over_paths(self, key):
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
@@ -378,7 +432,7 @@ class TestScene:
         x = y = jnp.linspace(-3, 3, 10)
         X, Y = jnp.meshgrid(x, y)
         got_Z = scene.accumulate_on_receivers_grid_over_paths(
-            X, Y, fun=fun, max_order=1, approx=False
+            X, Y, fun=fun, max_order=1, approx=False, key=key
         )
 
         tx_key, got_Z0 = next(got_Z)  # type: ignore
