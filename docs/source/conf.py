@@ -91,7 +91,7 @@ sphinx_gallery_conf = {
 }
 
 qtgallery_conf = {
-    "xvfb_size": (765, 775),
+    "xvfb_size": (1085, 775),
     "xvfb_color_depth": 24,
     "xfvb_use_xauth": False,
     "xfvb_extra_args": [],
