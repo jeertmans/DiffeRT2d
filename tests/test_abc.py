@@ -7,7 +7,6 @@ from differt2d.geometry import Wall
 
 
 class TestPlottable:
-
     def test_grid(self):
         wall = Wall([[0.0, 0.0], [1.0, 2.0]])
 
