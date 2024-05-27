@@ -78,7 +78,7 @@ sphinx_gallery_conf = {
     "filename_pattern": r"/(plot)|(qt)_",
     "examples_dirs": "../../examples",  # path to your example scripts
     "gallery_dirs": "examples_gallery",  # path to where to save gallery generated output
-    "image_scrapers": ("matplotlib", qtgallery.qtscraper),
+    "image_scrapers": (qtgallery.qtscraper, "matplotlib"),
     "reset_modules": (qtgallery.reset_qapp,),
     "matplotlib_animations": True,
     "backreferences_dir": "gen_modules/backreferences",
@@ -91,7 +91,7 @@ sphinx_gallery_conf = {
 }
 
 qtgallery_conf = {
-    "xvfb_size": (2 * 640, 2 * 480),
+    "xvfb_size": (1640, 1480),
 }
 
 # -- Options for HTML output -------------------------------------------------
