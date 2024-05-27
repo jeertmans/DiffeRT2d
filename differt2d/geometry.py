@@ -105,6 +105,10 @@ def segments_intersect(
 
         Division by zero may occur if the two segments are colinear.
 
+    :References:
+
+      `"Graphics Gems III - 1st Edition", section IV.6. <http://www.graphicsgems.org/>`_. `Link to code <https://www.realtimerendering.com/resources/GraphicsGems/gemsiii/insectc.c>`_.
+
     :param P1:
         The coordinates of the first point of the first segment.
     :param P2:
