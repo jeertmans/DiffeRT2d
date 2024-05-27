@@ -7,7 +7,7 @@ proposed by this module.
 
 .. warning::
     As of writing this, the ``FPT`` and ``MPT`` path methods
-    will not show the expected covarage (which ``image`` usually
+    will not show the expected coverage (which ``image`` usually
     does). This is mainly an issue caused by the use of `only`
     100 steps for the minimization, which may not be necessary
     to properly converge.

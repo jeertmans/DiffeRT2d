@@ -52,6 +52,7 @@ import jax.numpy as jnp
 from beartype import beartype as typechecker
 from jaxtyping import Array, Bool, Float, jaxtyped
 
+from ._typing import ArrayLikeFloat, ScalarFloat
 from .defaults import DEFAULT_ALPHA
 
 ENABLE_APPROX: bool = "ENABLE_APPROX" not in os.environ
@@ -215,9 +216,7 @@ def disable_approx(disable: bool = True):  # pragma: no cover
 
 @partial(jax.jit, inline=True)
 @jaxtyped(typechecker=typechecker)
-def sigmoid(
-    x: Union[float, Float[Array, " *batch"]], alpha: Union[float, Float[Array, " "]]
-) -> Float[Array, " *batch"]:
+def sigmoid(x: ArrayLikeFloat, alpha: ScalarFloat) -> Float[Array, " *batch"]:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -237,9 +236,7 @@ def sigmoid(
 
 @partial(jax.jit, inline=True)
 @jaxtyped(typechecker=typechecker)
-def hard_sigmoid(
-    x: Union[float, Float[Array, " *batch"]], alpha: Union[float, Float[Array, " "]]
-) -> Float[Array, " *batch"]:
+def hard_sigmoid(x: ArrayLikeFloat, alpha: ScalarFloat) -> Float[Array, " *batch"]:
     r"""
     Element-wise sigmoid, parametrized with ``alpha``.
 
@@ -260,10 +257,10 @@ def hard_sigmoid(
 @partial(jax.jit, inline=True, static_argnames=("function",))
 @jaxtyped(typechecker=None)
 def activation(
-    x: Union[float, Float[Array, " *batch"]],
-    alpha: Union[float, Float[Array, " "]] = DEFAULT_ALPHA,
+    x: ArrayLikeFloat,
+    alpha: ScalarFloat = DEFAULT_ALPHA,
     function: Callable[
-        [Union[float, Float[Array, " *batch"]], Union[float, Float[Array, " "]]],
+        [ArrayLikeFloat, ScalarFloat],
         Float[Array, " *batch"],
     ] = hard_sigmoid,
 ) -> Float[Array, " *batch"]:
@@ -382,8 +379,8 @@ def logical_not(x: Union[Truthy, float, bool], approx: Optional[bool] = None) ->
 @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
 @jaxtyped(typechecker=typechecker)
 def greater(
-    x: Union[float, Float[Array, " *batch"]],
-    y: Union[float, Float[Array, " *batch"]],
+    x: ArrayLikeFloat,
+    y: ArrayLikeFloat,
     approx: Optional[bool] = None,
     **kwargs: Any,
 ) -> Truthy:
@@ -409,8 +406,8 @@ def greater(
 @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
 @jaxtyped(typechecker=typechecker)
 def greater_equal(
-    x: Union[float, Float[Array, " *batch"]],
-    y: Union[float, Float[Array, " *batch"]],
+    x: ArrayLikeFloat,
+    y: ArrayLikeFloat,
     approx: Optional[bool] = None,
     **kwargs: Any,
 ) -> Truthy:
@@ -438,8 +435,8 @@ def greater_equal(
 @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
 @jaxtyped(typechecker=typechecker)
 def less(
-    x: Union[float, Float[Array, " *batch"]],
-    y: Union[float, Float[Array, " *batch"]],
+    x: ArrayLikeFloat,
+    y: ArrayLikeFloat,
     approx: Optional[bool] = None,
     **kwargs: Any,
 ) -> Truthy:
@@ -465,8 +462,8 @@ def less(
 @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
 @jaxtyped(typechecker=typechecker)
 def less_equal(
-    x: Union[float, Float[Array, " *batch"]],
-    y: Union[float, Float[Array, " *batch"]],
+    x: ArrayLikeFloat,
+    y: ArrayLikeFloat,
     approx: Optional[bool] = None,
     **kwargs: Any,
 ) -> Truthy:
@@ -543,7 +540,7 @@ def logical_any(
 @jaxtyped(typechecker=typechecker)
 def is_true(
     x: Union[Truthy, float, bool],
-    tol: Union[float, Float[Array, " "]] = 0.5,
+    tol: ScalarFloat = 0.5,
     approx: Optional[bool] = None,
 ) -> Bool[Array, " *batch"]:
     """
@@ -567,7 +564,7 @@ def is_true(
 @jaxtyped(typechecker=typechecker)
 def is_false(
     x: Union[Truthy, float, bool],
-    tol: Union[float, Float[Array, " "]] = 0.5,
+    tol: ScalarFloat = 0.5,
     approx: Optional[bool] = None,
 ) -> Bool[Array, " *batch"]:
     """

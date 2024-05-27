@@ -1,6 +1,6 @@
 """Geometrical objects to be placed in a :class:`differt2d.scene.Scene`."""
 
-from collections.abc import Mapping, MutableSequence, Sequence
+from collections.abc import Iterable, Mapping, MutableSequence, Sequence
 from functools import partial
 from typing import Any, Callable, Optional, TypeVar, Union
 
@@ -12,6 +12,7 @@ from jaxtyping import Array, Float, PRNGKeyArray, PyTree, UInt, jaxtyped
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 
+from ._typing import ScalarFloat, ScalarUInt
 from .abc import Interactable, Object, Plottable
 from .defaults import DEFAULT_PATCH
 from .logic import (
@@ -29,12 +30,15 @@ from .logic import (
 from .optimize import minimize_many_random_uniform
 
 T = TypeVar("T")
+P = TypeVar("P", bound=PyTree)
 
 
 @eqx.filter_jit
 def stack_leaves(
-    pytrees: PyTree, axis: int = 0, is_leaf: Optional[Callable[..., Any]] = None
-) -> PyTree:
+    pytrees: Iterable[P],
+    axis: int = 0,
+    is_leaf: Optional[Callable[..., Any]] = None,
+) -> P:
     """
     Stacks the leaves of one or more Pytrees along a new axis.
 
@@ -52,7 +56,7 @@ def stack_leaves(
 
 
 @eqx.filter_jit
-def unstack_leaves(pytrees) -> MutableSequence[PyTree]:
+def unstack_leaves(pytrees) -> list[PyTree]:
     """
     Unstacks the leaves of a Pytree. Reciprocal of :func:`stack_leaves`.
 
@@ -72,7 +76,7 @@ def segments_intersect(
     P2: Float[Array, "2"],
     P3: Float[Array, "2"],
     P4: Float[Array, "2"],
-    tol: Union[float, Float[Array, " "]] = 0.005,
+    tol: ScalarFloat = 0.005,
     approx: Optional[bool] = None,
     **kwargs: Any,
 ) -> Truthy:
@@ -98,19 +102,19 @@ def segments_intersect(
     must be in the range :math:`[0;1]`.
 
     :param P1:
-        The coordinates of the first point of the first segment, (2,).
+        The coordinates of the first point of the first segment.
     :param P2:
-        The coordinates of the second point of the first segment, (2,).
+        The coordinates of the second point of the first segment.
     :param P3:
-        The coordinates of the first point of the second segment, (2,).
+        The coordinates of the first point of the second segment.
     :param P4:
-        The coordinates of the second point of the second segment, (2,).
+        The coordinates of the second point of the second segment.
     :param tol:
         Relaxes the condition to :math:`[-\texttt{tol};1+\texttt{tol}]`.
     :param approx: Whether approximation is enabled or not.
     :param kwargs:
         Keyword arguments to be passed to :func:`activation<differt2d.logic.activation>`.
-    :return: Whether the two segments intersect, ().
+    :return: Whether the two segments intersect.
 
     .. warning::
 
@@ -170,8 +174,8 @@ def path_length(points: Float[Array, "N 2"]) -> Float[Array, " "]:
     """
     Returns the length of the given path, with N points.
 
-    :param points: An array of points, (N, 2).
-    :return: The path length, ().
+    :param points: An array of points.
+    :return: The path length.
 
     .. note::
 
@@ -200,8 +204,8 @@ def normalize(vector: Float[Array, "2"]) -> tuple[Float[Array, "2"], Float[Array
     """
     Normalizes a vector, and also returns its length.
 
-    :param vector: A vector, (2,).
-    :return: The normalized vector and its length, (2,) and ().
+    :param vector: A vector.
+    :return: The normalized vector and its length.
 
     :Examples:
 
@@ -229,8 +233,8 @@ def closest_point(
     """
     Returns the index of the closest point to some target, and the actual distance.
 
-    :param points: An array of 2D points, (N, 2).
-    :param target: A target point, (2,).
+    :param points: An array of 2D points.
+    :param target: A target point.
     :return: The index of the closest point and the distance to the target.
 
     :Examples:
@@ -423,11 +427,11 @@ class Wall(Ray, Object, eqx.Module):
 
     @partial(jax.jit, inline=True)
     @jaxtyped(typechecker=typechecker)
-    def normal(self) -> Array:
+    def normal(self) -> Float[Array, "2"]:
         """
         Returns the normal to the current wall, expressed in cartesian coordinates and normalized.
 
-        :return: The normal, (2,)
+        :return: The normal.
         """
         t = self.t()
         n = t.at[0].set(t[1])
@@ -444,7 +448,8 @@ class Wall(Ray, Object, eqx.Module):
     @jax.jit
     @jaxtyped(typechecker=typechecker)
     def parametric_to_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
-        self, param_coords: Float[Array, " n"]
+        self,
+        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
     ) -> Float[Array, "2"]:
         return self.origin() + param_coords * self.t()
 
@@ -452,7 +457,7 @@ class Wall(Ray, Object, eqx.Module):
     @jaxtyped(typechecker=typechecker)
     def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self, carte_coords: Float[Array, "2"]
-    ) -> Float[Array, " n"]:
+    ) -> Float[Array, " {self.parameters_count()}"]:  # type: ignore[reportUndefinedVariable]
         other = carte_coords - self.origin()
         squared_length = jnp.dot(self.t(), self.t())
         squared_length = jnp.where(squared_length == 0.0, 1.0, squared_length)
@@ -462,7 +467,7 @@ class Wall(Ray, Object, eqx.Module):
     @jaxtyped(typechecker=typechecker)
     def contains_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
-        param_coords: Float[Array, " n"],
+        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
@@ -486,7 +491,7 @@ class Wall(Ray, Object, eqx.Module):
     def intersects_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
         ray: Float[Array, "2 2"],
-        patch: Union[float, Float[Array, " "]] = DEFAULT_PATCH,
+        patch: ScalarFloat = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
@@ -516,8 +521,8 @@ class Wall(Ray, Object, eqx.Module):
         """
         Returns the image of a point with respect to this mirror (wall), using specular reflection.
 
-        :param point: The starting point, (2,).
-        :return: The image of the point, (2,).
+        :param point: The starting point.
+        :return: The image of the point.
 
         :Examples:
 
@@ -608,10 +613,10 @@ class Path(Plottable, eqx.Module):
         The present implementation will sample a point at :python:`t = 0.5`
         on each object.
 
-        :param tx: The transmitting node, (2,).
+        :param tx: The transmitting node.
         :param objects:
             The list of objects to interact with (order is important).
-        :param rx: The receiving node, (2,).
+        :param rx: The receiving node.
         :param key: Unused for this class,
             kept for compatibility with other path classes.
         :param kwargs: Unused for this class,
@@ -656,7 +661,7 @@ class Path(Plottable, eqx.Module):
         """
         Returns the length of this path.
 
-        :return: The path length, ().
+        :return: The path length.
         """
         return path_length(self.xys)
 
@@ -678,7 +683,7 @@ class Path(Plottable, eqx.Module):
         :param approx: Whether approximation is enabled or not.
         :param kwargs: Keyword arguments to be passed to
             :func:`activation<differt2d.logic.activation>`.
-        :return: Whether this path passes on the objects, ().
+        :return: Whether this path passes on the objects.
         """
         contains = true_value(approx=approx)
         for i, obj in enumerate(objects):
@@ -701,7 +706,7 @@ class Path(Plottable, eqx.Module):
         self,
         objects: Sequence[Interactable],
         path_candidate: Array,
-        patch: Union[float, Float[Array, " "]] = DEFAULT_PATCH,
+        patch: ScalarFloat = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
@@ -718,7 +723,7 @@ class Path(Plottable, eqx.Module):
         :param approx: Whether approximation is enabled or not.
         :param kwargs: Keyword arguments to be passed to
             :func:`activation<differt2d.logic.activation>`.
-        :return: Whether this path intersects any of the objects, ().
+        :return: Whether this path intersects any of the objects.
         """
         interacting_object_indices = [-1] + [i for i in path_candidate] + [-1]
         intersects = false_value(
@@ -756,13 +761,15 @@ class Path(Plottable, eqx.Module):
         objects: Sequence[Interactable],
         path_candidate: UInt[Array, " order"],
         interacting_objects: Sequence[Interactable],
-        tol: Union[float, Float[Array, " "]] = 1e-2,
-        patch: Union[float, Float[Array, " "]] = DEFAULT_PATCH,
+        tol: ScalarFloat = 1e-2,
+        patch: ScalarFloat = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
         """
-        Returns whether the current path is valid, according to three criterions (see below).
+        Returns whether the current path is valid, according to three requirements (see below).
+
+        The requirements are:
 
         1. the path loss is below some tolerance;
         2. the coordinate points are correctly placed inside the corresponding
@@ -784,7 +791,7 @@ class Path(Plottable, eqx.Module):
         :param approx: Whether approximation is enabled or not.
         :param kwargs: Keyword arguments to be passed to
             :func:`activation<differt2d.logic.activation>`.
-        :return: Whether this path is valid, ().
+        :return: Whether this path is valid.
         """
         return jnp.nan_to_num(
             logical_all(
@@ -819,9 +826,9 @@ class Path(Plottable, eqx.Module):
 @jaxtyped(typechecker=typechecker)
 def parametric_to_cartesian_from_slice(  # noqa: D103
     obj: Interactable,
-    parametric_coords: Float[Array, " t"],
-    start: Union[int, UInt[Array, " "]],
-    size: Union[int, UInt[Array, " "]],
+    parametric_coords: Float[Array, " num_parametric_coords"],
+    start: ScalarUInt,
+    size: ScalarUInt,
 ) -> Float[Array, "2"]:
     parametric_coords = jax.lax.dynamic_slice(parametric_coords, (start,), (size,))
     return obj.parametric_to_cartesian(parametric_coords)
@@ -831,11 +838,13 @@ def parametric_to_cartesian_from_slice(  # noqa: D103
 @jaxtyped(typechecker=typechecker)
 def parametric_to_cartesian(  # noqa: D103
     objects: Sequence[Interactable],
-    parametric_coords: Float[Array, " t"],
+    parametric_coords: Float[Array, " num_parametric_coords"],
     n: int,
     tx_coords: Float[Array, "2"],
     rx_coords: Float[Array, "2"],
 ) -> Float[Array, "{n}+2 2"]:
+    assert n >= 0, f"n must be greater than 0, got {n = } instead."
+
     cartesian_coords = jnp.empty((n + 2, 2))
     cartesian_coords = cartesian_coords.at[0].set(tx_coords)
     cartesian_coords = cartesian_coords.at[-1].set(rx_coords)
@@ -869,10 +878,10 @@ class ImagePath(Path, eqx.Module):
         """
         Returns a path with minimal length.
 
-        :param tx: The transmitting node, (2,).
+        :param tx: The transmitting node.
         :param objects:
             The list of walls to interact with (order is important).
-        :param rx: The receiving node, (2,).
+        :param rx: The receiving node.
         :param key: Unused for this class,
             kept for compatibility with other path classes.
         :param kwargs: Unused for this class,
@@ -976,10 +985,10 @@ class FermatPath(Path, eqx.Module):
         """
         Returns a path with minimal length.
 
-        :param tx: The transmitting node, (2,).
+        :param tx: The transmitting node.
         :param objects:
             The list of objects to interact with (order is important).
-        :param rx: The receiving node, (2,).
+        :param rx: The receiving node.
         :param key: The random key to generate the initial guess.
         :param kwargs:
             Keyword arguments to be passed to
@@ -1073,10 +1082,10 @@ class MinPath(Path, eqx.Module):
         """
         Returns a path that minimizes the sum of interactions.
 
-        :param tx: The transmitting node, (2,).
+        :param tx: The transmitting node.
         :param objects:
             The list of objects to interact with (order is important).
-        :param rx: The receiving node, (2,).
+        :param rx: The receiving node.
         :param key: The random key to generate the initial guess.
         :param kwargs:
             Keyword arguments to be passed to

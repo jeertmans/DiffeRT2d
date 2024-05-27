@@ -54,7 +54,7 @@ def minimize(
     Minimizes a scalar function of one or more variables.
 
     :param fun: The objective function to be minimized.
-    :param x0: The initial guess, (n,).
+    :param x0: The initial guess.
     :param args:
         Positional arguments to be passed to ``fun``.
     :param steps: The number of steps to perform.

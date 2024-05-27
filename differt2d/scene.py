@@ -27,6 +27,7 @@ from beartype import beartype as typechecker
 from jaxtyping import Array, Float, PRNGKeyArray, UInt, jaxtyped
 from matplotlib.artist import Artist
 
+from ._typing import ScalarFloat
 from .abc import Interactable, Loc, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
 from .logic import Truthy, is_true
@@ -480,11 +481,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
     @classmethod
     def random_uniform_scene(
         cls,
-        key: PRNGKeyArray,
-        *,
         n_transmitters: int = 1,
         n_walls: int = 1,
         n_receivers: int = 1,
+        *,
+        key: PRNGKeyArray,
     ) -> "Scene":
         """
         Generates a random scene, drawing coordinates from a random distribution.
@@ -505,7 +506,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
             ax = plt.gca()
             key = jax.random.PRNGKey(1234)
-            scene = Scene.random_uniform_scene(key, n_walls=5)
+            scene = Scene.random_uniform_scene(n_walls=5, key=key)
             _ = scene.plot(ax)
             plt.show()  # doctest: +SKIP
 
@@ -529,15 +530,14 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
     @classmethod
     def basic_scene(
         cls,
-        *,
         tx_coords: Float[Array, "2"] = jnp.array([0.1, 0.1]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.302, 0.2147]),  # noqa: B008
     ) -> "Scene":
         """
         Instantiates a basic scene with a main room, and a second inner room in the lower left corner, with a small entrance.
 
-        :param tx_coords: The transmitter's coordinates, array-like, (2,).
-        :param rx_coords: The receiver's coordinates, array-like, (2,).
+        :param tx_coords: The transmitter's coordinates.
+        :param rx_coords: The receiver's coordinates.
         :return: The scene.
 
         :Examples:
@@ -584,15 +584,14 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
     @classmethod
     def square_scene(
         cls,
-        *,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.2]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.5, 0.6]),  # noqa: B008
     ) -> "Scene":
         """
         Instantiates a square scene with one main room.
 
-        :param tx_coords: The transmitter's coordinates, array-like, (2,).
-        :param rx_coords: The receiver's coordinates, array-like, (2,).
+        :param tx_coords: The transmitter's coordinates.
+        :param rx_coords: The receiver's coordinates.
         :return: The scene.
 
         :Examples:
@@ -635,7 +634,6 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
     def square_scene_with_wall(
         cls,
         ratio: float = 0.1,
-        *,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.5]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.8, 0.5]),  # noqa: B008
     ) -> "Scene":
@@ -644,8 +642,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
-        :param tx_coords: The transmitter's coordinates, array-like, (2,).
-        :param rx_coords: The receiver's coordinates, array-like, (2,).
+        :param tx_coords: The transmitter's coordinates.
+        :param rx_coords: The receiver's coordinates.
         :return: The scene.
 
         :Examples:
@@ -679,7 +677,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         return scene
 
     @classmethod
-    def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> "Scene":
+    def square_scene_with_obstacle(
+        cls, ratio: ScalarFloat = 0.1, **kwargs: Any
+    ) -> "Scene":
         """
         Instantiates a square scene with one main room, and one square obstacle in the center.
 
@@ -837,7 +837,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         Returns the closest transmitter to the given coordinates.
 
-        :param coords: The x-y coordinates, (2,).
+        :param coords: The x-y coordinates.
         :return: The closet transmitter (name) and its distance to the
             coordinates.
         """
@@ -853,7 +853,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         Returns the closest receivers to the given coordinates.
 
-        :param coords: The x-y coordinates, (2,).
+        :param coords: The x-y coordinates.
         :return: The closet receiver (name) and its distance to the
             coordinates.
         """
@@ -1097,8 +1097,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         Produces an iterator with one element for each receiver location.
 
-        :param X: The grid of x-coordinates, (m, n).
-        :param Y: The grid of y-coordinates, (m, n).
+        :param X: The grid of x-coordinates.
+        :param Y: The grid of y-coordinates.
         :param fun: The function to evaluate on each path.
         :param fun_args:
             Positional arguments to be passed to ``fun``.
@@ -1233,8 +1233,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         Produces an iterator with one element for each transmitter location.
 
-        :param X: The grid of x-coordinates, (m, n).
-        :param Y: The grid of y-coordinates, (m, n).
+        :param X: The grid of x-coordinates.
+        :param Y: The grid of y-coordinates.
         :param fun: The function to evaluate on each path.
         :param args:
             Positional arguments to be passed to ``fun``.

@@ -135,21 +135,21 @@ class TestScene:
         ],
     )
     def test_random_uniform_scene(self, key, n):
-        scene = Scene.random_uniform_scene(key, n_transmitters=n)
+        scene = Scene.random_uniform_scene(key=key, n_transmitters=n)
 
         assert isinstance(scene, Scene)
         assert len(scene.transmitters) == n
         assert len(scene.objects) == 1
         assert len(scene.receivers) == 1
 
-        scene = Scene.random_uniform_scene(key, n_walls=n)
+        scene = Scene.random_uniform_scene(key=key, n_walls=n)
 
         assert isinstance(scene, Scene)
         assert len(scene.transmitters) == 1
         assert len(scene.objects) == n
         assert len(scene.receivers) == 1
 
-        scene = Scene.random_uniform_scene(key, n_receivers=n)
+        scene = Scene.random_uniform_scene(key=key, n_receivers=n)
 
         assert isinstance(scene, Scene)
         assert len(scene.transmitters) == 1
@@ -181,7 +181,7 @@ class TestScene:
 
     def test_plot(self, ax, key):
         scene = Scene.random_uniform_scene(
-            key, n_transmitters=3, n_walls=5, n_receivers=2
+            key=key, n_transmitters=3, n_walls=5, n_receivers=2
         )
         _ = scene.plot(ax)
 
@@ -195,7 +195,7 @@ class TestScene:
         _ = scene.plot(ax)
 
     def test_bounding_box(self, key):
-        scene = Scene.random_uniform_scene(key, n_walls=10)
+        scene = Scene.random_uniform_scene(key=key, n_walls=10)
 
         points = jnp.vstack(
             [scene.transmitters["tx_0"].xy, scene.receivers["rx_0"].xy]
@@ -213,7 +213,7 @@ class TestScene:
         chex.assert_shape(got, (2, 2))
 
     def test_get_closest_transmitter(self, key):
-        scene = Scene.random_uniform_scene(key, n_transmitters=10)
+        scene = Scene.random_uniform_scene(key=key, n_transmitters=10)
         expected_point = Point(xy=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
         scene = scene.update_transmitters(closest=expected_point)
@@ -223,7 +223,7 @@ class TestScene:
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
     def test_get_closest_receiver(self, key):
-        scene = Scene.random_uniform_scene(key, n_receivers=10)
+        scene = Scene.random_uniform_scene(key=key, n_receivers=10)
         expected_point = Point(xy=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
         scene = scene.update_receivers(closest=expected_point)
@@ -233,7 +233,7 @@ class TestScene:
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
     def test_all_path_candidates(self, key):
-        scene = Scene.random_uniform_scene(key, n_receivers=10)
+        scene = Scene.random_uniform_scene(key=key, n_receivers=10)
         got = scene.all_path_candidates(min_order=0, max_order=0)
         assert len(got) == 1
         assert len(got[0]) == 0

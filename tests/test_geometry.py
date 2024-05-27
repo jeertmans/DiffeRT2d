@@ -71,7 +71,7 @@ def steps():
 
 
 def test_stack_and_unstack_leaves(key: PRNGKeyArray):
-    scene = Scene.random_uniform_scene(key, n_walls=10)
+    scene = Scene.random_uniform_scene(key=key, n_walls=10)
     walls = scene.objects
 
     assert all(isinstance(wall, Wall) for wall in walls)
@@ -87,7 +87,7 @@ def test_stack_and_unstack_leaves(key: PRNGKeyArray):
 
 
 def test_stack_and_unstack_different_pytrees(key: PRNGKeyArray):
-    scene = Scene.random_uniform_scene(key, n_walls=2)
+    scene = Scene.random_uniform_scene(key=key, n_walls=2)
     walls = list(scene.objects)
     walls[0] = RIS(xys=walls[0].xys)
 
@@ -327,7 +327,7 @@ class TestPath:
     @approx
     def test_on_objects(self, approx: bool, key: PRNGKeyArray):
         with enable_approx(approx), disable_jit():
-            scene = Scene.random_uniform_scene(key, n_walls=5)
+            scene = Scene.random_uniform_scene(key=key, n_walls=5)
             path = Path.from_tx_objects_rx(
                 scene.transmitters["tx_0"],
                 scene.objects,
@@ -338,7 +338,7 @@ class TestPath:
             chex.assert_trees_all_close(expected, got, atol=1e-8)
 
             key = jax.random.split(key)[1]
-            scene = Scene.random_uniform_scene(key, n_walls=5)
+            scene = Scene.random_uniform_scene(key=key, n_walls=5)
             expected = false_value()
             got = path.on_objects(scene.objects)
             chex.assert_trees_all_close(expected, got, atol=1e-8)
@@ -346,7 +346,7 @@ class TestPath:
     @approx
     def test_intersects_with_objects(self, approx: bool, key: PRNGKeyArray):
         with enable_approx(approx), disable_jit():
-            scene = Scene.random_uniform_scene(key, n_walls=10)
+            scene = Scene.random_uniform_scene(key=key, n_walls=10)
             path = Path.from_tx_objects_rx(
                 scene.transmitters["tx_0"],
                 scene.objects,
