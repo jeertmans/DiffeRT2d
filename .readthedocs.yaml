@@ -5,9 +5,7 @@ build:
     python: '3.11'
   apt_packages:
   - libxcb-cursor0
-  - freeglut3-dev
   - xvfb
-  - x11-utils
 sphinx:
   builder: html
   configuration: docs/source/conf.py
