@@ -105,13 +105,6 @@ def segments_intersect(
 
         Division by zero may occur if the two segments are colinear.
 
-    :References:
-
-    Code inspired from "Graphics Gems III - 1st Edition", section IV.6.
-
-    https://www.realtimerendering.com/resources/GraphicsGems/gemsiii/insectc.c
-    http://www.graphicsgems.org/
-
     :param P1:
         The coordinates of the first point of the first segment.
     :param P2:
@@ -142,6 +135,13 @@ def segments_intersect(
     Array(True, dtype=bool)
     >>> segments_intersect(P1, P2, P3, P4, approx=True, function=sigmoid)
     Array(1., dtype=float32)
+
+    :References:
+
+    Code inspired from "Graphics Gems III - 1st Edition", section IV.6.
+
+    https://www.realtimerendering.com/resources/GraphicsGems/gemsiii/insectc.c
+    http://www.graphicsgems.org/
     """
     tol = jnp.asarray(tol)
     A = P2 - P1
