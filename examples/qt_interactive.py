@@ -487,11 +487,6 @@ class PlotWidget(QWidget):
 #
 # This part is not very interesting, and uses the builtin :mod:`argparse`
 # module to create a set of command-line options and parse them.
-#
-# .. note::
-#
-#     The figure canvas does not render correclty in the docs (size is too small).
-#     To better appreciate it, please run this example locally!
 
 
 if __name__ == "__main__":

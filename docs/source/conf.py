@@ -82,16 +82,14 @@ sphinx_gallery_conf = {
     "reset_modules": (qtgallery.reset_qapp,),
     "matplotlib_animations": True,
     "backreferences_dir": "gen_modules/backreferences",
-    "doc_module": ("differt2d", "numpy", "jax", "optax", "matplotlib"),
+    "doc_module": ("differt2d", "equinox", "jax", "matplotlib", "optax"),
     "reference_url": {
         "differt2d": None,
     },
+    "capture_repr": ("_repr_html_", "__repr__"),
+    "compress_images": ("images", "thumbnails"),
     "image_srcset": ["2x"],
     "show_api_usage": True,
-}
-
-qtgallery_conf = {
-    "xvfb_size": (775, 1550),
 }
 
 # -- Options for HTML output -------------------------------------------------
