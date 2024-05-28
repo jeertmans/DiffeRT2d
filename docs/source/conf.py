@@ -124,6 +124,7 @@ html_theme_options = {
 # -- Intersphinx mapping
 
 intersphinx_mapping = {
+    "differt_core": ("https://differt.eertmans.be/latest/", None),
     "equinox": ("https://docs.kidger.site/equinox/", None),
     "jax": ("https://jax.readthedocs.io/en/latest", None),
     "jaxtyping": ("https://docs.kidger.site/jaxtyping/", None),

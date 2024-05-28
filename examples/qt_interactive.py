@@ -324,6 +324,7 @@ class PlotWidget(QWidget):
         # Matplotlib figures
         self.fig = Figure(figsize=(10, 10), tight_layout=True)
         self.view = FigureCanvas(self.fig)
+        self.view.setMinimumHeight(200)
         self.ax = self.fig.add_subplot()
 
         # Toolbar above the figure

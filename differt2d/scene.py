@@ -19,11 +19,11 @@ from typing import (
     runtime_checkable,
 )
 
-import differt_core
 import equinox as eqx
 import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
+from differt_core.rt.graph import CompleteGraph
 from jaxtyping import Array, Float, PRNGKeyArray, UInt, jaxtyped
 from matplotlib.artist import Artist
 
@@ -888,21 +888,30 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         Note that it only includes indices for objects.
 
+        .. note::
+
+            Internally, it uses :py:class:`differt_core.rt.graph.CompleteGraph`
+            to generate the sequence of all path candidates efficiently.
+
         :param min_order: The minimum order of the path, i.e., the
             number of interactions.
         :param max_order: The maximum order of the path, i.e., the
             number of interactions.
         :return: The list of list of indices.
         """
-        num_primitives = len(self.objects)
+        num_nodes = len(self.objects)
+
+        graph = CompleteGraph(num_nodes)
+
+        from_ = num_nodes
+        to = from_ + 1
 
         return [
-            path_candidate
+            jnp.asarray(path_candidate, dtype=jnp.uint32)
             for order in range(min_order, max_order + 1)
-            for path_candidate in jnp.asarray(
-                differt_core.generate_path_candidates(num_primitives, order),
-                dtype=jnp.uint32,
-            ).T
+            for path_candidate in graph.all_paths(
+                from_, to, order + 2, include_from_and_to=False
+            )
         ]
 
     def get_interacting_objects(
