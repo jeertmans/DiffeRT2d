@@ -160,7 +160,7 @@ isort = {known-first-party = ["differt2d", "tests"]}
 
 [tool.ruff.lint.per-file-ignores]
 "**.ipynb" = ["F821", "T201"]
-"**/{docs,examples,paper,tests}/*" = ["D"]
+"**/{docs,examples,papers,tests}/*" = ["D"]
 "benchmark.py" = ["D"]
 
 [tool.rye]
