@@ -136,9 +136,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param transmitters: A mapping a transmitter names and points.
         :return: The new scene.
         """
-        return Scene(
-            transmitters=transmitters, receivers=self.receivers, objects=self.objects
-        )
+        return eqx.tree_at(lambda s: s.transmitters, self, transmitters)
 
     @jaxtyped(typechecker=typechecker)
     def with_receivers(self, **receivers: Point) -> "Scene":
@@ -148,9 +146,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param receivers: A mapping a receiver names and points.
         :return: The new scene.
         """
-        return Scene(
-            transmitters=self.transmitters, receivers=receivers, objects=self.objects
-        )
+        return eqx.tree_at(lambda s: s.receivers, self, receivers)
 
     @jaxtyped(typechecker=typechecker)
     def with_objects(self, *objects: Object) -> "Scene":
@@ -160,11 +156,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param objects: A sequence of objects.
         :return: The new scene.
         """
-        return Scene(
-            transmitters=self.transmitters,
-            receivers=self.receivers,
-            objects=tuple(objects),
-        )
+        return eqx.tree_at(lambda s: s.objects, self, tuple(objects))
 
     @jaxtyped(typechecker=typechecker)
     def update_transmitters(self, **transmitters: Point) -> "Scene":
@@ -177,11 +169,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param transmitters: A mapping a transmitter names and points.
         :return: The new scene.
         """
-        return Scene(
-            transmitters=self.transmitters | transmitters,
-            receivers=self.receivers,
-            objects=self.objects,
-        )
+        return eqx.tree_at(lambda s: s.transmitters, self, self.transmitters | transmitters)
 
     @jaxtyped(typechecker=typechecker)
     def update_receivers(self, **receivers: Point) -> "Scene":
@@ -194,11 +182,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param receivers: A mapping a receivers names and points.
         :return: The new scene.
         """
-        return Scene(
-            transmitters=self.transmitters,
-            receivers=self.receivers | receivers,
-            objects=self.objects,
-        )
+        return eqx.tree_at(lambda s: s.receivers, self, self.receivers | receivers)
 
     @jaxtyped(typechecker=typechecker)
     def add_objects(self, *objects: Object) -> "Scene":
@@ -628,7 +612,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             Wall(xys=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
         ]
 
-        return Scene(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
+        return cls(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
 
     @classmethod
     def square_scene_with_wall(

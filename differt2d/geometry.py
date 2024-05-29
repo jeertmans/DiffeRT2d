@@ -258,73 +258,6 @@ def closest_point(
 
 
 @jaxtyped(typechecker=typechecker)
-class Ray(Plottable, eqx.Module):
-    """
-    A ray object with origin and destination points.
-
-    .. plot::
-        :include-source: true
-
-        import matplotlib.pyplot as plt
-        import jax.numpy as jnp
-        from differt2d.geometry import Ray
-
-        ax = plt.gca()
-        ray = Ray(xys=jnp.array([[0., 0.], [1., 1.]]))
-        _ = ray.plot(ax)
-        plt.show()  # doctest: +SKIP
-
-    """
-
-    xys: Float[Array, "2 2"] = eqx.field(
-        converter=jnp.asarray,
-        default_factory=lambda: jnp.array([[0.0, 0.0], [1.0, 1.0]]),
-    )
-    """Cartesian coordinates (origin, dest)."""
-
-    @partial(jax.jit, inline=True)
-    @jaxtyped(typechecker=typechecker)
-    def origin(self) -> Float[Array, "2"]:
-        """
-        Returns the origin of this object.
-
-        :return: The origin.
-        """
-        return self.xys[0, :]
-
-    @partial(jax.jit, inline=True)
-    @jaxtyped(typechecker=typechecker)
-    def dest(self) -> Float[Array, "2"]:
-        """
-        Returns the destination of this object.
-
-        :return: The destination.
-        """
-        return self.xys[1, :]
-
-    @partial(jax.jit, inline=True)
-    @jaxtyped(typechecker=typechecker)
-    def t(self) -> Float[Array, "2"]:
-        """
-        Returns the direction vector of this object.
-
-        :return: The direction vector.
-        """
-        return self.dest() - self.origin()
-
-    @jaxtyped(typechecker=typechecker)
-    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> MutableSequence[Artist]:  # noqa: D102
-        kwargs.setdefault("color", "blue")
-        x, y = self.xys.T
-        return ax.plot(x, y, *args, **kwargs)  # type: ignore[func-returns-value]
-
-    @partial(jax.jit, inline=True)
-    @jaxtyped(typechecker=typechecker)
-    def bounding_box(self) -> Float[Array, "2 2"]:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
-        return jnp.vstack([jnp.min(self.xys, axis=0), jnp.max(self.xys, axis=0)])
-
-
-@jaxtyped(typechecker=typechecker)
 class Point(Plottable, eqx.Module):
     """
     A point object defined by its coordinates.
@@ -400,6 +333,111 @@ class Point(Plottable, eqx.Module):
     @jaxtyped(typechecker=typechecker)
     def bounding_box(self) -> Float[Array, "2 2"]:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         return jnp.vstack([self.xy, self.xy])
+
+
+@jaxtyped(typechecker=typechecker)
+class Ray(Plottable, eqx.Module):
+    """
+    A ray object with origin and destination points.
+
+    .. plot::
+        :include-source: true
+
+        import matplotlib.pyplot as plt
+        import jax.numpy as jnp
+        from differt2d.geometry import Ray
+
+        ax = plt.gca()
+        ray = Ray(xys=jnp.array([[0., 0.], [1., 1.]]))
+        _ = ray.plot(ax)
+        plt.show()  # doctest: +SKIP
+
+    """
+
+    xys: Float[Array, "2 2"] = eqx.field(
+        converter=jnp.asarray,
+        default_factory=lambda: jnp.array([[0.0, 0.0], [1.0, 1.0]]),
+    )
+    """Cartesian coordinates (origin, dest)."""
+
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def origin(self) -> Float[Array, "2"]:
+        """
+        Returns the origin of this object.
+
+        :return: The origin.
+        """
+        return self.xys[0, :]
+
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def dest(self) -> Float[Array, "2"]:
+        """
+        Returns the destination of this object.
+
+        :return: The destination.
+        """
+        return self.xys[1, :]
+
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def t(self) -> Float[Array, "2"]:
+        """
+        Returns the direction vector of this object.
+
+        :return: The direction vector.
+        """
+        return self.dest() - self.origin()
+
+
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def rotate(self, angle: ScalarFloat, around: Optional[Union[Float[Array, "2"], Point]] = None) -> "Ray":
+        """
+        Returns a rotated copy of this ray.
+
+        :param angle: The angle to rotate, in radian.
+        :param around: An optional point to rotate around.
+        :return: The rotated copy of this ray.
+
+        :Examples:
+
+        >>> from differt2d.geometry import Ray
+        >>> import jax.numpy as jnp
+        >>> ray = Ray(xys=jnp.array([[0.0, 0.0], [1.0, 0.0]]))
+        >>> ray.rotate(angle=jnp.pi).xys
+        Array([[ 8.742278e-08,  0.000000e+00],
+               [-1.000000e+00,  0.000000e+00]], dtype=float32)
+        """
+        if around is None:
+            center = jnp.array([0.0, 0.0])
+        elif isinstance(around, Point):
+            center = around.xy
+        else:
+            center = around
+
+        c = jnp.cos(angle)
+        s = jnp.sin(angle)
+
+        rotation_matrix = jnp.array([[+c, -s], [+s, +c]])
+
+        xys = self.xys - center[None, :]
+        xys = rotation_matrix @ xys
+        xys = xys + center[None, :]
+            
+        return eqx.tree_at(lambda ray: ray.xys, self, xys)
+
+    @jaxtyped(typechecker=typechecker)
+    def plot(self, ax: Axes, *args: Any, **kwargs: Any) -> MutableSequence[Artist]:  # noqa: D102
+        kwargs.setdefault("color", "blue")
+        x, y = self.xys.T
+        return ax.plot(x, y, *args, **kwargs)  # type: ignore[func-returns-value]
+
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def bounding_box(self) -> Float[Array, "2 2"]:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
+        return jnp.vstack([jnp.min(self.xys, axis=0), jnp.max(self.xys, axis=0)])
 
 
 @jaxtyped(typechecker=typechecker)

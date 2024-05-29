@@ -134,6 +134,25 @@ def test_path_length():
     chex.assert_trees_all_equal(expected, got)
 
 
+class TestPoint:
+    @point
+    def test_plot(self, ax, point: list):
+        _ = Point(xy=jnp.array(point)).plot(ax)
+
+    @point
+    def test_bounding_box(self, point: list):
+        xy = jnp.array(point)
+        expected = jnp.array(
+            [
+                [xy[0], xy[1]],
+                [xy[0], xy[1]],
+            ]
+        )
+        got = Point(xy=xy).bounding_box()
+        chex.assert_trees_all_equal(expected, got)
+        chex.assert_shape(got, (2, 2))
+
+
 class TestRay:
     @origin_dest
     def test_origin(self, origin: list, dest: list):
@@ -156,6 +175,25 @@ class TestRay:
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2,))
 
+    def test_rotate(self) -> None:
+        ray = Ray(xys=jnp.array([[0.0, 0.0], [1.0, 0.0]]))
+
+        got = ray.rotate(angle=jnp.pi)
+        expected = Ray(xys=jnp.array([[0.0, 0.0], [-1.0, 0.0]]))
+        chex.assert_trees_all_close(got, expected, atol=1e-7)
+
+        got = ray.rotate(angle=3 * jnp.pi)
+        chex.assert_trees_all_close(got, expected, atol=1e-7)
+
+        center = ray.dest()
+
+        got = ray.rotate(angle=jnp.pi, around=center)
+        expected = Ray(xys=jnp.array([[2.0, 0.0], [1.0, 0.0]]))
+        chex.assert_trees_all_close(got, expected, atol=1e-7)
+
+        got = ray.rotate(angle=jnp.pi, around=Point(xy=center))
+        chex.assert_trees_all_close(got, expected, atol=1e-7)
+
     @origin_dest
     def test_plot(self, ax, origin: list, dest: list):
         _ = Ray(xys=jnp.array([origin, dest])).plot(ax)
@@ -170,25 +208,6 @@ class TestRay:
             ]
         )
         got = Ray(xys=points).bounding_box()
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_shape(got, (2, 2))
-
-
-class TestPoint:
-    @point
-    def test_plot(self, ax, point: list):
-        _ = Point(xy=jnp.array(point)).plot(ax)
-
-    @point
-    def test_bounding_box(self, point: list):
-        xy = jnp.array(point)
-        expected = jnp.array(
-            [
-                [xy[0], xy[1]],
-                [xy[0], xy[1]],
-            ]
-        )
-        got = Point(xy=xy).bounding_box()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2, 2))
 

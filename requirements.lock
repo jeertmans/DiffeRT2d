@@ -19,7 +19,7 @@ contourpy==1.2.1
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-differt-core==0.0.12
+differt-core==0.0.14
     # via differt2d
 equinox==0.11.4
     # via differt2d
