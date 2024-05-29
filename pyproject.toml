@@ -159,6 +159,7 @@ extend-select = ["B", "C90", "D", "I", "RUF", "UP", "T"]
 isort = {known-first-party = ["differt2d", "tests"]}
 
 [tool.ruff.lint.per-file-ignores]
+"**.ipynb" = ["F821", "T201"]
 "**/{docs,examples,paper,tests}/*" = ["D"]
 "benchmark.py" = ["D"]
 

@@ -390,10 +390,13 @@ class Ray(Plottable, eqx.Module):
         """
         return self.dest() - self.origin()
 
-
     @partial(jax.jit, inline=True)
     @jaxtyped(typechecker=typechecker)
-    def rotate(self, angle: ScalarFloat, around: Optional[Union[Float[Array, "2"], Point]] = None) -> "Ray":
+    def rotate(
+        self,
+        angle: ScalarFloat,
+        around: Optional[Union[Float[Array, "2"], Point]] = None,
+    ) -> "Ray":
         """
         Returns a rotated copy of this ray.
 
@@ -425,7 +428,7 @@ class Ray(Plottable, eqx.Module):
         xys = self.xys - center[None, :]
         xys = rotation_matrix @ xys
         xys = xys + center[None, :]
-            
+
         return eqx.tree_at(lambda ray: ray.xys, self, xys)
 
     @jaxtyped(typechecker=typechecker)

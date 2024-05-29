@@ -97,7 +97,7 @@ f_and_df = jax.value_and_grad(
 #
 # .. note::
 #
-#    The transmitter is intentionnally placed in a zero-gradient zone, to showcase
+#    The transmitter is intentionally placed in a zero-gradient zone, to showcase
 #    the problem of non-convergence when not using approximation. Note that
 #    the zero gradient region can be avoided if one simulates a ``max_order``
 #    greater than ``0`` (e.g., ``1`` is sufficient here). This, of course,

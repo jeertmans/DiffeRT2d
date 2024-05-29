@@ -8,7 +8,7 @@ from differt2d.geometry import Wall
 
 class TestPlottable:
     def test_grid(self):
-        wall = Wall([[0.0, 0.0], [1.0, 2.0]])
+        wall = Wall(xys=jnp.array([[0.0, 0.0], [1.0, 2.0]]))
 
         X, Y = wall.grid(25)
 
@@ -20,7 +20,7 @@ class TestPlottable:
         assert float(Y.max()) == 2.0
 
     def test_center(self):
-        wall = Wall([[0.0, 1.0], [1.0, 2.0]])
+        wall = Wall(xys=jnp.array([[0.0, 1.0], [1.0, 2.0]]))
 
         got = wall.center()
         expected = jnp.array([0.5, 1.5])
@@ -28,7 +28,7 @@ class TestPlottable:
         chex.assert_trees_all_equal(got, expected)
 
     def test_get_location(self):
-        wall = Wall([[0.0, 0.5], [1.0, 2.0]])
+        wall = Wall(xys=jnp.array([[0.0, 0.5], [1.0, 2.0]]))
 
         got = wall.get_location("N")
         expected = jnp.array([0.5, 2.0])

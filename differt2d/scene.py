@@ -53,7 +53,7 @@ class Readable(Protocol):
     def read(self) -> S: ...
 
 
-class PyTreeDict(eqx.Module, Generic[_K, _V]):
+class PyTreeDict(eqx.Module, Mapping[_K, _V]):
     """
     An immutable mapping that is also a PyTree.
 
@@ -81,7 +81,10 @@ class PyTreeDict(eqx.Module, Generic[_K, _V]):
         :param: An existing mapping.
         :return: The new mapping.
         """
-        return cls(_keys=mapping.keys(), _values=mapping.values())
+        return cls(
+            _keys=mapping.keys(),  # type: ignore[reportArgumentType]
+            _values=mapping.values(),  # type: ignore[reportArgumentType]
+        )
 
     def __getitem__(self, key: _K) -> _V:
         try:
@@ -96,31 +99,16 @@ class PyTreeDict(eqx.Module, Generic[_K, _V]):
     def __len__(self) -> int:
         return len(self._keys)
 
-    def __contains__(self, key: _K) -> bool:
-        return key in self._keys
-
-    def __or__(self, other: Mapping[_K, _V]) -> "PyTreeDict":
-        return PyTreeDict.from_mapping(dict(self.items()) | dict(other.items()))
-
-    def keys(self) -> tuple[_K, ...]:
-        return self._keys
-
-    def values(self) -> tuple[_V, ...]:
-        return self._values
-
-    def items(self) -> tuple[tuple[_K, _V], ...]:
-        return tuple((key, value) for (key, value) in zip(self._keys, self._values))
-
 
 class Scene(Plottable, eqx.Module, Generic[_O]):
     """2D Scene made of objects, one or more transmitting node(s), and one or more receiving node(s)."""
 
-    transmitters: PyTreeDict[str, Point] = eqx.field(
+    transmitters: Mapping[str, Point] = eqx.field(
         converter=lambda d: PyTreeDict.from_mapping(d),
         default_factory=lambda: PyTreeDict.from_mapping({}),
     )
     """The transmitting nodes."""
-    receivers: PyTreeDict[str, Point] = eqx.field(
+    receivers: Mapping[str, Point] = eqx.field(
         converter=lambda d: PyTreeDict.from_mapping(d),
         default_factory=lambda: PyTreeDict.from_mapping({}),
     )
@@ -136,7 +124,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param transmitters: A mapping a transmitter names and points.
         :return: The new scene.
         """
-        return eqx.tree_at(lambda s: s.transmitters, self, transmitters)
+        return eqx.tree_at(
+            lambda s: s.transmitters, self, PyTreeDict.from_mapping(transmitters)
+        )
 
     @jaxtyped(typechecker=typechecker)
     def with_receivers(self, **receivers: Point) -> "Scene":
@@ -146,7 +136,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param receivers: A mapping a receiver names and points.
         :return: The new scene.
         """
-        return eqx.tree_at(lambda s: s.receivers, self, receivers)
+        return eqx.tree_at(
+            lambda s: s.receivers, self, PyTreeDict.from_mapping(receivers)
+        )
 
     @jaxtyped(typechecker=typechecker)
     def with_objects(self, *objects: Object) -> "Scene":
@@ -169,7 +161,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param transmitters: A mapping a transmitter names and points.
         :return: The new scene.
         """
-        return eqx.tree_at(lambda s: s.transmitters, self, self.transmitters | transmitters)
+        return eqx.tree_at(
+            lambda s: s.transmitters,
+            self,
+            PyTreeDict.from_mapping({**self.transmitters, **transmitters}),
+        )
 
     @jaxtyped(typechecker=typechecker)
     def update_receivers(self, **receivers: Point) -> "Scene":
@@ -182,7 +178,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param receivers: A mapping a receivers names and points.
         :return: The new scene.
         """
-        return eqx.tree_at(lambda s: s.receivers, self, self.receivers | receivers)
+        return eqx.tree_at(
+            lambda s: s.receivers,
+            self,
+            PyTreeDict.from_mapping({**self.receivers, **receivers}),
+        )
 
     @jaxtyped(typechecker=typechecker)
     def add_objects(self, *objects: Object) -> "Scene":
@@ -204,8 +204,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :return: The new scene.
         """
         return cls(
-            transmitters={},
-            receivers={},
+            transmitters={},  # type: ignore[reportArgumentType]
+            receivers={},  # type: ignore[reportArgumentType]
             objects=[Wall(xys=xys) for xys in walls],
         )
 

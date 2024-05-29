@@ -4,6 +4,7 @@ build:
   tools:
     python: '3.11'
   apt_packages:
+  - optipng
   - libxcb-cursor0
   - xvfb
 sphinx:

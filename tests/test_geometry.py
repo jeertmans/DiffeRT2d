@@ -304,7 +304,7 @@ class TestWall:
 
 class TestRIS:
     def test_evaluate_cartesian(self):
-        wall = RIS(xys=jnp.array([[0.0, 0.0], [4.0, 0.0]]), phi=0.0)
+        wall = RIS(xys=jnp.array([[0.0, 0.0], [4.0, 0.0]]), phi=jnp.array(0.0))
         expected = jnp.array(0.0)
         ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [2.0, 1.0]])
         got = wall.evaluate_cartesian(ray_path)
