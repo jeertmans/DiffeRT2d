@@ -121,7 +121,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         Returns a copy of this scene, with the given transmitters.
 
-        :param transmitters: A mapping a transmitter names and points.
+        :param transmitters: A mapping of transmitter names and points.
         :return: The new scene.
         """
         return eqx.tree_at(
@@ -133,7 +133,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         Returns a copy of this scene, with the given receivers.
 
-        :param receivers: A mapping a receiver names and points.
+        :param receivers: A mapping of receiver names and points.
         :return: The new scene.
         """
         return eqx.tree_at(
@@ -158,7 +158,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         The new set of transmitters is the union of the previous set and
         the ones provided as arguments.
 
-        :param transmitters: A mapping a transmitter names and points.
+        :param transmitters: A mapping of transmitter names and points.
         :return: The new scene.
         """
         return eqx.tree_at(
@@ -175,7 +175,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         The new set of receivers is the union of the previous set and
         the ones provided as arguments.
 
-        :param receivers: A mapping a receivers names and points.
+        :param receivers: A mapping of receivers names and points.
         :return: The new scene.
         """
         return eqx.tree_at(
