@@ -1,6 +1,6 @@
-<img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
-
 # DiffeRT2d
+
+<img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
 
 [![Latest Release][pypi-version-badge]][pypi-version-url]
 [![Python version][pypi-python-version-badge]][pypi-version-url]
@@ -12,8 +12,7 @@ Differentiable Ray Tracing (RT) Python framework for Telecommunications-oriented
 applications.
 
 > [!IMPORTANT]
-> The present work offers a simple Python module to create basic 2D scenarios,
-> and should be used for experimental purposes only. For practical 3D applications,
+> For 3D scenarios at city-scales,
 > checkout [DiffeRT](https://github.com/jeertmans/DiffeRT).
 
 - [Installation](#installation)
