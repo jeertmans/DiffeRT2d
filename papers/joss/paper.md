@@ -40,6 +40,8 @@ Ray Tracing is arguably one of the most prevalent methodologies in the field of 
 
 Thanks to [@deepmind2020jax]
 
+We have used it in [@eertmans2024eucap]...
+
 ## Machine Learning
 
 In DiffeRT2d, every single class is a PyTree... Thanks to [@kidger2021equinox]
