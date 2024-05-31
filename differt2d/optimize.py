@@ -56,7 +56,7 @@ def minimize(
     :param fun: The objective function to be minimized.
     :param x0: The initial guess.
     :param args:
-        Positional arguments to be passed to ``fun``.
+        Positional arguments passed to ``fun``.
     :param steps: The number of steps to perform.
     :param optimizer: The optimizer to use. If not provided,
         uses :func:`optax.adam` with a learning rate of ``0.1``.
@@ -112,7 +112,7 @@ def minimize_random_uniform(
     :param key: The random key used to generate the initial guess.
     :param n: The size of the random vector to generate.
     :param kwargs:
-        Keyword arguments to be passed to :func:`minimize`.
+        Keyword arguments passed to :func:`minimize`.
     :return: The solution array and the corresponding loss.
 
     :Examples:
@@ -151,7 +151,7 @@ def minimize_many_random_uniform(
     :param many:
         How many times the minimization should be performed.
     :param kwargs:
-        Keyword arguments to be passed to :func:`minimize_random_uniform`.
+        Keyword arguments passed to :func:`minimize_random_uniform`.
     :return: The solution array and the corresponding loss.
 
     :Examples:

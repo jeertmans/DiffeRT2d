@@ -121,7 +121,7 @@ def segments_intersect(
         Relaxes the condition to :math:`[-\texttt{tol};1+\texttt{tol}]`.
     :param approx: Whether approximation is enabled or not.
     :param kwargs:
-        Keyword arguments to be passed to :func:`activation<differt2d.logic.activation>`.
+        Keyword arguments passed to :func:`activation<differt2d.logic.activation>`.
     :return: Whether the two segments intersect.
 
     :Examples:
@@ -296,7 +296,7 @@ class Point(Plottable, eqx.Module):
         :param annotate: Text to put next the the point.
         :param annotate_offset:
         :param annotate_kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`matplotlib.axes.Axes.annotate`.
         """  # noqa: D205
         kwargs.setdefault("marker", "o")
@@ -717,7 +717,7 @@ class Path(Plottable, eqx.Module):
 
         :param objects: The list of objects to check against.
         :param approx: Whether approximation is enabled or not.
-        :param kwargs: Keyword arguments to be passed to
+        :param kwargs: Keyword arguments passed to
             :func:`activation<differt2d.logic.activation>`.
         :return: Whether this path passes on the objects.
         """
@@ -757,7 +757,7 @@ class Path(Plottable, eqx.Module):
         :param patch: The patch value for intersection check,
             see :meth:`Interactable.intersects_cartesian<differt2d.abc.Interactable.intersects_cartesian>`.
         :param approx: Whether approximation is enabled or not.
-        :param kwargs: Keyword arguments to be passed to
+        :param kwargs: Keyword arguments passed to
             :func:`activation<differt2d.logic.activation>`.
         :return: Whether this path intersects any of the objects.
         """
@@ -825,7 +825,7 @@ class Path(Plottable, eqx.Module):
         :param patch: The patch value for intersection check,
             see :meth:`Interactable.intersects_cartesian<differt2d.abc.Interactable.intersects_cartesian>`.
         :param approx: Whether approximation is enabled or not.
-        :param kwargs: Keyword arguments to be passed to
+        :param kwargs: Keyword arguments passed to
             :func:`activation<differt2d.logic.activation>`.
         :return: Whether this path is valid.
         """
@@ -1026,7 +1026,7 @@ class FermatPath(Path, eqx.Module):
         :param rx: The receiving node.
         :param key: The random key to generate the initial guess.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
             Note that the ``many`` parameter defaults to ``1`` here.
         :return: The resulting path of the FPT method.
@@ -1122,7 +1122,7 @@ class MinPath(Path, eqx.Module):
         :param rx: The receiving node.
         :param key: The random key to generate the initial guess.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :func:`minimize_many_random_uniform<differt2d.optimize.minimize_many_random_uniform>`.
             Note that the ``many`` parameter defaults to ``1`` here.
         :return: The resulting path of the MPT method.

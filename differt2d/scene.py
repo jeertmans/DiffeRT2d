@@ -454,9 +454,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         Generates a new scene from the given scene name.
 
         :param scene_name: The name of the scene.
-        :param args: Positional arguments to be passed to the
+        :param args: Positional arguments passed to the
             constructor.
-        :param kwargs: Keyword arguments to be passed to the
+        :param kwargs: Keyword arguments passed to the
             constructor.
         :return: The scene.
         """
@@ -670,7 +670,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
         :param kwargs:
-            Keyword arguments to be passed to :meth:`square_scene`.
+            Keyword arguments passed to :meth:`square_scene`.
         :return: The scene.
 
         :Examples:
@@ -733,21 +733,21 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param transmitters:
             If set, includes transmitters in the plot.
         :param transmitters_args:
-            Arguments to be passed to each transmitter's plot function.
+            Arguments passed to each transmitter's plot function.
         :param transmitters_kwargs:
-            Keyword arguments to be passed to each transmitter's plot function.
+            Keyword arguments passed to each transmitter's plot function.
         :param objects:
             If set, includes objects in the plot.
         :param objects_args:
-            Arguments to be passed to the each object' plot function.
+            Arguments passed to the each object' plot function.
         :param objects_kwargs:
-            Keyword arguments to be passed to each object' plot function.
+            Keyword arguments passed to each object' plot function.
         :param receivers:
             If set, includes receivers in the plot.
         :param receivers_args:
-            Arguments to be passed to each receiver's plot function.
+            Arguments passed to each receiver's plot function.
         :param receivers_kwargs:
-            Keyword arguments to be passed to each receiver's plot function.
+            Keyword arguments passed to each receiver's plot function.
         :param annotate:
             If set, will annotate all transmitters and receivers with their name,
             and append the corresponding artists
@@ -863,7 +863,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         return product(self.transmitters.items(), self.receivers.items())
 
-    @partial(jax.jit, static_argnames=("min_order", "max_order", "order",))
+    @eqx.filter_jit
     def all_path_candidates(
             self, min_order: int = 0, max_order: int = 1, *, order: Optional[int] = None,
     ) -> list[UInt[Array, "num_path_candidates order"]]:
@@ -942,7 +942,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return: The generator of paths, as
             (transmitter name, receiver name, valid, path, path_candidate) tuples,
@@ -989,7 +989,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         Returns only valid paths as returned by :meth:`all_paths`, by filtering out paths using :func:`is_true<differt2d.logic.is_true>`.
 
         :param kwargs:
-            Keyword arguments to be passed to :meth:`all_paths`.
+            Keyword arguments passed to :meth:`all_paths`.
         :return: The generator of valid paths, as
             (transmitter name, receiver name, path, path_candidate) tuples.
         """
@@ -1014,14 +1014,14 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         :param fun: The function to evaluate on each path.
         :param fun_args:
-            Positional arguments to be passed to ``fun``.
+            Positional arguments passed to ``fun``.
         :param fun_kwargs:
-            Keyword arguments to be passed to ``fun``.
+            Keyword arguments passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`all_paths`.
         :return:
             An iterator of transmitter name, receiver name
@@ -1103,9 +1103,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param Y: The grid of y-coordinates.
         :param fun: The function to evaluate on each path.
         :param fun_args:
-            Positional arguments to be passed to ``fun``.
+            Positional arguments passed to ``fun``.
         :param fun_kwargs:
-            Keyword arguments to be passed to ``fun``.
+            Keyword arguments passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
@@ -1124,7 +1124,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return:
             An iterator of receiver name and the corresponding
@@ -1239,7 +1239,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param Y: The grid of y-coordinates.
         :param fun: The function to evaluate on each path.
         :param args:
-            Positional arguments to be passed to ``fun``.
+            Positional arguments passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
@@ -1258,7 +1258,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return:
             An iterator of transmitter name and the corresponding

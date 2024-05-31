@@ -35,8 +35,8 @@ class Plottable(ABC):
         Plot this object on the given axes and returns the results.
 
         :param ax: The axes to plot on.
-        :param args: Arguments to be passed to the plot function.
-        :param kwargs: Keyword arguments to be passed to the plot
+        :param args: Arguments passed to the plot function.
+        :param kwargs: Keyword arguments passed to the plot
             function.
         :return: The artist(s).
         """
@@ -169,7 +169,7 @@ class Interactable(ABC):
 
         :param param_coords: Parametric coordinates.
         :param approx: Whether approximation is enabled or not.
-        :param kwargs: Keyword arguments to be passed to
+        :param kwargs: Keyword arguments passed to
             :func:`activation<differt2d.logic.activation>`.
         :return: True if object contains these coordinates.
         """
@@ -195,7 +195,7 @@ class Interactable(ABC):
             smoothing objects can virtually reduce this object's size, so using
             a ``patch`` value greater than ``1`` can compensate this effect.
         :param approx: Whether approximation is enabled or not.
-        :param kwargs: Keyword arguments to be passed to
+        :param kwargs: Keyword arguments passed to
             :func:`activation<differt2d.logic.activation>`.
         :return: True if it intersects.
         """

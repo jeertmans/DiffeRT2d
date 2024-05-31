@@ -395,7 +395,7 @@ def greater(
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
     :param kwargs:
-        Keyword arguments to be passed to :func:`activation`.
+        Keyword arguments passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
@@ -422,7 +422,7 @@ def greater_equal(
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
     :param kwargs:
-        Keyword arguments to be passed to :func:`activation`.
+        Keyword arguments passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
@@ -451,7 +451,7 @@ def less(
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
     :param kwargs:
-        Keyword arguments to be passed to :func:`activation`.
+        Keyword arguments passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
@@ -478,7 +478,7 @@ def less_equal(
     :param y: The second input array.
     :param approx: Whether approximation is enabled or not.
     :param kwargs:
-        Keyword arguments to be passed to :func:`activation`.
+        Keyword arguments passed to :func:`activation`.
     :return: Output array, with element-wise comparison.
     """
     if approx is None:
