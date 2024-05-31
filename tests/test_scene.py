@@ -286,6 +286,9 @@ class TestScene:
         got = scene.all_path_candidates(min_order=0, max_order=0)
         assert len(got) == 1
         assert len(got[0]) == 0
+        got = scene.all_path_candidates(order=0)
+        assert len(got) == 1
+        assert len(got[0]) == 0
 
     @pytest.mark.parametrize(
         ("min_order", "max_order"), [(0, 0), (1, 1), (2, 2), (0, 2)]

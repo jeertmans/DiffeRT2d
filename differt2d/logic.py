@@ -55,7 +55,7 @@ from jaxtyping import Array, Bool, Float, jaxtyped
 from ._typing import ArrayLikeFloat, ScalarFloat
 from .defaults import DEFAULT_ALPHA
 
-ENABLE_APPROX: bool = "ENABLE_APPROX" not in os.environ
+ENABLE_APPROX: bool = "ENABLE_APPROX" in os.environ
 """Enable approximation using some activation function."""
 
 _LOCK = Lock()
