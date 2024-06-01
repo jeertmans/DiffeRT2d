@@ -68,18 +68,18 @@ to know how.
 ## Usage
 
 For a quick introduction to DiffeRT2d, check you our
-[Quickstart](https://eertmans.be/DiffeRT2d/quickstart.html) tutorial!
+[Quickstart](https://eertmans.be/DiffeRT2d/latest/quickstart.html) tutorial!
 
 You may find a multitude of usage examples across the documentation
-or the [examples](https://github.com/jeertmans/DiffeRT2d/tree/main/examples)
+or the [examples](https://github.com/jeertmans/DiffeRT2d/latest/tree/main/examples)
 folder, or directly in the
-[examples gallery](https://eertmans.be/DiffeRT2d/examples_gallery/index.html).
+[examples gallery](https://eertmans.be/DiffeRT2d/latest/examples_gallery/index.html).
 
 ## Contributing
 
 Contributions are more than welcome!
 Please read through
-[our contributing section](https://eertmans.be/DiffeRT2d/contributing/index.html).
+[our contributing section](https://eertmans.be/DiffeRT2d/latest/contributing/index.html).
 
 ### Reporting an Issue
 
