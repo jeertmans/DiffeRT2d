@@ -1099,7 +1099,7 @@ class FermatPath(Path, eqx.Module):
 
 @jaxtyped(typechecker=typechecker)
 class MinPath(Path, eqx.Module):
-    """A path object that was obtained with the Min-Path-Tracing method."""
+    """A path object that was obtained with the Min-Path-Tracing method :cite:`mpt-eucap2023`."""
 
     @classmethod
     @partial(jax.jit, static_argnames=("cls", "steps", "many", "optimizer"))

@@ -5,7 +5,7 @@ __all__ = ("Scene", "SceneName")
 import json
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
-from functools import partial, singledispatchmethod
+from functools import singledispatchmethod
 from itertools import groupby, product
 from typing import (
     Any,
@@ -865,7 +865,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
     @eqx.filter_jit
     def all_path_candidates(
-            self, min_order: int = 0, max_order: int = 1, *, order: Optional[int] = None,
+        self,
+        min_order: int = 0,
+        max_order: int = 1,
+        *,
+        order: Optional[int] = None,
     ) -> list[UInt[Array, "num_path_candidates order"]]:
         """
         Returns all path candidates, from any of the :attr:`transmitters` to any of the :attr:`receivers`, as a list of array of indices.
@@ -950,7 +954,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             :python:`is_true(valid)`.
         """
         path_candidates = self.all_path_candidates(
-            min_order=min_order, max_order=max_order, order=order,
+            min_order=min_order,
+            max_order=max_order,
+            order=order,
         )
 
         for (tx_key, transmitter), (

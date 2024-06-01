@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in DiffeRT2D! ✨
+Thank you for your interest in DiffeRT2d! ✨
 
 This project is open source,
 and we welcome contributions of all forms.

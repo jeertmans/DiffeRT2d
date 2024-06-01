@@ -29,13 +29,15 @@ version = __version__
 extensions = [
     # Built-in
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     # Additional
-    "myst_parser",
     "matplotlib.sphinxext.plot_directive",
+    "myst_nb",
+    "sphinxcontrib.bibtex",
     "sphinxext.opengraph",
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
@@ -55,13 +57,17 @@ autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 typehints_defaults = "comma"
 
+# -- MyST-nb and MyST-parser settings
+
 myst_enable_extensions = [
     "colon_fence",
     "html_admonition",
 ]
+nb_render_image_options = {"align": "center"}
+nb_execution_mode = "off"
 
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns = ["examples_gallery/*.ipynb"]
 
 # Removes the 'package.module' part from package.module.Class
 add_module_names = False
@@ -72,7 +78,8 @@ suppress_warnings = [
     "config.cache",
 ]
 
-extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
+# generate autosummary even if no references
+autosummary_generate = True
 
 sphinx_gallery_conf = {
     "filename_pattern": r"/(plot)|(qt)_",
@@ -82,7 +89,7 @@ sphinx_gallery_conf = {
     "reset_modules": (qtgallery.reset_qapp,),
     "matplotlib_animations": True,
     "backreferences_dir": "gen_modules/backreferences",
-    "doc_module": ("differt2d", "equinox", "jax", "matplotlib", "optax"),
+    "doc_module": ("differt2d", "equinox", "jax", "jaxtyping", "matplotlib", "optax"),
     "reference_url": {
         "differt2d": None,
     },
@@ -137,6 +144,10 @@ intersphinx_mapping = {
 
 ogp_site_url = "https://eertmans.be/DiffeRT2d/"
 ogp_use_first_image = True
+
+# -- Bibtex
+
+bibtex_bibfiles = ["references.bib"]
 
 # -- Sphinx App
 

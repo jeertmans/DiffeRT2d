@@ -7,6 +7,7 @@ docs/build/
 docs/source/apidocs/
 docs/source/examples_gallery/
 docs/source/gen_modules/backreferences/
+docs/source/sg_api_usage.rst
 docs/source/sg_execution_times.rst
 
 # Papers build artifacts

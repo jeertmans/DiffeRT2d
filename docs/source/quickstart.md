@@ -10,7 +10,7 @@
 ## Creating your first scene
 
 ```{eval-rst}
-DiffeRT2d is meant to perform Ray Tracing simulation on two dimensional
+DiffeRT2d is meant to perform Ray Tracing simulations on two dimensional
 scenes.
 
 A scene is simply defined as a collection of objects

@@ -29,7 +29,7 @@ applications.
 
 <!-- start install -->
 
-While installing DiffeRT2D and its dependencies on your global Python is fine,
+While installing DiffeRT2d and its dependencies on your global Python is fine,
 we recommend using a virtual environment
 (e.g., [venv](https://docs.python.org/3/tutorial/venv.html)) for a local installation.
 
@@ -67,7 +67,7 @@ to know how.
 
 ## Usage
 
-For a quick introduction to DiffeRT2D, check you our
+For a quick introduction to DiffeRT2d, check you our
 [Quickstart](https://eertmans.be/DiffeRT2d/quickstart.html) tutorial!
 
 You may find a multitude of usage examples across the documentation
