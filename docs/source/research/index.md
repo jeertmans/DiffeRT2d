@@ -1,4 +1,4 @@
-# In The Literature
+# In the Literature
 
 DiffeRT2d was first developed as a toolbox for my own research on
 Differentiable Ray Tracing applied to Radio Propagation.
