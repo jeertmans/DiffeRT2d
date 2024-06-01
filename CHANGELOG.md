@@ -8,16 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- start changelog -->
 
 (unreleased)=
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.2.0...HEAD)
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/0.3.0...HEAD)
 
-(unreleased-added)=
+(v0.3.0)=
+## [v0.3.0](https://github.com/jeertmans/DiffeRT2d/compare/v0.2.0...v0.3.0)
+
+(v0.3.0-added)=
 ### Added
 
 + Path methods now accept `Point` in addition to `Float[Array, "2"]` for `tx`
   and `rx` arguments.
   [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
 
-(unreleased-changed)=
+(v0.3.0-changed)=
 ### Changed
 
 + Changed `.point` and `.points` class attributes to `.xy` and `.xys`
@@ -34,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This is a **breaking change**.
   [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
 
-(unreleased-chore)=
+(v0.3.0-chore)=
 ### Chore
 
 + Changed to project to use modern tools like Rye, Ruff (discarding Black
