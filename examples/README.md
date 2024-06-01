@@ -1,14 +1,15 @@
 Examples Gallery
 ================
 
-On this page, you will find a example usages of this Python library,
+On this page, you will find usage examples of this Python library,
 as well as plots generated with :mod:`matplotlib`.
 
 Requirements
 ------------
 
-Examples shown can either be obtained through downloads on this page or each example
-page, or by cloning this git repository.
+Source files can be obtained either through download links (on this page or
+each example's page), or by cloning this git repository and going to the
+``examples`` folder.
 
 Usage
 -----

@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.2.0...HEAD)
 
+(unreleased-added)=
+### Added
+
++ Path methods now accept `Point` in addition to `Float[Array, "2"]` for `tx`
+  and `rx` arguments.
+  [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
+
+(unreleased-changed)=
+### Changed
+
++ Changed `.point` and `.points` class attributes to `.xy` and `.xys`
+  to emphasize that they are the raw x-y coordinates.
+  This is a **breaking change**.
+  [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
++ Changed `Scene` attributes to me immutable, to follow the principle
+  of PyTrees.
+  This is a **breaking change**.
+  [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
++ Removed the `seed` argument for path methods and made the `key` argument
+  mandatory when needed. The `key` and `kwargs` arguments are now present
+  everywhere, but may be unused.
+  This is a **breaking change**.
+  [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
+
 (unreleased-chore)=
 ### Chore
 
@@ -20,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g., `minimize`), a type checker is used on many functions, and classes
   are now frozen dataclasses (because PyTrees).
   [#58](https://github.com/jeertmans/DiffeRT2d/pull/58)
++ Update the examples and lib to match changes in codebase and satisfy Pyright.
+  [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
++ Reworked documentation to include notes on JAX, jaxtyping, and scientific
+  publications.
+  [#59](https://github.com/jeertmans/DiffeRT2d/pull/59)
 
 (v0.2.0)=
 ## [v0.2.0](https://github.com/jeertmans/DiffeRT2d/compare/v0.1.0...v0.2.0)

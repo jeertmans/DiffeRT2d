@@ -30,6 +30,7 @@ async-lru==2.0.4
     # via jupyterlab
 attrs==23.2.0
     # via jsonschema
+    # via jupyter-cache
     # via referencing
 babel==2.15.0
     # via jupyterlab-server
@@ -58,9 +59,11 @@ chex==0.1.86
     # via optax
 click==8.1.7
     # via bump-my-version
+    # via jupyter-cache
     # via rich-click
 comm==0.2.2
     # via ipykernel
+    # via ipywidgets
 contourpy==1.2.1
     # via matplotlib
 coverage==7.5.1
@@ -73,19 +76,17 @@ decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-differt-core==0.0.5
+differt-core==0.0.14
     # via differt2d
 distlib==0.3.8
     # via virtualenv
 docutils==0.21.2
     # via myst-parser
+    # via pybtex-docutils
     # via sphinx
+    # via sphinxcontrib-bibtex
 equinox==0.11.4
     # via differt2d
-exceptiongroup==1.2.1
-    # via anyio
-    # via ipython
-    # via pytest
 execnet==2.1.1
     # via pytest-xdist
 executing==2.0.1
@@ -99,6 +100,8 @@ fonttools==4.51.0
 fqdn==1.5.1
     # via jsonschema
 furo==2024.5.6
+greenlet==3.0.3
+    # via sqlalchemy
 h11==0.14.0
     # via httpcore
 httpcore==1.0.5
@@ -115,21 +118,18 @@ idna==3.7
 imagesize==1.4.1
     # via sphinx
 importlib-metadata==7.1.0
-    # via jax
-    # via jupyter-client
-    # via jupyter-lsp
-    # via jupyterlab
-    # via jupyterlab-server
-    # via nbconvert
-    # via sphinx
-importlib-resources==6.4.0
-    # via matplotlib
+    # via jupyter-cache
+    # via myst-nb
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.4
     # via jupyterlab
+    # via myst-nb
 ipython==8.18.0
     # via ipykernel
+    # via ipywidgets
+    # via myst-nb
+ipywidgets==8.1.2
 isoduration==20.11.0
     # via jsonschema
 jax==0.4.28
@@ -162,6 +162,8 @@ jsonschema==4.22.0
     # via nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
+jupyter-cache==1.0.0
+    # via myst-nb
 jupyter-client==8.6.1
     # via ipykernel
     # via jupyter-server
@@ -193,8 +195,12 @@ jupyterlab-pygments==0.3.0
 jupyterlab-server==2.27.1
     # via jupyterlab
     # via notebook
+jupyterlab-widgets==3.0.10
+    # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
+latexcodec==3.0.0
+    # via pybtex
 markdown-it-py==3.0.0
     # via mdit-py-plugins
     # via myst-parser
@@ -216,13 +222,19 @@ mistune==3.0.2
 ml-dtypes==0.4.0
     # via jax
     # via jaxlib
+myst-nb==1.1.0
 myst-parser==3.0.1
+    # via myst-nb
 nbclient==0.10.0
+    # via jupyter-cache
+    # via myst-nb
     # via nbconvert
 nbconvert==7.16.4
     # via jupyter-server
 nbformat==5.10.4
+    # via jupyter-cache
     # via jupyter-server
+    # via myst-nb
     # via nbclient
     # via nbconvert
 nest-asyncio==1.6.0
@@ -290,6 +302,11 @@ ptyprocess==0.7.0
     # via terminado
 pure-eval==0.2.2
     # via stack-data
+pybtex==0.24.0
+    # via pybtex-docutils
+    # via sphinxcontrib-bibtex
+pybtex-docutils==1.0.3
+    # via sphinxcontrib-bibtex
 pycparser==2.22
     # via cffi
 pydantic==2.7.1
@@ -332,9 +349,12 @@ python-json-logger==2.0.7
 pyvirtualdisplay==3.0
     # via qtgallery
 pyyaml==6.0.1
+    # via jupyter-cache
     # via jupyter-events
+    # via myst-nb
     # via myst-parser
     # via pre-commit
+    # via pybtex
 pyzmq==26.0.3
     # via ipykernel
     # via jupyter-client
@@ -379,6 +399,7 @@ shiboken6==6.6.3.1
 six==1.16.0
     # via asttokens
     # via bleach
+    # via pybtex
     # via python-dateutil
     # via rfc3339-validator
 sniffio==1.3.1
@@ -390,12 +411,14 @@ soupsieve==2.5
     # via beautifulsoup4
 sphinx==7.3.7
     # via furo
+    # via myst-nb
     # via myst-parser
     # via sphinx-autodoc-typehints
     # via sphinx-basic-ng
     # via sphinx-copybutton
     # via sphinx-gallery
     # via sphinx-rtd-theme
+    # via sphinxcontrib-bibtex
     # via sphinxext-opengraph
 sphinx-autodoc-typehints==2.1.0
 sphinx-basic-ng==1.0.0b2
@@ -407,6 +430,7 @@ sphinx-rtd-theme==0.5.1
     # via qtgallery
 sphinxcontrib-applehelp==1.0.8
     # via sphinx
+sphinxcontrib-bibtex==2.6.2
 sphinxcontrib-devhelp==1.0.6
     # via sphinx
 sphinxcontrib-htmlhelp==2.0.5
@@ -418,19 +442,17 @@ sphinxcontrib-qthelp==1.0.7
 sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
 sphinxext-opengraph==0.9.1
+sqlalchemy==2.0.30
+    # via jupyter-cache
 stack-data==0.6.3
     # via ipython
+tabulate==0.9.0
+    # via jupyter-cache
 terminado==0.18.1
     # via jupyter-server
     # via jupyter-server-terminals
 tinycss2==1.3.0
     # via nbconvert
-tomli==2.0.1
-    # via coverage
-    # via jupyterlab
-    # via pytest
-    # via pytest-env
-    # via sphinx
 tomlkit==0.12.5
     # via bump-my-version
 toolz==0.12.1
@@ -442,10 +464,12 @@ tornado==6.4
     # via jupyterlab
     # via notebook
     # via terminado
+tqdm==4.66.4
 traitlets==5.14.3
     # via comm
     # via ipykernel
     # via ipython
+    # via ipywidgets
     # via jupyter-client
     # via jupyter-core
     # via jupyter-events
@@ -460,15 +484,13 @@ typeguard==2.13.3
 types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.11.0
-    # via anyio
-    # via async-lru
     # via chex
-    # via differt2d
     # via equinox
-    # via ipython
+    # via myst-nb
     # via pydantic
     # via pydantic-core
     # via rich-click
+    # via sqlalchemy
 uri-template==1.3.0
     # via jsonschema
 urllib3==2.2.1
@@ -486,6 +508,7 @@ webencodings==0.5.1
     # via tinycss2
 websocket-client==1.8.0
     # via jupyter-server
-zipp==3.18.1
+widgetsnbextension==4.0.10
+    # via ipywidgets
+zipp==3.19.1
     # via importlib-metadata
-    # via importlib-resources

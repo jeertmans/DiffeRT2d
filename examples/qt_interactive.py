@@ -5,6 +5,17 @@ Interactive example with Qt interface
 This example provides an interactive experience to most of the features
 proposed by this module.
 
+.. warning::
+    As of writing this, the ``FPT`` and ``MPT`` path methods
+    will not show the expected coverage (which ``image`` usually
+    does). This is mainly an issue caused by the use of `only`
+    100 steps for the minimization, which may not be necessary
+    to properly converge.
+
+    Also, you will observe that the coverage map changes a lot between two
+    position, this is because the random key used to initialize
+    the minimization process changes on each update.
+
 Requirements
 ------------
 
@@ -39,12 +50,17 @@ if you hover over them.
 
 from argparse import ArgumentParser, FileType
 from functools import partial
-from typing import get_args
+from typing import Literal, get_args
 
 import jax
 import jax.numpy as jnp
+from jaxtyping import Array, Float
 from matplotlib.artist import Artist
-from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
+from matplotlib.backend_bases import MouseEvent, PickEvent
+from matplotlib.backends.backend_qtagg import (
+    FigureCanvas,  # type: ignore[reportAttributeAccessIssue]
+    NavigationToolbar2QT,  # type: ignore[reportPrivateImportUsage]
+)
 from matplotlib.figure import Figure
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -79,11 +95,11 @@ METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
 class CustomSlider(QSlider):
     def __init__(
         self,
-        start=0,
-        stop=99,
-        num=100,
-        base=10.0,
-        scale="linear",
+        start: float = 0,
+        stop: float = 99,
+        num: int = 100,
+        base: float = 10.0,
+        scale: Literal["linear", "log", "geom"] = "linear",
         orientation=Qt.Orientation.Horizontal,
     ):
         super().__init__()
@@ -100,19 +116,19 @@ class CustomSlider(QSlider):
         else:
             raise ValueError("Invalid scale: " + scale)
 
-    def value(self):
+    def value(self) -> float:  # type: ignore[reportIncompatibleMethodOverride]
         index = super().value()
-        return self.values[index]
+        return float(self.values[index])
 
-    def maximum(self):
-        return self.values[-1]
+    def maximum(self):  # type: ignore[reportIncompatibleMethodOverride]
+        return float(self.values[-1])
 
-    def minimum(self):
-        return self.values[0]
+    def minimum(self):  # type: ignore[reportIncompatibleMethodOverride]
+        return float(self.values[0])
 
-    def setValue(self, value):
+    def setValue(self, value: float) -> None:  # type: ignore[reportIncompatibleMethodOverride]
         index = jnp.abs(self.values - value).argmin()
-        super().setValue(index)
+        super().setValue(int(index))
 
 
 LinearSlider = partial(CustomSlider, scale="linear")
@@ -125,6 +141,7 @@ class PlotWidget(QWidget):
         self,
         scene: Scene,
         resolution: int,
+        seed: int,
         parent=None,
     ):
         super().__init__(parent)
@@ -133,11 +150,12 @@ class PlotWidget(QWidget):
         self.min_order = 0
         self.max_order = 1
         self.patch = DEFAULT_PATCH
-        self.approx = True
+        self.approx = False
         self.alpha = DEFAULT_ALPHA
         self.function = hard_sigmoid
         self.r_coef = 0.5
         self.path_cls = METHOD_TO_PATH_CLASS["image"]
+        self.key = jax.random.PRNGKey(seed)
 
         assert (
             len(scene.transmitters) == 1
@@ -158,7 +176,7 @@ class PlotWidget(QWidget):
         # Approx. parameters
         approx_box = QGroupBox("Enable approx.")
         approx_box.setCheckable(True)
-        approx_box.setChecked(True)
+        approx_box.setChecked(False)
         approx_box.setToolTip(
             "Click to enable/disable approximation. "
             "When enabled, you can specify further parameters below."
@@ -183,7 +201,7 @@ class PlotWidget(QWidget):
         grid.addWidget(self.alpha_label, 1, 2)
         grid.addWidget(self.alpha_slider, 1, 3)
 
-        def set_alpha(_):
+        def set_alpha(_) -> None:
             alpha = self.alpha_slider.value()
             self.alpha = alpha
             self.alpha_label.setText(f"{alpha:.3e}")
@@ -225,7 +243,7 @@ class PlotWidget(QWidget):
         grid.addWidget(self.patch_label, 1, 2)
         grid.addWidget(self.patch_slider, 1, 3)
 
-        def set_patch(_):
+        def set_patch(_) -> None:
             patch = self.patch_slider.value()
             self.patch = patch
             self.patch_label.setText(f"{patch:+.2f}")
@@ -243,7 +261,7 @@ class PlotWidget(QWidget):
         grid.addWidget(QLabel("min. order:"), 2, 1)
         grid.addWidget(self.min_order_spin_box, 2, 3)
 
-        def set_min_order(min_order):
+        def set_min_order(min_order: int) -> None:
             self.min_order = min_order
             self.on_scene_change()
 
@@ -259,7 +277,7 @@ class PlotWidget(QWidget):
         grid.addWidget(QLabel("max. order:"), 3, 1)
         grid.addWidget(self.max_order_spin_box, 3, 3)
 
-        def set_max_order(max_order):
+        def set_max_order(max_order: int) -> None:
             self.max_order = max_order
             self.on_scene_change()
 
@@ -276,7 +294,7 @@ class PlotWidget(QWidget):
         grid.addWidget(self.r_coef_label, 4, 2)
         grid.addWidget(self.r_coef_slider, 4, 3)
 
-        def set_r_coef(_):
+        def set_r_coef(_) -> None:
             r_coef = self.r_coef_slider.value()
             self.r_coef = r_coef
             self.r_coef_label.setText(f"{r_coef:.2f}")
@@ -285,7 +303,7 @@ class PlotWidget(QWidget):
         self.r_coef_slider.valueChanged.connect(set_r_coef)
 
         self.path_cls_combo_box = QComboBox()
-        self.path_cls_combo_box.addItems(METHOD_TO_PATH_CLASS.keys())
+        self.path_cls_combo_box.addItems(METHOD_TO_PATH_CLASS.keys())  # type: ignore
         self.path_cls_combo_box.setToolTip(
             "The path method that is used to determine each ray path. "
             "Note that each next method is much slower than the previous, "
@@ -297,7 +315,7 @@ class PlotWidget(QWidget):
         grid.addWidget(QLabel("method:"), 5, 1)
         grid.addWidget(self.path_cls_combo_box, 5, 3)
 
-        def set_path_cls(method):
+        def set_path_cls(method: str) -> None:
             self.path_cls = METHOD_TO_PATH_CLASS[method]
             self.on_scene_change()
 
@@ -306,6 +324,7 @@ class PlotWidget(QWidget):
         # Matplotlib figures
         self.fig = Figure(figsize=(10, 10), tight_layout=True)
         self.view = FigureCanvas(self.fig)
+        self.view.setMinimumHeight(200)
         self.ax = self.fig.add_subplot()
 
         # Toolbar above the figure
@@ -349,23 +368,21 @@ class PlotWidget(QWidget):
 
         self.path_artists: list[Artist] = []
 
-        def f(rx_coords):
-            receivers = self.scene.receivers.copy()
-            self.scene.receivers.clear()
-            self.scene.receivers.update({"rx": Point(point=rx_coords)})
+        def f(rx_coords: Float[Array, "2"]) -> Float[Array, " "]:
+            scene = self.scene.with_transmitters(rx=Point(xy=rx_coords))
 
-            total_power = self.scene.accumulate_over_paths(
+            self.key, key = jax.random.split(self.key, 2)
+
+            total_power = scene.accumulate_over_paths(
                 fun=partial(received_power, r_coef=self.r_coef),
                 reduce_all=True,
                 min_order=self.min_order,
                 max_order=self.max_order,
                 path_cls=self.path_cls,
+                key=key,
             )
 
-            self.scene.receivers.clear()
-            self.scene.receivers.update(receivers)
-
-            return total_power
+            return total_power  # type: ignore
 
         self.f_and_df = jax.value_and_grad(f)
 
@@ -377,12 +394,12 @@ class PlotWidget(QWidget):
 
         self.on_scene_change()
 
-    def on_pick_event(self, event):
+    def on_pick_event(self, event: PickEvent) -> None:
         if self.picked:
             self.picked = None
         else:
             artist = event.artist
-            coords = jnp.array(artist.get_xydata()).reshape(-1)
+            coords = jnp.array(artist.get_xydata()).reshape(-1)  # type: ignore
             tx, dist_tx = self.scene.get_closest_transmitter(coords)
             rx, dist_rx = self.scene.get_closest_receiver(coords)
 
@@ -393,28 +410,30 @@ class PlotWidget(QWidget):
                 self.picked = (event.artist, rx)
                 self.picked_tx = False
 
-    def on_motion_notify_event(self, event):
-        if self.picked:
+    def on_motion_notify_event(self, event: MouseEvent) -> None:
+        if self.picked and event.xdata is not None and event.ydata is not None:
             artist, point_name = self.picked
             if self.picked_tx:
-                self.scene.transmitters[point_name] = Point(
-                    point=jnp.array([event.xdata, event.ydata])
+                self.scene = self.scene.update_transmitters(
+                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))}
                 )
             else:
-                self.scene.receivers[point_name] = Point(
-                    point=jnp.array([event.xdata, event.ydata])
+                self.scene = self.scene.update_receivers(
+                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))}
                 )
-            artist.set_xdata([event.xdata])
-            artist.set_ydata([event.ydata])
+            artist.set_xdata([event.xdata])  # type: ignore
+            artist.set_ydata([event.ydata])  # type: ignore
             self.on_scene_change()
 
-    def on_scene_change(self):
+    def on_scene_change(self) -> None:
         for artist in self.path_artists:
             artist.remove()
 
         self.path_artists = []
 
-        P = self.scene.accumulate_on_receivers_grid_over_paths(
+        self.key, key_acc, key_all = jax.random.split(self.key, 3)
+
+        P: Float[Array, "n n"] = self.scene.accumulate_on_receivers_grid_over_paths(
             self.X,
             self.Y,
             fun=partial(received_power, r_coef=self.r_coef),
@@ -426,7 +445,8 @@ class PlotWidget(QWidget):
             alpha=self.alpha,
             function=self.function,
             path_cls=self.path_cls,
-        )
+            key=key_acc,
+        )  # type: ignore
 
         PdB = 10.0 * jnp.log10(P / P0)
 
@@ -440,13 +460,14 @@ class PlotWidget(QWidget):
             alpha=self.alpha,
             function=self.function,
             path_cls=self.path_cls,
+            key=key_all,
         ):
             self.path_artists.extend(path.plot(self.ax, zorder=-1, alpha=float(valid)))
 
         if self.picked and False:
             _, point = self.picked
 
-            x, y = rx_coords = point.point
+            x, y = rx_coords = point.xy
 
             p, dp = self.f_and_df(rx_coords)
 
@@ -490,8 +511,16 @@ if __name__ == "__main__":
         metavar="INT",
         type=int,
         default=150,
-        choices=range(0, 999999),
-        help="set the grid resolution (default: 0, " "allowed: 0 to 999999 excl.)",
+        choices=range(1, 999999),
+        help="set the grid resolution (default: 150, allowed: 1 to 999999 excl.)",
+    )
+    parser.add_argument(
+        "--seed",
+        metavar="INT",
+        type=int,
+        default=1234,
+        choices=range(1, 999999),
+        help="set the grid resolution (default: 1234, allowed: 1 to 999999 excl.)",
     )
     parser.add_argument(
         "--file",
@@ -525,14 +554,15 @@ if __name__ == "__main__":
     else:
         scene = Scene.from_scene_name(args.scene_name)
 
-    if not QApplication.instance():
+    app = QApplication.instance()
+
+    if app is None:
         app = QApplication([])
-    else:
-        app = QApplication.instance()
 
     plot_widget = PlotWidget(
         scene=scene,
         resolution=args.resolution,
+        seed=args.seed,
     )
     plot_widget.show()
     app.exec_()

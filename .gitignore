@@ -6,5 +6,11 @@ __pycache__/
 docs/build/
 docs/source/apidocs/
 docs/source/examples_gallery/
+docs/source/gen_modules/backreferences/
+docs/source/sg_api_usage.rst
+docs/source/sg_execution_times.rst
 
-paper/pgf/
+# Papers build artifacts
+papers/eucap2024/pgf/
+papers/joss/paper.pdf
+papers/joss/paper.jats

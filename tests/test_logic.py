@@ -102,21 +102,21 @@ def test_enable_approx():
 
 
 def test_enable_approx_clear_cache():
-    is_true.clear_cache()
+    is_true.clear_cache()  # type: ignore
     with enable_approx(True):
         expected = jnp.array(True)
         got = is_true(1.0)
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
-    is_true.clear_cache()
+    is_true.clear_cache()  # type: ignore
     with (
         enable_approx(False),
         pytest.raises(TypeCheckError, match="Expected type: Bool"),
     ):
         got = is_true(1.0)
 
-    is_true.clear_cache()
+    is_true.clear_cache()  # type: ignore
     with enable_approx(False):
         expected = jnp.array(True)
         got = is_true(True)
@@ -168,21 +168,21 @@ def test_disable_approx():
 
 
 def test_disable_approx_clear_cache():
-    is_true.clear_cache()
+    is_true.clear_cache()  # type: ignore
     with disable_approx(False):
         expected = jnp.array(True)
         got = is_true(1.0)
         chex.assert_trees_all_equal(expected, got)
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
-    is_true.clear_cache()
+    is_true.clear_cache()  # type: ignore
     with (
         disable_approx(True),
         pytest.raises(TypeCheckError, match="Expected type: Bool"),
     ):
         got = is_true(1.0)
 
-    is_true.clear_cache()
+    is_true.clear_cache()  # type: ignore
     with disable_approx(True):
         expected = jnp.array(True)
         got = is_true(True)

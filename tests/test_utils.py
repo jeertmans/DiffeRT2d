@@ -6,9 +6,9 @@ from differt2d.utils import received_power
 
 
 def test_received_power():
-    tx = rx = Point(point=jnp.array([0.0, 0.0]))
+    tx = rx = Point(xy=jnp.array([0.0, 0.0]))
     path = Path(
-        points=jnp.array(
+        xys=jnp.array(
             [
                 [0.0, 0.0],
                 [1.0, 0.0],

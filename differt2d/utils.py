@@ -41,5 +41,5 @@ def received_power(
     :return: The received power.
     """
     r = path.length()
-    n = path.points.shape[0] - 2  # Number of interactions
+    n = path.xys.shape[0] - 2  # Number of interactions
     return (r_coef**n) / (height * height + r * r)

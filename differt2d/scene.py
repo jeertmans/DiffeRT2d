@@ -5,26 +5,29 @@ __all__ = ("Scene", "SceneName")
 import json
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
-from functools import partial, singledispatchmethod
+from functools import singledispatchmethod
 from itertools import groupby, product
 from typing import (
     Any,
     Callable,
+    Generic,
     Literal,
     Optional,
     Protocol,
+    TypeVar,
     Union,
     runtime_checkable,
 )
 
-import differt_core
 import equinox as eqx
 import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
+from differt_core.rt.graph import CompleteGraph
 from jaxtyping import Array, Float, PRNGKeyArray, UInt, jaxtyped
 from matplotlib.artist import Artist
 
+from ._typing import ScalarFloat
 from .abc import Interactable, Loc, Object, Plottable
 from .geometry import ImagePath, Path, Point, Wall, closest_point
 from .logic import Truthy, is_true
@@ -39,6 +42,9 @@ SceneName = Literal[
     "square_scene_with_wall",
 ]
 """Literal type for all valid scene names."""
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+_O = TypeVar("_O", bound=Object, covariant=True)
 
 
 @runtime_checkable
@@ -47,15 +53,161 @@ class Readable(Protocol):
     def read(self) -> S: ...
 
 
-class Scene(Plottable, eqx.Module):
+class PyTreeDict(eqx.Module, Mapping[_K, _V]):
+    """
+    An immutable mapping that is also a PyTree.
+
+    The main difference with the usual dict is that, here, the index
+    time is linear with the size of the mapping.
+    """
+
+    _keys: tuple[_K, ...] = eqx.field(converter=lambda seq: tuple(seq), static=True)
+    """The sequence of keys."""
+    _values: tuple[_V, ...] = eqx.field(converter=lambda seq: tuple(seq))
+    """The sequence of values."""
+
+    def __check_init__(self):
+        if len(self._keys) != len(self._values):
+            raise ValueError(
+                "Number of keys must match number of values, "
+                f"got {len(self._keys)} and {len(self._values)}."
+            )
+
+    @classmethod
+    def from_mapping(cls, mapping: Mapping[_K, _V]) -> "PyTreeDict":
+        """
+        Constructs an immutable mapping from another mapping.
+
+        :param: An existing mapping.
+        :return: The new mapping.
+        """
+        return cls(
+            _keys=mapping.keys(),  # type: ignore[reportArgumentType]
+            _values=mapping.values(),  # type: ignore[reportArgumentType]
+        )
+
+    def __getitem__(self, key: _K) -> _V:
+        try:
+            index = self._keys.index(key)
+            return self._values[index]
+        except ValueError as e:
+            raise KeyError from e
+
+    def __iter__(self) -> Iterator[_K]:
+        return iter(self._keys)
+
+    def __len__(self) -> int:
+        return len(self._keys)
+
+
+class Scene(Plottable, eqx.Module, Generic[_O]):
     """2D Scene made of objects, one or more transmitting node(s), and one or more receiving node(s)."""
 
-    transmitters: dict[str, Point]
+    transmitters: Mapping[str, Point] = eqx.field(
+        converter=lambda d: PyTreeDict.from_mapping(d),
+        default_factory=lambda: PyTreeDict.from_mapping({}),
+    )
     """The transmitting nodes."""
-    receivers: dict[str, Point]
+    receivers: Mapping[str, Point] = eqx.field(
+        converter=lambda d: PyTreeDict.from_mapping(d),
+        default_factory=lambda: PyTreeDict.from_mapping({}),
+    )
     """The receiving nodes."""
-    objects: list[Object]
-    """The list of objects in the scene."""
+    objects: Sequence[_O] = ()
+    """The sequence of objects in the scene."""
+
+    @jaxtyped(typechecker=typechecker)
+    def with_transmitters(self, **transmitters: Point) -> "Scene":
+        """
+        Returns a copy of this scene, with the given transmitters.
+
+        :param transmitters: A mapping of transmitter names and points.
+        :return: The new scene.
+        """
+        return eqx.tree_at(
+            lambda s: s.transmitters, self, PyTreeDict.from_mapping(transmitters)
+        )
+
+    @jaxtyped(typechecker=typechecker)
+    def with_receivers(self, **receivers: Point) -> "Scene":
+        """
+        Returns a copy of this scene, with the given receivers.
+
+        :param receivers: A mapping of receiver names and points.
+        :return: The new scene.
+        """
+        return eqx.tree_at(
+            lambda s: s.receivers, self, PyTreeDict.from_mapping(receivers)
+        )
+
+    @jaxtyped(typechecker=typechecker)
+    def with_objects(self, *objects: Object) -> "Scene":
+        """
+        Returns a copy of this scene, with the given objects.
+
+        :param objects: A sequence of objects.
+        :return: The new scene.
+        """
+        return eqx.tree_at(lambda s: s.objects, self, tuple(objects))
+
+    @jaxtyped(typechecker=typechecker)
+    def update_transmitters(self, **transmitters: Point) -> "Scene":
+        """
+        Returns a copy of this scene, with the updated transmitters.
+
+        The new set of transmitters is the union of the previous set and
+        the ones provided as arguments.
+
+        :param transmitters: A mapping of transmitter names and points.
+        :return: The new scene.
+        """
+        return eqx.tree_at(
+            lambda s: s.transmitters,
+            self,
+            PyTreeDict.from_mapping({**self.transmitters, **transmitters}),
+        )
+
+    @jaxtyped(typechecker=typechecker)
+    def update_receivers(self, **receivers: Point) -> "Scene":
+        """
+        Returns a copy of this scene, with the updated receivers.
+
+        The new set of receivers is the union of the previous set and
+        the ones provided as arguments.
+
+        :param receivers: A mapping of receivers names and points.
+        :return: The new scene.
+        """
+        return eqx.tree_at(
+            lambda s: s.receivers,
+            self,
+            PyTreeDict.from_mapping({**self.receivers, **receivers}),
+        )
+
+    @jaxtyped(typechecker=typechecker)
+    def add_objects(self, *objects: Object) -> "Scene":
+        """
+        Returns a copy of this scene, with the given objects, plus the scene objects.
+
+        :param objects: A sequence of objects.
+        :return: The new scene.
+        """
+        return self.with_objects(*self.objects, *objects)
+
+    @classmethod
+    @jaxtyped(typechecker=typechecker)
+    def from_walls_array(cls, walls: Float[Array, "num_walls 2 2"]) -> "Scene":
+        """
+        Creates an empty scene from an array of walls.
+
+        :param walls: An array of wall coordinates.
+        :return: The new scene.
+        """
+        return cls(
+            transmitters={},  # type: ignore[reportArgumentType]
+            receivers={},  # type: ignore[reportArgumentType]
+            objects=[Wall(xys=xys) for xys in walls],
+        )
 
     @singledispatchmethod
     @classmethod
@@ -272,33 +424,27 @@ class Scene(Plottable, eqx.Module):
 
                 if _type == "Polygon":
                     for i in range(n):
-                        points = jnp.array(
+                        xys = jnp.array(
                             [coordinates[i - 1], coordinates[i]], dtype=float
                         )
-                        wall = Wall(points=points)
+                        wall = Wall(xys=xys)
                         walls.append(wall)
 
+        scene = Scene(objects=walls)
+
         if len(walls) > 0:
-            tx = Point(point=walls[0].origin())
-            rx = Point(point=walls[0].dest())
+            scene = scene.with_transmitters(tx=Point(xy=scene.get_location(tx_loc)))
+            scene = scene.with_receivers(rx=Point(xy=scene.get_location(rx_loc)))
+        else:
+            scene = scene.with_transmitters(tx=Point(xy=jnp.array([0.0, 0.0])))
+            scene = scene.with_receivers(rx=Point(xy=jnp.array([1.0, 1.0])))
 
-        else:  # pragma: no cover
-            tx = Point(point=jnp.array([0.0, 0.0]))
-            rx = Point(point=jnp.array([1.0, 1.0]))
-
-        scene = cls(transmitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)  # type: ignore[arg-type]
-        scene.transmitters["tx"] = Point(point=scene.get_location(tx_loc))
-        scene.receivers["rx"] = Point(point=scene.get_location(rx_loc))
         return scene
 
     @from_geojson.register(Readable)
     @classmethod
     def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> "Scene":
         return cls.from_geojson(fp.read(), *args, **kwargs)
-
-    def add_objects(self, objects: Sequence[Object]) -> None:
-        """Add objects to the scene."""
-        self.objects.extend(objects)
 
     @classmethod
     def from_scene_name(
@@ -308,9 +454,9 @@ class Scene(Plottable, eqx.Module):
         Generates a new scene from the given scene name.
 
         :param scene_name: The name of the scene.
-        :param args: Positional arguments to be passed to the
+        :param args: Positional arguments passed to the
             constructor.
-        :param kwargs: Keyword arguments to be passed to the
+        :param kwargs: Keyword arguments passed to the
             constructor.
         :return: The scene.
         """
@@ -319,11 +465,11 @@ class Scene(Plottable, eqx.Module):
     @classmethod
     def random_uniform_scene(
         cls,
-        key: PRNGKeyArray,
-        *,
         n_transmitters: int = 1,
         n_walls: int = 1,
         n_receivers: int = 1,
+        *,
+        key: PRNGKeyArray,
     ) -> "Scene":
         """
         Generates a random scene, drawing coordinates from a random distribution.
@@ -344,7 +490,7 @@ class Scene(Plottable, eqx.Module):
 
             ax = plt.gca()
             key = jax.random.PRNGKey(1234)
-            scene = Scene.random_uniform_scene(key, n_walls=5)
+            scene = Scene.random_uniform_scene(n_walls=5, key=key)
             _ = scene.plot(ax)
             plt.show()  # doctest: +SKIP
 
@@ -353,14 +499,14 @@ class Scene(Plottable, eqx.Module):
             key, (n_transmitters + 2 * n_walls + n_receivers, 2)
         )
         transmitters = {
-            f"tx_{i}": Point(point=points[i, :]) for i in range(n_transmitters)
+            f"tx_{i}": Point(xy=points[i, :]) for i in range(n_transmitters)
         }
         receivers = {
-            f"rx_{i}": Point(point=points[-(i + 1), :]) for i in range(n_receivers)
+            f"rx_{i}": Point(xy=points[-(i + 1), :]) for i in range(n_receivers)
         }
 
-        walls: list[Object] = [
-            Wall(points=points[2 * i + n_transmitters : 2 * i + 2 + n_transmitters, :])
+        walls = [
+            Wall(xys=points[2 * i + n_transmitters : 2 * i + 2 + n_transmitters, :])
             for i in range(n_walls)
         ]
         return cls(transmitters=transmitters, receivers=receivers, objects=walls)
@@ -368,15 +514,14 @@ class Scene(Plottable, eqx.Module):
     @classmethod
     def basic_scene(
         cls,
-        *,
         tx_coords: Float[Array, "2"] = jnp.array([0.1, 0.1]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.302, 0.2147]),  # noqa: B008
     ) -> "Scene":
         """
         Instantiates a basic scene with a main room, and a second inner room in the lower left corner, with a small entrance.
 
-        :param tx_coords: The transmitter's coordinates, array-like, (2,).
-        :param rx_coords: The receiver's coordinates, array-like, (2,).
+        :param tx_coords: The transmitter's coordinates.
+        :param rx_coords: The receiver's coordinates.
         :return: The scene.
 
         :Examples:
@@ -389,7 +534,7 @@ class Scene(Plottable, eqx.Module):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         7
-        >>> scene.transmitters["tx"].point
+        >>> scene.transmitters["tx"].xy
         Array([0.1, 0.1], dtype=float32)
 
         .. plot::
@@ -403,35 +548,34 @@ class Scene(Plottable, eqx.Module):
             plt.show()  # doctest: +SKIP
 
         """
-        tx = Point(point=jnp.asarray(tx_coords, dtype=float))
-        rx = Point(point=jnp.asarray(rx_coords, dtype=float))
+        tx = Point(xy=jnp.asarray(tx_coords, dtype=float))
+        rx = Point(xy=jnp.asarray(rx_coords, dtype=float))
 
-        walls: list[Object] = [
+        walls = [
             # Outer walls
-            Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
-            Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
-            Wall(points=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
-            Wall(points=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
+            Wall(xys=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
+            Wall(xys=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
+            Wall(xys=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
+            Wall(xys=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
             # Small room
-            Wall(points=jnp.array([[0.4, 0.0], [0.4, 0.4]])),
-            Wall(points=jnp.array([[0.4, 0.4], [0.3, 0.4]])),
-            Wall(points=jnp.array([[0.1, 0.4], [0.0, 0.4]])),
+            Wall(xys=jnp.array([[0.4, 0.0], [0.4, 0.4]])),
+            Wall(xys=jnp.array([[0.4, 0.4], [0.3, 0.4]])),
+            Wall(xys=jnp.array([[0.1, 0.4], [0.0, 0.4]])),
         ]
 
-        return cls(transmitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
+        return cls(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
 
     @classmethod
     def square_scene(
         cls,
-        *,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.2]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.5, 0.6]),  # noqa: B008
     ) -> "Scene":
         """
         Instantiates a square scene with one main room.
 
-        :param tx_coords: The transmitter's coordinates, array-like, (2,).
-        :param rx_coords: The receiver's coordinates, array-like, (2,).
+        :param tx_coords: The transmitter's coordinates.
+        :param rx_coords: The receiver's coordinates.
         :return: The scene.
 
         :Examples:
@@ -444,7 +588,7 @@ class Scene(Plottable, eqx.Module):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         4
-        >>> scene.transmitters["tx"].point
+        >>> scene.transmitters["tx"].xy
         Array([0.2, 0.2], dtype=float32)
 
         .. plot::
@@ -458,23 +602,22 @@ class Scene(Plottable, eqx.Module):
             plt.show()  # doctest: +SKIP
 
         """
-        tx = Point(point=jnp.asarray(tx_coords, dtype=float))
-        rx = Point(point=jnp.asarray(rx_coords, dtype=float))
+        tx = Point(xy=jnp.asarray(tx_coords, dtype=float))
+        rx = Point(xy=jnp.asarray(rx_coords, dtype=float))
 
-        walls: list[Object] = [
-            Wall(points=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
-            Wall(points=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
-            Wall(points=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
-            Wall(points=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
+        walls = [
+            Wall(xys=jnp.array([[0.0, 0.0], [1.0, 0.0]])),
+            Wall(xys=jnp.array([[1.0, 0.0], [1.0, 1.0]])),
+            Wall(xys=jnp.array([[1.0, 1.0], [0.0, 1.0]])),
+            Wall(xys=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
         ]
 
-        return Scene(transmitters=dict(tx=tx), receivers=dict(rx=rx), objects=walls)
+        return cls(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
 
     @classmethod
     def square_scene_with_wall(
         cls,
         ratio: float = 0.1,
-        *,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.5]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.8, 0.5]),  # noqa: B008
     ) -> "Scene":
@@ -483,8 +626,8 @@ class Scene(Plottable, eqx.Module):
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
-        :param tx_coords: The transmitter's coordinates, array-like, (2,).
-        :param rx_coords: The receiver's coordinates, array-like, (2,).
+        :param tx_coords: The transmitter's coordinates.
+        :param rx_coords: The receiver's coordinates.
         :return: The scene.
 
         :Examples:
@@ -497,7 +640,7 @@ class Scene(Plottable, eqx.Module):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         5
-        >>> scene.transmitters["tx"].point
+        >>> scene.transmitters["tx"].xy
         Array([0.2, 0.5], dtype=float32)
 
         .. plot::
@@ -513,21 +656,21 @@ class Scene(Plottable, eqx.Module):
         """
         scene = Scene.square_scene(tx_coords=tx_coords, rx_coords=rx_coords)
 
-        wall: Object = Wall(points=jnp.array([[0.5, 0.2], [0.5, 0.8]]))
-
-        scene.add_objects([wall])
+        scene = scene.add_objects(Wall(xys=jnp.array([[0.5, 0.2], [0.5, 0.8]])))
 
         return scene
 
     @classmethod
-    def square_scene_with_obstacle(cls, ratio: float = 0.1, **kwargs: Any) -> "Scene":
+    def square_scene_with_obstacle(
+        cls, ratio: ScalarFloat = 0.1, **kwargs: Any
+    ) -> "Scene":
         """
         Instantiates a square scene with one main room, and one square obstacle in the center.
 
         :param ratio: The ratio of the obstacle's side length to
             the room's side length.
         :param kwargs:
-            Keyword arguments to be passed to :meth:`square_scene`.
+            Keyword arguments passed to :meth:`square_scene`.
         :return: The scene.
 
         :Examples:
@@ -540,7 +683,7 @@ class Scene(Plottable, eqx.Module):
                [1., 1.]], dtype=float32)
         >>> len(scene.objects)
         8
-        >>> scene.transmitters["tx"].point
+        >>> scene.transmitters["tx"].xy
         Array([0.2, 0.2], dtype=float32)
 
         .. plot::
@@ -561,14 +704,12 @@ class Scene(Plottable, eqx.Module):
         x0, x1 = 0.5 - hl, 0.5 + hl
         y0, y1 = 0.5 - hl, 0.5 + hl
 
-        walls: list[Object] = [
-            Wall(points=jnp.array([[x0, y0], [x1, y0]])),
-            Wall(points=jnp.array([[x1, y0], [x1, y1]])),
-            Wall(points=jnp.array([[x1, y1], [x0, y1]])),
-            Wall(points=jnp.array([[x0, y1], [x0, y0]])),
-        ]
-
-        scene.add_objects(walls)
+        scene = scene.add_objects(
+            Wall(xys=jnp.array([[x0, y0], [x1, y0]])),
+            Wall(xys=jnp.array([[x1, y0], [x1, y1]])),
+            Wall(xys=jnp.array([[x1, y1], [x0, y1]])),
+            Wall(xys=jnp.array([[x0, y1], [x0, y0]])),
+        )
 
         return scene
 
@@ -592,21 +733,21 @@ class Scene(Plottable, eqx.Module):
         :param transmitters:
             If set, includes transmitters in the plot.
         :param transmitters_args:
-            Arguments to be passed to each transmitter's plot function.
+            Arguments passed to each transmitter's plot function.
         :param transmitters_kwargs:
-            Keyword arguments to be passed to each transmitter's plot function.
+            Keyword arguments passed to each transmitter's plot function.
         :param objects:
             If set, includes objects in the plot.
         :param objects_args:
-            Arguments to be passed to the each object' plot function.
+            Arguments passed to the each object' plot function.
         :param objects_kwargs:
-            Keyword arguments to be passed to each object' plot function.
+            Keyword arguments passed to each object' plot function.
         :param receivers:
             If set, includes receivers in the plot.
         :param receivers_args:
-            Arguments to be passed to each receiver's plot function.
+            Arguments passed to each receiver's plot function.
         :param receivers_kwargs:
-            Keyword arguments to be passed to each receiver's plot function.
+            Keyword arguments passed to each receiver's plot function.
         :param annotate:
             If set, will annotate all transmitters and receivers with their name,
             and append the corresponding artists
@@ -618,8 +759,9 @@ class Scene(Plottable, eqx.Module):
             objects_kwargs = {}
         if transmitters_kwargs is None:
             transmitters_kwargs = {}
-        transmitters_kwargs.setdefault("color", "blue")
-        receivers_kwargs.setdefault("color", "green")
+
+        transmitters_kwargs = {"color": "blue", **transmitters_kwargs}
+        receivers_kwargs = {"color": "green", **receivers_kwargs}
 
         artists = []
 
@@ -679,12 +821,12 @@ class Scene(Plottable, eqx.Module):
         """
         Returns the closest transmitter to the given coordinates.
 
-        :param coords: The x-y coordinates, (2,).
+        :param coords: The x-y coordinates.
         :return: The closet transmitter (name) and its distance to the
             coordinates.
         """
         transmitters = list(self.transmitters.items())
-        points = jnp.vstack([tx.point for _, tx in transmitters])
+        points = jnp.vstack([tx.xy for _, tx in transmitters])
         i_min, distance = closest_point(points, coords)
         return transmitters[i_min][0], distance
 
@@ -695,12 +837,12 @@ class Scene(Plottable, eqx.Module):
         """
         Returns the closest receivers to the given coordinates.
 
-        :param coords: The x-y coordinates, (2,).
+        :param coords: The x-y coordinates.
         :return: The closet receiver (name) and its distance to the
             coordinates.
         """
         receivers = list(self.receivers.items())
-        points = jnp.vstack([rx.point for _, rx in receivers])
+        points = jnp.vstack([rx.xy for _, rx in receivers])
         i_min, distance = closest_point(points, coords)
         return receivers[i_min][0], distance
 
@@ -721,30 +863,49 @@ class Scene(Plottable, eqx.Module):
         """
         return product(self.transmitters.items(), self.receivers.items())
 
-    @partial(jax.jit, static_argnames=("min_order", "max_order"))
+    @eqx.filter_jit
     def all_path_candidates(
-        self, min_order: int = 0, max_order: int = 1
+        self,
+        min_order: int = 0,
+        max_order: int = 1,
+        *,
+        order: Optional[int] = None,
     ) -> list[UInt[Array, "num_path_candidates order"]]:
         """
         Returns all path candidates, from any of the :attr:`transmitters` to any of the :attr:`receivers`, as a list of array of indices.
 
         Note that it only includes indices for objects.
 
+        .. note::
+
+            Internally, it uses :py:class:`differt_core.rt.graph.CompleteGraph`
+            to generate the sequence of all path candidates efficiently.
+
         :param min_order: The minimum order of the path, i.e., the
             number of interactions.
         :param max_order: The maximum order of the path, i.e., the
             number of interactions.
+        :param order: If provided, it is equivalent to setting
+            ``min_order=order`` and ``max_order=order``.
         :return: The list of list of indices.
         """
-        num_primitives = len(self.objects)
+        num_nodes = len(self.objects)
+
+        graph = CompleteGraph(num_nodes)
+
+        from_ = num_nodes
+        to = from_ + 1
+
+        if order is not None:
+            min_order = order
+            max_order = order
 
         return [
-            path_candidate
+            jnp.asarray(path_candidate, dtype=jnp.uint32)
             for order in range(min_order, max_order + 1)
-            for path_candidate in jnp.asarray(
-                differt_core.generate_path_candidates(num_primitives, order),
-                dtype=jnp.uint32,
-            ).T
+            for path_candidate in graph.all_paths(
+                from_, to, order + 2, include_from_and_to=False
+            )
         ]
 
     def get_interacting_objects(
@@ -767,18 +928,25 @@ class Scene(Plottable, eqx.Module):
         path_cls: type[Path] = ImagePath,
         min_order: int = 0,
         max_order: int = 1,
+        order: Optional[int] = None,
+        *,
+        key: Optional[PRNGKeyArray] = None,
         **kwargs: Any,
-    ) -> Iterator[tuple[str, str, Truthy, Path, list[int]]]:
+    ) -> Iterator[tuple[str, str, Truthy, Path, UInt[Array, " order"]]]:
         """
         Returns all paths from any of the :attr:`transmitters` to any of the :attr:`receivers`, using the given method, see, :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and :class:`differt2d.geometry.MinPath`.
 
         :param path_cls: Method to be used to find the path coordinates.
-        :param min_order:
-            The minimum order of the path, i.e., the number of interactions.
-        :param max_order:
-            The maximum order of the path, i.e., the number of interaction
+        :param min_order: The minimum order of the path, i.e., the
+            number of interactions.
+        :param max_order: The maximum order of the path, i.e., the
+            number of interactions.
+        :param order: If provided, it is equivalent to setting
+            ``min_order=order`` and ``max_order=order``.
+        :param key: The random key to be used to find the paths.
+            Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return: The generator of paths, as
             (transmitter name, receiver name, valid, path, path_candidate) tuples,
@@ -786,7 +954,9 @@ class Scene(Plottable, eqx.Module):
             :python:`is_true(valid)`.
         """
         path_candidates = self.all_path_candidates(
-            min_order=min_order, max_order=max_order
+            min_order=min_order,
+            max_order=max_order,
+            order=order,
         )
 
         for (tx_key, transmitter), (
@@ -795,8 +965,17 @@ class Scene(Plottable, eqx.Module):
         ) in self.all_transmitter_receiver_pairs():
             for path_candidate in path_candidates:
                 interacting_objects = self.get_interacting_objects(path_candidate)
+
+                if key is not None:
+                    key, key_path = jax.random.split(key, 2)
+                else:
+                    key_path = None
+
                 path = path_cls.from_tx_objects_rx(
-                    transmitter.point, interacting_objects, receiver.point
+                    transmitter,
+                    interacting_objects,
+                    receiver,
+                    key=key_path,
                 )
                 valid = path.is_valid(
                     self.objects,
@@ -816,7 +995,7 @@ class Scene(Plottable, eqx.Module):
         Returns only valid paths as returned by :meth:`all_paths`, by filtering out paths using :func:`is_true<differt2d.logic.is_true>`.
 
         :param kwargs:
-            Keyword arguments to be passed to :meth:`all_paths`.
+            Keyword arguments passed to :meth:`all_paths`.
         :return: The generator of valid paths, as
             (transmitter name, receiver name, path, path_candidate) tuples.
         """
@@ -841,14 +1020,14 @@ class Scene(Plottable, eqx.Module):
 
         :param fun: The function to evaluate on each path.
         :param fun_args:
-            Positional arguments to be passed to ``fun``.
+            Positional arguments passed to ``fun``.
         :param fun_kwargs:
-            Keyword arguments to be passed to ``fun``.
+            Keyword arguments passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`all_paths`.
         :return:
             An iterator of transmitter name, receiver name
@@ -862,7 +1041,7 @@ class Scene(Plottable, eqx.Module):
             for (tx_key, rx_key), paths_group in groupby(
                 self.all_paths(**kwargs), lambda key: key[:2]
             ):
-                acc = 0.0
+                acc = jnp.array(0.0)
                 transmitter = self.transmitters[tx_key]
                 receiver = self.receivers[rx_key]
 
@@ -880,11 +1059,16 @@ class Scene(Plottable, eqx.Module):
                 yield tx_key, rx_key, acc
 
         if reduce_all:
-            return sum(p for _, _, p in results())
+            Z = jnp.array(0.0)
+
+            for _, _, p in results():
+                Z = Z + p
+
+            return Z
         else:
             return results()
 
-    def accumulate_on_transmitters_grid_over_paths(
+    def accumulate_on_transmitters_grid_over_paths(  # noqa: C901
         self,
         X: Float[Array, "m n"],
         Y: Float[Array, "m n"],
@@ -898,6 +1082,8 @@ class Scene(Plottable, eqx.Module):
         transmitter_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
+        *,
+        key: Optional[PRNGKeyArray] = None,
         **kwargs,
     ) -> Union[
         Iterator[
@@ -919,13 +1105,13 @@ class Scene(Plottable, eqx.Module):
 
         Produces an iterator with one element for each receiver location.
 
-        :param X: The grid of x-coordinates, (m, n).
-        :param Y: The grid of y-coordinates, (m, n).
+        :param X: The grid of x-coordinates.
+        :param Y: The grid of y-coordinates.
         :param fun: The function to evaluate on each path.
         :param fun_args:
-            Positional arguments to be passed to ``fun``.
+            Positional arguments passed to ``fun``.
         :param fun_kwargs:
-            Keyword arguments to be passed to ``fun``.
+            Keyword arguments passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
@@ -941,8 +1127,10 @@ class Scene(Plottable, eqx.Module):
             The minimum order of the path, i.e., the number of interactions.
         :param max_order:
             The maximum order of the path, i.e., the number of interactions.
+        :param key: The random key to be used to find the paths.
+            Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return:
             An iterator of receiver name and the corresponding
@@ -952,34 +1140,38 @@ class Scene(Plottable, eqx.Module):
         if fun_kwargs is None:
             fun_kwargs = {}
 
-        transmitters = self.transmitters.copy()
-        self.transmitters.clear()
-        self.transmitters["tx"] = Point(point=jnp.array([0.0, 0.0]))
+        scene = self.with_transmitters(tx=Point(xy=jnp.array([0.0, 0.0])))
 
-        path_candidates = self.all_path_candidates(
+        path_candidates = scene.all_path_candidates(
             min_order=min_order,
             max_order=max_order,
         )
 
-        pairs = list(self.all_transmitter_receiver_pairs())
-        self.transmitters.clear()
-        self.transmitters.update(transmitters)
+        pairs = list(scene.all_transmitter_receiver_pairs())
+
+        if key is not None:
+            keys = list(jax.random.split(key, len(path_candidates)))
+        else:
+            keys = [None] * len(path_candidates)
 
         def facc(tx_coords: Float[Array, "2"], receiver: Point) -> Float[Array, " "]:
-            acc = 0.0
-            for path_candidate in path_candidates:
-                interacting_objects = self.get_interacting_objects(path_candidate)
+            acc = jnp.array(0.0)
+            for path_candidate, key in zip(path_candidates, keys):
+                interacting_objects = scene.get_interacting_objects(path_candidate)
                 path = path_cls.from_tx_objects_rx(
-                    tx_coords, interacting_objects, receiver.point
+                    tx_coords,
+                    interacting_objects,
+                    receiver,
+                    key=key,
                 )
                 valid = path.is_valid(
-                    self.objects,  # type: ignore[arg-type]
+                    scene.objects,
                     path_candidate,
-                    interacting_objects,  # type: ignore[arg-type]
+                    interacting_objects,
                     **kwargs,
                 )
                 acc = acc + valid * fun(
-                    transmitter_cls(point=tx_coords),
+                    transmitter_cls(xy=tx_coords),
                     receiver,
                     path,
                     interacting_objects,
@@ -990,35 +1182,41 @@ class Scene(Plottable, eqx.Module):
             return acc
 
         if value_and_grad:
-            facc = jax.value_and_grad(facc, argnums=0)
+            f = jax.value_and_grad(facc, argnums=0)  # type: ignore
         elif grad:
-            facc = jax.grad(facc, argnums=0)
+            f = jax.grad(facc, argnums=0)
+        else:
+            f = facc
 
-        vfacc = jax.vmap(
-            jax.vmap(facc, in_axes=(0, None)),
+        vf = jax.vmap(
+            jax.vmap(f, in_axes=(0, None)),
             in_axes=(0, None),
         )
 
         grid = jnp.dstack((X, Y))
 
-        def results() -> Iterator[Array]:
-            return ((rx_key, vfacc(grid, receiver)) for _, (rx_key, receiver) in pairs)
+        def results() -> Iterator[tuple[str, Union[Array, tuple[Array, Array]]]]:
+            return ((rx_key, vf(grid, receiver)) for _, (rx_key, receiver) in pairs)
 
         if reduce_all:
             if value_and_grad:
-                Z = 0.0
-                dZ = 0.0
+                Z = jnp.array(0.0)
+                dZ = jnp.array(0.0)
                 for _, (p, dp) in results():
                     Z = Z + p
                     dZ = dZ + dp
 
                 return Z, dZ
             else:
-                return sum(p for _, p in results())
+                Z = jnp.array(0.0)
+                for _, p in results():
+                    Z = Z + p
+
+                return Z
         else:
             return results()
 
-    def accumulate_on_receivers_grid_over_paths(
+    def accumulate_on_receivers_grid_over_paths(  # noqa: C901
         self,
         X: Float[Array, "m n"],
         Y: Float[Array, "m n"],
@@ -1031,6 +1229,8 @@ class Scene(Plottable, eqx.Module):
         receiver_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
+        *,
+        key: Optional[PRNGKeyArray] = None,
         **kwargs,
     ) -> Union[
         Iterator[tuple[str, Union[Array, tuple[Array, Array]]]],
@@ -1041,11 +1241,11 @@ class Scene(Plottable, eqx.Module):
 
         Produces an iterator with one element for each transmitter location.
 
-        :param X: The grid of x-coordinates, (m, n).
-        :param Y: The grid of y-coordinates, (m, n).
+        :param X: The grid of x-coordinates.
+        :param Y: The grid of y-coordinates.
         :param fun: The function to evaluate on each path.
         :param args:
-            Positional arguments to be passed to ``fun``.
+            Positional arguments passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
@@ -1061,43 +1261,49 @@ class Scene(Plottable, eqx.Module):
             The minimum order of the path, i.e., the number of interactions.
         :param max_order:
             The maximum order of the path, i.e., the number of interactions.
+        :param key: The random key to be used to find the paths.
+            Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
-            Keyword arguments to be passed to
+            Keyword arguments passed to
             :meth:`Path.is_valid<differt2d.geometry.Path.is_valid>`.
         :return:
             An iterator of transmitter name and the corresponding
             accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
-        receivers = self.receivers.copy()
-        self.receivers.clear()
-        self.receivers["rx"] = Point(point=jnp.array([0.0, 0.0]))
+        scene = self.with_receivers(rx=Point(xy=jnp.array([0.0, 0.0])))
 
-        path_candidates = self.all_path_candidates(
+        path_candidates = scene.all_path_candidates(
             min_order=min_order,
             max_order=max_order,
         )
 
-        pairs = list(self.all_transmitter_receiver_pairs())
-        self.receivers.clear()
-        self.receivers.update(receivers)
+        pairs = list(scene.all_transmitter_receiver_pairs())
 
-        def facc(transmitter: Point, rx_coords: Array) -> Array:
-            acc = 0.0
-            for path_candidate in path_candidates:
-                interacting_objects = self.get_interacting_objects(path_candidate)
+        if key is not None:
+            keys = list(jax.random.split(key, len(path_candidates)))
+        else:
+            keys = [None] * len(path_candidates)
+
+        def facc(transmitter: Point, rx_coords: Float[Array, "2"]) -> Float[Array, " "]:
+            acc = jnp.array(0.0)
+            for path_candidate, key in zip(path_candidates, keys):
+                interacting_objects = scene.get_interacting_objects(path_candidate)
                 path = path_cls.from_tx_objects_rx(
-                    transmitter.point, interacting_objects, rx_coords
+                    transmitter,
+                    interacting_objects,
+                    rx_coords,
+                    key=key,
                 )
                 valid = path.is_valid(
-                    self.objects,  # type: ignore[arg-type]
+                    scene.objects,
                     path_candidate,
-                    interacting_objects,  # type: ignore[arg-type]
+                    interacting_objects,
                     **kwargs,
                 )
                 acc = acc + valid * fun(
                     transmitter,
-                    receiver_cls(point=rx_coords),
+                    receiver_cls(xy=rx_coords),
                     path,
                     interacting_objects,
                     *args,
@@ -1106,32 +1312,38 @@ class Scene(Plottable, eqx.Module):
             return acc
 
         if value_and_grad:
-            facc = jax.value_and_grad(facc, argnums=1)
+            f = jax.value_and_grad(facc, argnums=1)  # type: ignore
         elif grad:
-            facc = jax.grad(facc, argnums=1)
+            f = jax.grad(facc, argnums=1)
+        else:
+            f = facc
 
-        vfacc = jax.vmap(
-            jax.vmap(facc, in_axes=(None, 0)),
+        vf = jax.vmap(
+            jax.vmap(f, in_axes=(None, 0)),
             in_axes=(None, 0),
         )
 
         grid = jnp.dstack((X, Y))
 
-        def results() -> Iterator[Float[Array, " "]]:
+        def results() -> Iterator[tuple[str, Union[Array, tuple[Array, Array]]]]:
             return (
-                (tx_key, vfacc(transmitter, grid)) for (tx_key, transmitter), _ in pairs
+                (tx_key, vf(transmitter, grid)) for (tx_key, transmitter), _ in pairs
             )
 
         if reduce_all:
             if value_and_grad:
-                Z = 0.0
-                dZ = 0.0
+                Z = jnp.array(0.0)
+                dZ = jnp.array(0.0)
                 for _, (p, dp) in results():
                     Z = Z + p
                     dZ = dZ + dp
 
                 return Z, dZ
             else:
-                return sum(p for _, p in results())
+                Z = jnp.array(0.0)
+                for _, p in results():
+                    Z = Z + p
+
+                return Z
         else:
             return results()

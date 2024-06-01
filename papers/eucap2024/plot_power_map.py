@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import jax.numpy as jnp
-from chex import Array
+from jaxtyping import Array, Float
 from matplotlib.colors import LogNorm
 from utils import create_fig_for_paper
 
@@ -9,7 +9,7 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene_with_wall()
-scene.transmitters["Tx"] = scene.transmitters.pop("tx")
+scene = scene.with_transmitters(Tx=scene.transmitters["tx"])
 
 annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
 point_kwargs = dict(
@@ -29,7 +29,7 @@ for grad in [False, True]:
             receivers=False,
         )
 
-        P: Array = scene.accumulate_on_receivers_grid_over_paths(
+        P: Float[Array, "600 600"] = scene.accumulate_on_receivers_grid_over_paths(
             X,
             Y,
             fun=received_power,
@@ -37,7 +37,7 @@ for grad in [False, True]:
             grad=grad,
             approx=approx,
             alpha=50.0,
-        )
+        )  # type: ignore
 
         if grad:
             dP = jnp.linalg.norm(P, axis=-1)

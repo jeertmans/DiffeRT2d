@@ -19,12 +19,15 @@ step after step, using a geometric progression.
 #
 # First, we need to import the necessary modules.
 
-from copy import deepcopy as copy
+from collections.abc import Iterator
+from copy import copy
+from typing import Any
 
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import optax
+from jaxtyping import Array, Float
 from matplotlib.animation import FuncAnimation
 from matplotlib.colors import LogNorm
 
@@ -57,12 +60,14 @@ scene = Scene.square_scene_with_obstacle()
 # objective function, because most optimizer minimize functions.
 
 
-def objective_function(received_power_per_receiver):
+def objective_function(
+    received_power_per_receiver: Iterator[Float[Array, " *batch"]],
+) -> Float[Array, " *batch"]:
     """
     Objective function, that wants to maximize the received power by each
     receiver.
     """
-    acc = jnp.inf
+    acc = jnp.array(jnp.inf)
     for p in received_power_per_receiver:
         p = p / P0  # Normalize power
         acc = jnp.minimum(acc, p)
@@ -70,9 +75,11 @@ def objective_function(received_power_per_receiver):
     return acc
 
 
-def loss(tx_coords, scene, *args, **kwargs):
+def loss(
+    tx_coords: Float[Array, "2"], scene: Scene, *args: Any, **kwargs: Any
+) -> Float[Array, " "]:
     """Loss function, to be minimized."""
-    scene.transmitters["tx"] = Point(point=tx_coords)
+    scene = scene.with_transmitters(tx=Point(xy=tx_coords))
     return -objective_function(
         power for _, _, power in scene.accumulate_over_paths(*args, **kwargs)
     )
@@ -90,7 +97,7 @@ f_and_df = jax.value_and_grad(
 #
 # .. note::
 #
-#    The transmitter is intentionnally placed in a zero-gradient zone, to showcase
+#    The transmitter is intentionally placed in a zero-gradient zone, to showcase
 #    the problem of non-convergence when not using approximation. Note that
 #    the zero gradient region can be avoided if one simulates a ``max_order``
 #    greater than ``0`` (e.g., ``1`` is sufficient here). This, of course,
@@ -100,18 +107,9 @@ fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
 annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
-scene.transmitters.clear()
-scene.transmitters.update(
-    {
-        "tx": Point(point=jnp.array([0.5, 0.7])),
-    }
-)
-scene.receivers.clear()
-scene.receivers.update(
-    {
-        r"rx_0": Point(point=jnp.array([0.3, 0.1])),
-        r"rx_1": Point(point=jnp.array([0.5, 0.1])),
-    }
+scene = scene.with_transmitters(tx=Point(xy=jnp.array([0.5, 0.7])))
+scene = scene.with_receivers(
+    rx_0=Point(xy=jnp.array([0.3, 0.1])), rx_1=Point(xy=jnp.array([0.5, 0.1]))
 )
 
 X, Y = scene.grid(n=300)
@@ -162,8 +160,8 @@ steps = 101  # In how many steps we hope to converge
 alphas = jnp.logspace(0, 2, steps)  # Values between 1.0 and 100.0
 
 # Dummy values, to be filled by ``init_func``.
-optimizers = [None, None]
-carries = [(None, None), (None, None)]
+optimizers: list[optax.GradientTransformation] = [None, None]  # type: ignore
+carries: list[tuple[Float[Array, "2"], optax.OptState]] = [(None, None), (None, None)]  # type: ignore
 
 # sphinx_gallery_defer_figures
 
@@ -178,20 +176,22 @@ carries = [(None, None), (None, None)]
 # the corresponding ``alpha`` values directly as an argument.
 
 
-def init_func():
+def init_func() -> list:
     tx_coords = jnp.array([0.5, 0.7])
-    for i, scene in enumerate(scenes):
-        scene.transmitters["tx"] = Point(point=tx_coords)
+    for i in range(2):
+        scenes[i] = scene.with_transmitters(tx=Point(xy=tx_coords))
         optimizers[i] = optax.chain(optax.adam(learning_rate=0.01), optax.zero_nans())
         carries[i] = tx_coords, optimizers[i].init(tx_coords)
 
+    return []
 
-def func(alpha):
+
+def func(alpha: float) -> list:
     for i, approx in enumerate([False, True]):
         tx_coords, opt_state = carries[i]
 
         # Plotting prior to updating
-        scenes[i].transmitters["tx"] = Point(point=tx_coords)
+        scenes[i] = scene.with_transmitters(tx=Point(xy=tx_coords))
         transmitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
@@ -206,7 +206,7 @@ def func(alpha):
         )
 
         F = objective_function(
-            power
+            power  # type: ignore
             for _, power in scenes[i].accumulate_on_transmitters_grid_over_paths(
                 X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
             )
@@ -223,6 +223,8 @@ def func(alpha):
             base, expo = alpha_str.split("e")
             expo = str(int(expo))  # Remove trailing zeros and +
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
+
+    return []
 
 
 anim = FuncAnimation(fig, func=func, init_func=init_func, frames=alphas, interval=100)

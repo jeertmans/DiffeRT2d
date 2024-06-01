@@ -29,13 +29,15 @@ version = __version__
 extensions = [
     # Built-in
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     # Additional
-    "myst_parser",
     "matplotlib.sphinxext.plot_directive",
+    "myst_nb",
+    "sphinxcontrib.bibtex",
     "sphinxext.opengraph",
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
@@ -51,18 +53,21 @@ rst_prolog = """
     :language: python
 """
 
+autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 typehints_defaults = "comma"
-typehints_use_signature = True
-typehints_use_signature_return = True
+
+# -- MyST-nb and MyST-parser settings
 
 myst_enable_extensions = [
     "colon_fence",
     "html_admonition",
 ]
+nb_render_image_options = {"align": "center"}
+nb_execution_mode = "off"
 
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns = ["examples_gallery/*.ipynb"]
 
 # Removes the 'package.module' part from package.module.Class
 add_module_names = False
@@ -73,29 +78,25 @@ suppress_warnings = [
     "config.cache",
 ]
 
-extlinks = {"sothread": (" https://stackoverflow.com/%s", "this thread %s")}
+# generate autosummary even if no references
+autosummary_generate = True
 
 sphinx_gallery_conf = {
     "filename_pattern": r"/(plot)|(qt)_",
     "examples_dirs": "../../examples",  # path to your example scripts
     "gallery_dirs": "examples_gallery",  # path to where to save gallery generated output
-    "image_scrapers": ("matplotlib", qtgallery.qtscraper),
+    "image_scrapers": (qtgallery.qtscraper, "matplotlib"),
     "reset_modules": (qtgallery.reset_qapp,),
     "matplotlib_animations": True,
     "backreferences_dir": "gen_modules/backreferences",
-    "doc_module": ("differt2d", "numpy", "jax", "optax", "matplotlib"),
+    "doc_module": ("differt2d", "equinox", "jax", "jaxtyping", "matplotlib", "optax"),
     "reference_url": {
         "differt2d": None,
     },
+    "capture_repr": ("_repr_html_", "__repr__"),
+    "compress_images": ("images", "thumbnails"),
     "image_srcset": ["2x"],
     "show_api_usage": True,
-}
-
-qtgallery_conf = {
-    "xvfb_size": (640, 775),
-    "xvfb_color_depth": 24,
-    "xfvb_use_xauth": False,
-    "xfvb_extra_args": [],
 }
 
 # -- Options for HTML output -------------------------------------------------
@@ -128,6 +129,7 @@ html_theme_options = {
 # -- Intersphinx mapping
 
 intersphinx_mapping = {
+    "differt_core": ("https://differt.eertmans.be/latest/", None),
     "equinox": ("https://docs.kidger.site/equinox/", None),
     "jax": ("https://jax.readthedocs.io/en/latest", None),
     "jaxtyping": ("https://docs.kidger.site/jaxtyping/", None),
@@ -142,6 +144,10 @@ intersphinx_mapping = {
 
 ogp_site_url = "https://eertmans.be/DiffeRT2d/"
 ogp_use_first_image = True
+
+# -- Bibtex
+
+bibtex_bibfiles = ["references.bib"]
 
 # -- Sphinx App
 

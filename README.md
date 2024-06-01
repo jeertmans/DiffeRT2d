@@ -1,18 +1,18 @@
-<img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
-
 # DiffeRT2d
+
+<img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
 
 [![Latest Release][pypi-version-badge]][pypi-version-url]
 [![Python version][pypi-python-version-badge]][pypi-version-url]
 [![Documentation][documentation-badge]][documentation-url]
-[![codecov][codecov-badge]][codecov-url]
+[![DOI][doi-badge]][doi-url]
+[![Codecov][codecov-badge]][codecov-url]
 
 Differentiable Ray Tracing (RT) Python framework for Telecommunications-oriented
 applications.
 
 > [!IMPORTANT]
-> The present work offers a simple Python module to create basic 2D scenarios,
-> and should be used for experimental purposes only. For practical 3D applications,
+> For 3D scenarios at city-scales,
 > checkout [DiffeRT](https://github.com/jeertmans/DiffeRT).
 
 - [Installation](#installation)
@@ -29,7 +29,7 @@ applications.
 
 <!-- start install -->
 
-While installing DiffeRT2D and its dependencies on your global Python is fine,
+While installing DiffeRT2d and its dependencies on your global Python is fine,
 we recommend using a virtual environment
 (e.g., [venv](https://docs.python.org/3/tutorial/venv.html)) for a local installation.
 
@@ -67,7 +67,7 @@ to know how.
 
 ## Usage
 
-For a quick introduction to DiffeRT2D, check you our
+For a quick introduction to DiffeRT2d, check you our
 [Quickstart](https://eertmans.be/DiffeRT2d/quickstart.html) tutorial!
 
 You may find a multitude of usage examples across the documentation
@@ -132,5 +132,7 @@ you can do so at: [jeertmans@icloud.com](mailto:jeertmans@icloud.com).
 [pypi-python-version-badge]: https://img.shields.io/pypi/pyversions/DiffeRT2d
 [documentation-badge]: https://img.shields.io/website?down_color=lightgrey&down_message=offline&label=documentation&up_color=green&up_message=online&url=https%3A%2F%2Feertmans.be%2FDiffeRT2d%2F
 [documentation-url]: https://eertmans.be/DiffeRT2d/
+[doi-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.11386517.svg
+[doi-url]: https://doi.org/10.5281/zenodo.11386517
 [codecov-badge]: https://codecov.io/gh/jeertmans/DiffeRT2d/branch/main/graph/badge.svg?token=1dJ1AKWMR5
 [codecov-url]: https://codecov.io/gh/jeertmans/DiffeRT2d

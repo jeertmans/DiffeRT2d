@@ -18,6 +18,7 @@ from jaxtyping import Array, Float, jaxtyped
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 
+from ._typing import ScalarFloat
 from .defaults import DEFAULT_PATCH
 from .logic import Truthy
 
@@ -34,12 +35,12 @@ class Plottable(ABC):
         Plot this object on the given axes and returns the results.
 
         :param ax: The axes to plot on.
-        :param args: Arguments to be passed to the plot function.
-        :param kwargs: Keyword arguments to be passed to the plot
+        :param args: Arguments passed to the plot function.
+        :param kwargs: Keyword arguments passed to the plot
             function.
         :return: The artist(s).
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def bounding_box(self) -> Float[Array, "2 2"]:
@@ -48,13 +49,15 @@ class Plottable(ABC):
 
         This is: :python:`[[min_x, min_y], [max_x, max_y]]`.
 
-        :return: The min. and max. coordinates of this object, (2, 2).
+        :return: The min. and max. coordinates of this object.
         """
-        pass
+        pass  # pragma: no cover
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
-    def grid(self, n: int = 50) -> tuple[Float[Array, "n n"], Float[Array, "n n"]]:
+    def grid(
+        self, n: int = 50
+    ) -> tuple[Float[Array, "{n} {n}"], Float[Array, "{n} {n}"]]:
         """
         Returns a (mesh) grid that overlays the current object.
 
@@ -76,7 +79,7 @@ class Plottable(ABC):
 
         This is: :python:`[avg_x, avg_y]`.
 
-        :return: The average coordinates of this object, (2,).
+        :return: The average coordinates of this object.
         """
         bounding_box = self.bounding_box()
 
@@ -92,30 +95,26 @@ class Plottable(ABC):
         South, West, and center. You can also combine two letters to
         define one of the four corners.
 
-        :param location: A literal denothing the location.
+        :param location: A literal referring to the location.
         :return: The location coordinates within this object's extents.
         """
         (xmin, ymin), (xmax, ymax) = self.bounding_box()
         xavg = 0.5 * (xmin + xmax)
         yavg = 0.5 * (ymin + ymax)
 
-        try:
-            x, y = dict(
-                N=(xavg, ymax),
-                E=(xmax, yavg),
-                S=(xavg, ymin),
-                W=(xmin, yavg),
-                C=(xavg, yavg),
-                NE=(xmax, ymax),
-                NW=(xmin, ymax),
-                SE=(xmax, ymin),
-                SW=(xmin, ymin),
-            )[location]
+        x, y = dict(
+            N=(xavg, ymax),
+            E=(xmax, yavg),
+            S=(xavg, ymin),
+            W=(xmin, yavg),
+            C=(xavg, yavg),
+            NE=(xmax, ymax),
+            NW=(xmin, ymax),
+            SE=(xmax, ymin),
+            SW=(xmin, ymin),
+        )[location]
 
-            return jnp.array([x, y])
-
-        except KeyError as e:
-            raise ValueError(f"Invalid location '{location}'") from e
+        return jnp.array([x, y])
 
 
 class Interactable(ABC):
@@ -131,64 +130,63 @@ class Interactable(ABC):
 
         :return: The number of parameters.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def parametric_to_cartesian(
-        self, param_coords: Float[Array, " n"]
+        self,
+        param_coords: Float[Array, " {self.parameters_counts()}"],  # type: ignore[reportUndefinedVariable]
     ) -> Float[Array, "2"]:
         """
         Converts parametric coordinates to cartesian coordinates.
 
-        :param param_coords: Parametric coordinates,
-            (:meth:`parameters_count()`,).
-        :return: Cartesian coordinates, (2,).
+        :param param_coords: Parametric coordinates.
+        :return: Cartesian coordinates.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def cartesian_to_parametric(
         self, carte_coords: Float[Array, "2"]
-    ) -> Float[Array, " n"]:
+    ) -> Float[Array, " {self.parameters_counts()}"]:  # type: ignore[reportUndefinedVariable]
         """
         Converts cartesian coordinates to parametric coordinates.
 
-        :param carte_coords: Cartesian coordinates, (2,).
-        :return: Parametric coordinates, (:meth:`parameters_count()`,).
+        :param carte_coords: Cartesian coordinates.
+        :return: Parametric coordinates.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def contains_parametric(
         self,
-        param_coords: Float[Array, " n"],
+        param_coords: Float[Array, " {self.parameters_counts()}"],  # type: ignore[reportUndefinedVariable]
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
         """
         Checks if the given coordinates are within the object.
 
-        :param param_coords: Parametric coordinates,
-            (:meth:`parameters_count()`,).
+        :param param_coords: Parametric coordinates.
         :param approx: Whether approximation is enabled or not.
-        :param kwargs: Keyword arguments to be passed to
+        :param kwargs: Keyword arguments passed to
             :func:`activation<differt2d.logic.activation>`.
-        :return: True if object contains these coordinates, (),
+        :return: True if object contains these coordinates.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def intersects_cartesian(
         self,
         ray: Float[Array, "2 2"],
-        patch: float = DEFAULT_PATCH,
+        patch: ScalarFloat = DEFAULT_PATCH,
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
         """
         Ray intersection test on the current object.
 
-        :param ray: Ray coordinates, (2, 2).
+        :param ray: Ray coordinates.
         :param patch: The patch ratio, to virtually resize the object
             prior to intersection check. A ``patch`` value greater than ``1``
             indicates that the object is enlarged, and a value between ``0`` and
@@ -197,11 +195,11 @@ class Interactable(ABC):
             smoothing objects can virtually reduce this object's size, so using
             a ``patch`` value greater than ``1`` can compensate this effect.
         :param approx: Whether approximation is enabled or not.
-        :param kwargs: Keyword arguments to be passed to
+        :param kwargs: Keyword arguments passed to
             :func:`activation<differt2d.logic.activation>`.
-        :return: True if it intersects, ().
+        :return: True if it intersects.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:
@@ -219,10 +217,10 @@ class Interactable(ABC):
 
         The returned value cannot be negative.
 
-        :param ray_path: Ray path coordinates, (3, 2).
-        :return: Interaction score, ().
+        :param ray_path: Ray path coordinates.
+        :return: Interaction score.
         """
-        pass
+        pass  # pragma: no cover
 
 
 class Object(Plottable, Interactable):
