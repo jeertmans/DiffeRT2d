@@ -35,7 +35,7 @@ If you are interested in contributing to this tool, please checkout the
 ```{eval-rst}
 .. plot::
     :caption: Power map computed on a basic scene,
-        with shadowing caused by object.
+        with shadowing caused by walls.
 
     import jax.numpy as jnp
     import matplotlib.pyplot as plt
