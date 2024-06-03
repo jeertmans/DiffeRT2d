@@ -60,6 +60,7 @@ typehints_defaults = "comma"
 # -- MyST-nb and MyST-parser settings
 
 myst_enable_extensions = [
+    "amsmath",
     "colon_fence",
     "html_admonition",
 ]
