@@ -58,7 +58,7 @@ jobs:
         rye config --set-bool behavior.use-uv=true
         rye pin '3.11'
 
-    - name: Install Differt2D
+    - name: Install Differt2D (on changes)
       run: rye sync
 
     - name: Run Benchmarks on changes
@@ -71,6 +71,9 @@ jobs:
 
     - name: Run Benchmarks before changes
       run: rye run python benchmark.py -o before.json
+
+    - name: Install Differt2D (before changes)
+      run: rye sync
 
     - name: Compare benchmarks
       run: |
