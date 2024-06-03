@@ -62,6 +62,7 @@ typehints_defaults = "comma"
 myst_enable_extensions = [
     "amsmath",
     "colon_fence",
+    "dollarmath",
     "html_admonition",
 ]
 nb_render_image_options = {"align": "center"}

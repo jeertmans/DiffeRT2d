@@ -12,17 +12,17 @@ to, please contact me if you used DiffeRT2d for one of your scientific
 projects, so I can add your publication (or else) to this list!
 :::
 
-```{toctree}
-:hidden:
-
-../notebooks/cost20120_model
-```
-
 ## 2024
 
 Publications in 2024.
 
 ### COST20120 Meeting in Helsinki
+
+```{toctree}
+:hidden:
+
+../notebooks/cost20120_model
+```
 
 At the COST Meeting held in Helsinkin, June 2024,
 we will present a Machine Learning model that aims to reduce the computational
