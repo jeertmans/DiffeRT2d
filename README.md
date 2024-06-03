@@ -8,8 +8,7 @@
 [![DOI][doi-badge]][doi-url]
 [![Codecov][codecov-badge]][codecov-url]
 
-Differentiable Ray Tracing (RT) Python framework for Telecommunications-oriented
-applications.
+Differentiable Ray Tracing Python Framework for Radio Propagation.
 
 > [!IMPORTANT]
 > For 3D scenarios at city-scales,
