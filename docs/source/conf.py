@@ -38,6 +38,7 @@ extensions = [
     "matplotlib.sphinxext.plot_directive",
     "myst_nb",
     "sphinxcontrib.bibtex",
+    "sphinxcontrib.mermaid",
     "sphinxext.opengraph",
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
