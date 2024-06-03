@@ -69,11 +69,11 @@ jobs:
         ref: ${{ github.event.pull_request.base.sha }}
         clean: false
 
-    - name: Run Benchmarks before changes
-      run: rye run python benchmark.py -o before.json
-
     - name: Install Differt2D (before changes)
       run: rye sync
+
+    - name: Run Benchmarks before changes
+      run: rye run python benchmark.py -o before.json
 
     - name: Compare benchmarks
       run: |
