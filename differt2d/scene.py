@@ -24,7 +24,7 @@ import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
 from differt_core.rt.graph import CompleteGraph
-from jaxtyping import Array, Float, PRNGKeyArray, UInt, jaxtyped
+from jaxtyping import Array, Float, Int, PRNGKeyArray, jaxtyped
 from matplotlib.artist import Artist
 
 from ._typing import ScalarFloat
@@ -870,7 +870,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         max_order: int = 1,
         *,
         order: Optional[int] = None,
-    ) -> list[UInt[Array, "num_path_candidates order"]]:
+    ) -> list[Int[Array, "num_path_candidates order"]]:
         """
         Returns all path candidates, from any of the :attr:`transmitters` to any of the :attr:`receivers`, as a list of array of indices.
 
@@ -901,7 +901,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             max_order = order
 
         return [
-            jnp.asarray(path_candidate, dtype=jnp.uint32)
+            jnp.asarray(path_candidate, dtype=jnp.int32)
             for order in range(min_order, max_order + 1)
             for path_candidate in graph.all_paths(
                 from_, to, order + 2, include_from_and_to=False
@@ -909,7 +909,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         ]
 
     def get_interacting_objects(
-        self, path_candidate: UInt[Array, " order"]
+        self, path_candidate: Int[Array, " order"]
     ) -> list[Interactable]:
         """
         Returns the list of interacting objects from a path candidate.
@@ -932,7 +932,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs: Any,
-    ) -> Iterator[tuple[str, str, Truthy, Path, UInt[Array, " order"]]]:
+    ) -> Iterator[tuple[str, str, Truthy, Path, Int[Array, " order"]]]:
         """
         Returns all paths from any of the :attr:`transmitters` to any of the :attr:`receivers`, using the given method, see, :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and :class:`differt2d.geometry.MinPath`.
 
@@ -990,7 +990,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         self,
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Iterator[tuple[str, str, Path, UInt[Array, " order"]]]:
+    ) -> Iterator[tuple[str, str, Path, Int[Array, " order"]]]:
         """
         Returns only valid paths as returned by :meth:`all_paths`, by filtering out paths using :func:`is_true<differt2d.logic.is_true>`.
 

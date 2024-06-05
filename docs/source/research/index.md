@@ -21,7 +21,7 @@ Publications in 2024.
 ```{toctree}
 :hidden:
 
-../notebooks/cost20120_model
+../notebooks/cost20120_helsinki_model
 ```
 
 At the COST Meeting held in Helsinkin, June 2024,
@@ -31,7 +31,7 @@ This model uses Differt2d for both (1) generating the training
 data, and (2) constructing the actual ray paths from the sampled path candidates.
 
 The model is completely open source and is detailed in
-[this notebook](../notebooks/cost20120_model.ipynb).
+[this notebook](../notebooks/cost20120_helsinki_model.ipynb).
 
 ### Journal of Open Source Software
 

@@ -8,11 +8,11 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
-from jaxtyping import Array, Float, PRNGKeyArray, PyTree, UInt, jaxtyped
+from jaxtyping import Array, Float, Int, PRNGKeyArray, PyTree, jaxtyped
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 
-from ._typing import ScalarFloat, ScalarUInt
+from ._typing import ScalarFloat, ScalarInt
 from .abc import Interactable, Object, Plottable
 from .defaults import DEFAULT_PATCH
 from .logic import (
@@ -225,7 +225,7 @@ def normalize(vector: Float[Array, "2"]) -> tuple[Float[Array, "2"], Float[Array
 @jaxtyped(typechecker=typechecker)
 def closest_point(
     points: Float[Array, "N 2"], target: Float[Array, "2"]
-) -> tuple[UInt[Array, " "], Float[Array, " "]]:
+) -> tuple[Int[Array, " "], Float[Array, " "]]:
     """
     Returns the index of the closest point to some target, and the actual distance.
 
@@ -247,12 +247,12 @@ def closest_point(
     ...     ]
     ... )
     >>> closest_point(points, target)
-    (Array(1, dtype=uint32), Array(0.49999997, dtype=float32))
+    (Array(1, dtype=int32), Array(0.49999997, dtype=float32))
     >>> points[closest_point(points, target)[0]]
     Array([1., 0.], dtype=float32)
     """
     distances = jnp.linalg.norm(points - target.reshape(-1, 2), axis=1)
-    i_min = jnp.argmin(distances).astype(jnp.uint32)
+    i_min = jnp.argmin(distances)
 
     return i_min, distances[i_min]
 
@@ -795,7 +795,7 @@ class Path(Plottable, eqx.Module):
     def is_valid(
         self,
         objects: Sequence[Interactable],
-        path_candidate: UInt[Array, " order"],
+        path_candidate: Int[Array, " order"],
         interacting_objects: Sequence[Interactable],
         tol: ScalarFloat = 1e-2,
         patch: ScalarFloat = DEFAULT_PATCH,
@@ -863,8 +863,8 @@ class Path(Plottable, eqx.Module):
 def parametric_to_cartesian_from_slice(  # noqa: D103
     obj: Interactable,
     parametric_coords: Float[Array, " num_parametric_coords"],
-    start: ScalarUInt,
-    size: ScalarUInt,
+    start: ScalarInt,
+    size: ScalarInt,
 ) -> Float[Array, "2"]:
     parametric_coords = jax.lax.dynamic_slice(parametric_coords, (start,), (size,))
     return obj.parametric_to_cartesian(parametric_coords)
@@ -884,7 +884,7 @@ def parametric_to_cartesian(  # noqa: D103
     cartesian_coords = jnp.empty((n + 2, 2))
     cartesian_coords = cartesian_coords.at[0].set(tx_coords)
     cartesian_coords = cartesian_coords.at[-1].set(rx_coords)
-    j = jnp.uint32(0)
+    j = jnp.int32(0)
     for i, obj in enumerate(objects):
         size = obj.parameters_count()
         cartesian_coords = cartesian_coords.at[i + 1].set(
