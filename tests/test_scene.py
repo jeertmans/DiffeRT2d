@@ -113,6 +113,40 @@ class TestScene:
 
         assert len(scene.objects) == 3
 
+    def test_rename_transmitters(self):
+        scene = Scene(transmitters={"a": Point(), "b": Point()})
+
+        assert "a" in scene.transmitters
+
+        scene = scene.rename_transmitters(a="A")
+
+        assert "a" not in scene.transmitters
+        assert "A" in scene.transmitters
+        assert len(scene.transmitters) == 2
+
+        scene = scene.rename_transmitters(c="C")
+
+        assert "c" not in scene.transmitters
+        assert "C" not in scene.transmitters
+        assert len(scene.transmitters) == 2
+
+    def test_rename_receivers(self):
+        scene = Scene(receivers={"a": Point(), "b": Point()})
+
+        assert "a" in scene.receivers
+
+        scene = scene.rename_receivers(a="A")
+
+        assert "a" not in scene.receivers
+        assert "A" in scene.receivers
+        assert len(scene.receivers) == 2
+
+        scene = scene.rename_receivers(c="C")
+
+        assert "c" not in scene.receivers
+        assert "C" not in scene.receivers
+        assert len(scene.receivers) == 2
+
     def test_from_walls_array(self, key):
         scene = Scene.random_uniform_scene(
             n_transmitters=0, n_receivers=0, n_walls=30, key=key

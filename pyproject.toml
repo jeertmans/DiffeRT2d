@@ -126,6 +126,7 @@ venvPath = "."
 addopts = [
   "--ignore=benchmark.py",
   "--ignore=examples",
+  "--ignore=papers",
   "--doctest-modules",
   "--doctest-ignore-import-errors",
   "--doctest-glob=*.md",
@@ -176,6 +177,7 @@ dev-dependencies = [
   "qtpy<=2.4.0",
   "sphinx>=7.2.6",
   "sphinxcontrib-bibtex>=2.6.0",
+  "sphinxcontrib-mermaid>=0.9.2",
   "sphinxext-opengraph>=0.7.5",
   "sphinx-autodoc-typehints>=1.23.2",
   "sphinx-copybutton>=0.5.1",

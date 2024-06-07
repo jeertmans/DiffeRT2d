@@ -2,8 +2,8 @@
 
 from typing import Union
 
-from jaxtyping import Array, Float, UInt
+from jaxtyping import Array, Float, Int
 
 ArrayLikeFloat = Union[Float[Array, " *batch"], float]
 ScalarFloat = Union[Float[Array, " "], float]
-ScalarUInt = Union[UInt[Array, " "], int]  # TODO: annotate that int must be >= 0.
+ScalarInt = Union[Int[Array, " "], int]

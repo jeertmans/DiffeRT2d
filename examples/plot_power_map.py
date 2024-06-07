@@ -2,7 +2,7 @@
 Plot received power over a grid
 ===============================
 
-This examples shows how one can plot the received power map, i.e.,
+This example shows how one can plot the received power map, i.e.,
 the power received at each (x, y) coordinate as the sum of the power from
 each transmitter.
 
@@ -25,8 +25,6 @@ from jaxtyping import Array, Float
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
-scene = Scene.square_scene_with_wall()
-
 # %%
 # Scene
 # -----
@@ -35,6 +33,8 @@ scene = Scene.square_scene_with_wall()
 # may introduces a long computation time.
 #
 # You can easily change the scene by modifying the following line:
+
+scene = Scene.square_scene_with_wall()
 
 # %%
 # Plot setup

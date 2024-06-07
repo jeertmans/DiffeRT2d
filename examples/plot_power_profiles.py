@@ -2,7 +2,7 @@
 Plot power profiles for various parameters
 ==========================================
 
-This examples shows how one can plot the received power profiles, i.e.,
+This example shows how one can plot the received power profiles, i.e.,
 the power received along a line as the sum of the power from
 each transmitter, for a variety of approximation parameters.
 

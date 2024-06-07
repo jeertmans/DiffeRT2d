@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/0.3.0...HEAD)
 
+(unreleased-added)=
+### Added
+
++ Added utilities to rename scene transmitters and receivers.
+  [#62](https://github.com/jeertmans/DiffeRT2d/pull/62)
+
+(unreleased-changed)=
+### Changed
+
++ Changed the types of indices (and path candidates) to
+  allow signed integers, as a way to support negative indexing.
+  [#62](https://github.com/jeertmans/DiffeRT2d/pull/62)
+
+(unreleased-chore)=
+### Chore
+
++ Added a detailed notebook about our ML model presented at
+  the COST20120 INTERACT meeting, Helsinki, June 2024.
+  [#62](https://github.com/jeertmans/DiffeRT2d/pull/62)
+
 (v0.3.0)=
 ## [v0.3.0](https://github.com/jeertmans/DiffeRT2d/compare/v0.2.0...v0.3.0)
 

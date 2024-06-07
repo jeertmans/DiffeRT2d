@@ -38,6 +38,7 @@ extensions = [
     "matplotlib.sphinxext.plot_directive",
     "myst_nb",
     "sphinxcontrib.bibtex",
+    "sphinxcontrib.mermaid",
     "sphinxext.opengraph",
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
@@ -59,8 +60,11 @@ typehints_defaults = "comma"
 
 # -- MyST-nb and MyST-parser settings
 
+myst_heading_anchors = 3
 myst_enable_extensions = [
+    "amsmath",
     "colon_fence",
+    "dollarmath",
     "html_admonition",
 ]
 nb_render_image_options = {"align": "center"}

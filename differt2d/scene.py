@@ -24,7 +24,7 @@ import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
 from differt_core.rt.graph import CompleteGraph
-from jaxtyping import Array, Float, PRNGKeyArray, UInt, jaxtyped
+from jaxtyping import Array, Float, Int, PRNGKeyArray, jaxtyped
 from matplotlib.artist import Artist
 
 from ._typing import ScalarFloat
@@ -193,6 +193,38 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :return: The new scene.
         """
         return self.with_objects(*self.objects, *objects)
+
+    @jaxtyped(typechecker=typechecker)
+    def rename_transmitters(self, **transmitter_names: str) -> "Scene":
+        """
+        Returns a copy of this scene, with the specified transmitters renamed.
+
+        :param transmitter_names: A mapping of transmitter old names
+            and new names.
+        :return: The new scene.
+        """
+        transmitters = {}
+        for name, point in self.transmitters.items():
+            name = transmitter_names.get(name, name)
+            transmitters[name] = point
+
+        return self.with_transmitters(**transmitters)
+
+    @jaxtyped(typechecker=typechecker)
+    def rename_receivers(self, **receiver_names: str) -> "Scene":
+        """
+        Returns a copy of this scene, with the specified receivers renamed.
+
+        :param receiver_names: A mapping of receiver old names
+            and new names.
+        :return: The new scene.
+        """
+        receivers = {}
+        for name, point in self.receivers.items():
+            name = receiver_names.get(name, name)
+            receivers[name] = point
+
+        return self.with_receivers(**receivers)
 
     @classmethod
     @jaxtyped(typechecker=typechecker)
@@ -870,7 +902,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         max_order: int = 1,
         *,
         order: Optional[int] = None,
-    ) -> list[UInt[Array, "num_path_candidates order"]]:
+    ) -> list[Int[Array, "num_path_candidates order"]]:
         """
         Returns all path candidates, from any of the :attr:`transmitters` to any of the :attr:`receivers`, as a list of array of indices.
 
@@ -901,7 +933,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             max_order = order
 
         return [
-            jnp.asarray(path_candidate, dtype=jnp.uint32)
+            jnp.asarray(path_candidate, dtype=jnp.int32)
             for order in range(min_order, max_order + 1)
             for path_candidate in graph.all_paths(
                 from_, to, order + 2, include_from_and_to=False
@@ -909,7 +941,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         ]
 
     def get_interacting_objects(
-        self, path_candidate: UInt[Array, " order"]
+        self, path_candidate: Int[Array, " order"]
     ) -> list[Interactable]:
         """
         Returns the list of interacting objects from a path candidate.
@@ -926,17 +958,20 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
     def all_paths(
         self,
         path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
         min_order: int = 0,
         max_order: int = 1,
         order: Optional[int] = None,
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs: Any,
-    ) -> Iterator[tuple[str, str, Truthy, Path, UInt[Array, " order"]]]:
+    ) -> Iterator[tuple[str, str, Truthy, Path, Int[Array, " order"]]]:
         """
         Returns all paths from any of the :attr:`transmitters` to any of the :attr:`receivers`, using the given method, see, :class:`differt2d.geometry.ImagePath` :class:`differt2d.geometry.FermatPath` and :class:`differt2d.geometry.MinPath`.
 
         :param path_cls: Method to be used to find the path coordinates.
+        :param path_cls_kwargs:
+            Keyword arguments passed to ``path_cls.from_tx_objects_rx``.
         :param min_order: The minimum order of the path, i.e., the
             number of interactions.
         :param max_order: The maximum order of the path, i.e., the
@@ -953,6 +988,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             where validity path validity can be later evaluated using
             :python:`is_true(valid)`.
         """
+        if path_cls_kwargs is None:  # pragma: no cover  # TODO: add test
+            path_cls_kwargs = {}
+
         path_candidates = self.all_path_candidates(
             min_order=min_order,
             max_order=max_order,
@@ -976,6 +1014,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     interacting_objects,
                     receiver,
                     key=key_path,
+                    **path_cls_kwargs,
                 )
                 valid = path.is_valid(
                     self.objects,
@@ -990,7 +1029,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         self,
         approx: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Iterator[tuple[str, str, Path, UInt[Array, " order"]]]:
+    ) -> Iterator[tuple[str, str, Path, Int[Array, " order"]]]:
         """
         Returns only valid paths as returned by :meth:`all_paths`, by filtering out paths using :func:`is_true<differt2d.logic.is_true>`.
 
@@ -1079,9 +1118,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         grad: bool = False,
         value_and_grad: bool = False,
         path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
         transmitter_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
+        order: Optional[int] = None,
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs,
@@ -1121,12 +1162,16 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param value_and_grad: If set, returns both the ``fun`` and its
             gradient. Takes precedence over setting :python:`grad=True`.
         :param path_cls: Method to be used to find the path coordinates.
+        :param path_cls_kwargs:
+            Keyword arguments passed to ``path_cls.from_tx_objects_rx``.
         :param transmitter_cls: A point constructor called on every transmitter,
             should inherit from :class:`Point<differt2d.geometry.Point>`.
         :param min_order:
             The minimum order of the path, i.e., the number of interactions.
         :param max_order:
             The maximum order of the path, i.e., the number of interactions.
+        :param order: If provided, it is equivalent to setting
+            ``min_order=order`` and ``max_order=order``.
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
@@ -1140,11 +1185,15 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         if fun_kwargs is None:
             fun_kwargs = {}
 
+        if path_cls_kwargs is None:
+            path_cls_kwargs = {}
+
         scene = self.with_transmitters(tx=Point(xy=jnp.array([0.0, 0.0])))
 
         path_candidates = scene.all_path_candidates(
             min_order=min_order,
             max_order=max_order,
+            order=order,
         )
 
         pairs = list(scene.all_transmitter_receiver_pairs())
@@ -1163,6 +1212,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     interacting_objects,
                     receiver,
                     key=key,
+                    **path_cls_kwargs,
                 )
                 valid = path.is_valid(
                     scene.objects,
@@ -1221,14 +1271,17 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         X: Float[Array, "m n"],
         Y: Float[Array, "m n"],
         fun: PathFun,
-        args: tuple = (),
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
         path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
         receiver_cls: type[Point] = Point,
         min_order: int = 0,
         max_order: int = 1,
+        order: Optional[int] = None,
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs,
@@ -1244,8 +1297,10 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param X: The grid of x-coordinates.
         :param Y: The grid of y-coordinates.
         :param fun: The function to evaluate on each path.
-        :param args:
+        :param fun_args:
             Positional arguments passed to ``fun``.
+        :param fun_kwargs:
+            Keyword arguments passed to ``fun``.
         :param reduce_all: Whether to reduce the output by summing
             all accumulated results. This is especially useful
             if you only care about the total accumulated results.
@@ -1255,12 +1310,16 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :param value_and_grad: If set, returns both the ``fun`` and its
             gradient. Takes precedence over setting :python:`grad=True`.
         :param path_cls: Method to be used to find the path coordinates.
+        :param path_cls_kwargs:
+            Keyword arguments passed to ``path_cls.from_tx_objects_rx``.
         :param receiver_cls: A point constructor called on every receiver,
             should inherit from :class:`Point<differt2d.geometry.Point>`.
         :param min_order:
             The minimum order of the path, i.e., the number of interactions.
         :param max_order:
             The maximum order of the path, i.e., the number of interactions.
+        :param order: If provided, it is equivalent to setting
+            ``min_order=order`` and ``max_order=order``.
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
@@ -1271,11 +1330,18 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             accumulated result, or the sum of accumulated results
             if :python:`reduce_all=True`.
         """
+        if fun_kwargs is None:
+            fun_kwargs = {}
+
+        if path_cls_kwargs is None:
+            path_cls_kwargs = {}
+
         scene = self.with_receivers(rx=Point(xy=jnp.array([0.0, 0.0])))
 
         path_candidates = scene.all_path_candidates(
             min_order=min_order,
             max_order=max_order,
+            order=order,
         )
 
         pairs = list(scene.all_transmitter_receiver_pairs())
@@ -1294,6 +1360,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     interacting_objects,
                     rx_coords,
                     key=key,
+                    **path_cls_kwargs,
                 )
                 valid = path.is_valid(
                     scene.objects,
@@ -1306,7 +1373,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     receiver_cls(xy=rx_coords),
                     path,
                     interacting_objects,
-                    *args,
+                    *fun_args,
+                    **fun_kwargs,
                 )
 
             return acc
