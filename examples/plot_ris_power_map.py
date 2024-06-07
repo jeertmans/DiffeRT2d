@@ -36,7 +36,10 @@ from differt2d.utils import P0, received_power
 # should reflect any incident ray with a reflection angle of 45°.
 
 scene = Scene.square_scene()
-ris = RIS(xys=jnp.array([[0.5, 0.3], [0.5, 0.7]]), phi=jnp.pi / 4)
+ris = RIS(
+    xys=jnp.array([[0.5, 0.3], [0.5, 0.7]]),
+    phi=jnp.pi / 4,  # type: ignore[reportArgumentType]
+)
 scene = scene.add_objects(ris)
 
 # %%
