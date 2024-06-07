@@ -176,7 +176,7 @@ is available throughout DiffeRT2d via an optional `approx`
 \autoref{fig:opt} shows how we used the Adam optimizer [@adam],
 provided by the Optax library, to successfully solve some optimization problem.
 
-![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimizate_steps.pdf){ width="100%" }
+![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimize_steps.pdf){ width="100%" }
 
 ## Machine Learning
 
