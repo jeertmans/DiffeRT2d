@@ -764,7 +764,7 @@ class Path(Plottable, eqx.Module):
         interacting_object_indices = [-1] + [i for i in path_candidate] + [-1]
         intersects = false_value(
             approx=approx
-        )  # TODO(fixme): wtf this is a NumPy array?
+        )  # TODO(fixme): why is this a NumPy array?
 
         for i in range(self.xys.shape[0] - 1):
             ray_path = self.xys[i : i + 2, :]
