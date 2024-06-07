@@ -10,7 +10,10 @@ from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene()
-ris = RIS(xys=jnp.array([[0.5, 0.3], [0.5, 0.7]]), phi=jnp.pi / 4)
+ris = RIS(
+    xys=jnp.array([[0.5, 0.3], [0.5, 0.7]]),
+    phi=jnp.pi / 4,  # type: ignore[reportArgumentType]
+)
 scene = scene.add_objects(ris)
 
 fig, ax = plt.subplots()
@@ -31,7 +34,7 @@ P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
     Y,
     fun=received_power,
     path_cls=MinPath,
-    min_order=1,
+    order=1,
     reduce_all=True,
     path_cls_kwargs={"steps": 1000},
     key=key,
@@ -39,10 +42,16 @@ P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
 
 PdB = 10.0 * jnp.log10(P / P0)
 
-im = ax.pcolormesh(X, Y, PdB, vmin=-50, vmax=5, zorder=-1,
-                rasterized=True,
-                antialiased=True,
-        )
+im = ax.pcolormesh(
+    X,
+    Y,
+    PdB,
+    vmin=-50,
+    vmax=5,
+    zorder=-1,
+    rasterized=True,
+    antialiased=True,
+)
 cbar = fig.colorbar(im, ax=ax)
 cbar.ax.set_ylabel("Power (dB)")
 

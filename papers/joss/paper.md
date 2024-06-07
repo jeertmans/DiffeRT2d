@@ -26,7 +26,7 @@ bibliography: paper.bib
 
 # Summary
 
-![DiffeRT2d' logo.\label{fig:logo}](logo.png){ style="width: 30%; margin: auto;" }
+![DiffeRT2d' logo.\label{fig:logo}](logo.png){ width = 30% }
 
 Ray Tracing (RT) is arguably one of the most prevalent methodologies in the field of radio propagation modeling.
 However, the access to RT software is often constrained by its closed-source nature, licensing costs,
@@ -65,48 +65,126 @@ This framework democratizes access to advanced RT capabilities, thereby fosterin
 
 # Easy to Use Commitment
 
+DiffeRT2d is a 2D RT toolbox that aims to provide
+a comprehensive solution for path tracing,
+while avoiding the need to compute electromagnetic (EM) fields.
+Consequently, we provide a rough approximation of the received power,
+which ignores the local phase of the wave, to allow the user to focus
+on higher-level concepts, such as the number of multipath components, angle of arrival.
+As an object-oriented package with curated default values,
+constructing a basic RT scenario can be performed in a minimal amount of lines of
+code while keeping the code extremely expressive.
+
+Moreover, DiffeRT2d is designed to maximize its compatibility with the JAX ecosystem.
+It provides JAX-compatible objects, which are immutable, differentiable,
+and jit-in-time compilable. This enables users to leverage the full capabilities
+of other JAX-related libraries, such as Optax [@deepmind2020jax]
+for optimization problems or Equinox [@kidger2021equinox] for Machine Learning (ML).
+
 # Usage Examples
 
-The documentation contains [an example gallery](https://differt2d.readthedocs.io/latest/examples_gallery/),
-as well as many other usage examples disseminated throughout the API documentation.
+The documentation contains
+[an example gallery](https://differt2d.readthedocs.io/latest/examples_gallery/),
+as well as numerous other usage examples disseminated throughout the
+application programming interface (API) documentation.
 
-In the next sections, we highlight a few of the most attractive usages of DiffeRT2d.
+In the following sections, we will highlight a few of
+the most attractive usages of DiffeRT2d.
 
 ## Exploring Metasurfaces and More
 
-The first motivation behind using an object-oriented paradigm is the ability
-to create custom subclasses to implement different behavior for a given object.
-This is the case for metasurfaces: those object usually do not satisfy the usual
-law of specular reflection, and a specific procedure must be applied for them.
+The primary rationale for employing an object-oriented paradigm
+is the capacity to generate custom subclasses, enabling the implementation
+of novel characteristics for a given object. This is exemplified by metasurfaces,
+which typically exhibit a deviation from the conventional law of specular
+reflection. Consequently, a distinct procedure must be employed for their treatment.
 
-Using the Min-Path-Tracing method [@mpt-eucap2023], that is implement in DiffeRT2d, we can
-easily accommodate those object, thanks to the object-oriented structure of the code.
+Using the Min-Path-Tracing method (MPT) [@mpt-eucap2023],
+that is one of the path tracing methods implemented in DiffeRT2d,
+we can easily accommodate those object,
+thanks to the object-oriented structure of the code.
+We also provide a very simple reflecting intelligent surface (RIS) to this end.
 
-![Coverage map for single-reflection paths (no line-of-sight) in a scene containing a RIS. Here, we can clearly observe that the RIS reflects rays with an angle of 45°. The small noise present around the edges if caused by convergence issue in with the MPT method, which can be solved be increasing the number of minimzation steps.\label{fig:rispowermap}](ris_power_map.pdf){ style="width: 70%; margin: auto;" }
+![The following figure depicts a coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. It is evident that the RIS reflects rays with an angle of 45°. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width = 70% }
 
+\autoref{fig:rispowermap} can be reproduced[^1] with the following code:
+
+[^1]: The code to plot the coverage map has been removed for clarity.
+
+```python
+import jax
+import jax.numpy as jnp
+
+from differt2d.geometry import RIS, MinPath
+from differt2d.scene import Scene
+from differt2d.utils import received_power
+
+scene = Scene.square_scene()
+ris = RIS(
+    xys=jnp.array([[0.5, 0.3], [0.5, 0.7]]),
+    phi=jnp.pi / 4, 
+)
+scene = scene.add_objects(ris)
+
+key = jax.random.PRNGKey(1234)  # Needed to start MPT minimization
+X, Y = scene.grid(n=300)
+
+P = scene.accumulate_on_receivers_grid_over_paths(
+    X,
+    Y,
+    fun=received_power,
+    path_cls=MinPath,
+    order=1,
+    reduce_all=True,
+    key=key,
+)
+```
 
 ## Network optimization
 
-Thanks to [@deepmind2020jax]
+In a previous work, we presented a smoothing technique [@eertmans2024eucap]
+that makes RT differentiable everywhere. The aforementioned technique
+is available throughout DiffeRT2d via an optional `approx`
+(for *approximation*) parameter, or via a global config variable.
 
-We have used it in [@eertmans2024eucap]...
+\autoref{fig:opt} shows how we used the Adam optimizer [@adam],
+provided by the Optax library, to sucessfully solve some optimization problem.
+
+![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimization_steps.pdf){ width = 100% }
 
 ## Machine Learning
 
-In another work we present at this COST meeting, we have developed
+In a separate study presented at this COST meeting,
+we developed an ML model that learns how to sample path candidates
+to accelerate RT in general.
 
-In DiffeRT2d, every single class is a PyTree... Thanks to [@kidger2021equinox]
+The model and its training were implemented using the DiffeRT2d library,
+and a detailed notebook is available
+[online](https://eertmans.be/r/cost20120-helsinki).
 
 # Stability and releases
 
-Type checking is provided by [@jaxtyping2024github]
+A significant amount of effort has been invested in the documentation and testing of our code. All public functions are annotated, primarily through the use of the jaxtyping library [@jaxtyping2024github], which enables static type checking. Furthermore, we aim to maintain a code coverage metric of 100%.
 
-# Statement of Need
+Our project adheres to semantic versioning,
+and we document all significant changes in a changelog file.
 
 ## Target Audience
 
-## Comparison with Similar Tools
+The intended audience for this software is researchers engaged
+in the field of radio propagation who are interested in simulating
+relatively simple scenarios. In such cases, the ease of use, flexibility,
+and interpretability of the software are of greater importance than
+performing city-scale simulations or computing
+electromagnetic fields[^2] with high accuracy.
+
+[^2]: While this is currently not part of our API, we do not omit the possibility
+    to include more complex EM routines in the future.
 
 # Acknowledgments
+
+We would like to acknowledge the work from all contributors of
+the JAX ecosystem, especially Patrick Kidger for the jaxtyping
+and Equinox packages.
 
 # References

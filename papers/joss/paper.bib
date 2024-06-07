@@ -1,15 +1,16 @@
+@misc{adam,
+  title         = {Adam: A Method for Stochastic Optimization},
+  author        = {Diederik P. Kingma and Jimmy Ba},
+  year          = {2017},
+  eprint        = {1412.6980},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG}
+}
 @software{deepmind2020jax,
   title         = {The {D}eep{M}ind {JAX} {E}cosystem},
   author        = {DeepMind and Babuschkin, Igor and Baumli, Kate and Bell, Alison and Bhupatiraju, Surya and Bruce, Jake and Buchlovsky, Peter and Budden, David and Cai, Trevor and Clark, Aidan and Danihelka, Ivo and Dedieu, Antoine and Fantacci, Claudio and Godwin, Jonathan and Jones, Chris and Hemsley, Ross and Hennigan, Tom and Hessel, Matteo and Hou, Shaobo and Kapturowski, Steven and Keck, Thomas and Kemaev, Iurii and King, Michael and Kunesch, Markus and Martens, Lena and Merzic, Hamza and Mikulik, Vladimir and Norman, Tamara and Papamakarios, George and Quan, John and Ring, Roman and Ruiz, Francisco and Sanchez, Alvaro and Sartran, Laurent and Schneider, Rosalia and Sezener, Eren and Spencer, Stephen and Srinivasan, Srivatsan and Stanojevi\'{c}, Milo\v{s} and Stokowiec, Wojciech and Wang, Luyu and Zhou, Guangyao and Viola, Fabio},
   year          = {2020},
   url           = {http://github.com/google-deepmind}
-}
-@software{pylayers,
-  title         = {The {D}eep{M}ind {JAX} {E}cosystem},
-  author        = {Bernard Uguen and Nicolas Amiot and Mohamed Laaraiedh and Meriem Mhedhbi and Stephane Avrillon and Roxana Burghelea and Eric Plouhinec and Friedman Tchoffo Talom and
-Taguhi Chaluyman and Yu Lei},
-  year          = {2014},
-  url           = {http://github.com/pylayers/pylayers}
 }
 @inproceedings{eertmans2024eucap,
   title         = {Fully Differentiable Ray Tracing via Discontinuity Smoothing for Radio Network Optimization},
@@ -53,6 +54,26 @@ Taguhi Chaluyman and Yu Lei},
   doi           = {10.23919/EuCAP57121.2023.10132934},
   keywords      = {Geometry;Diffraction;Image edge detection;Scattering;Europe;Ray tracing;Minimization;Ray Tracing;Image Method;Diffraction;Telecommunications;Optimization}
 }
+@article{opal,
+  title         = {Opal: An open source ray-tracing propagation simulator for electromagnetic characterization},
+  author        = {Egea-Lopez, Esteban AND Molina-Garcia-Pardo, Jose Maria AND Lienard, Martine AND Degauque, Pierre},
+  year          = {2021},
+  month         = {11},
+  journal       = {PLOS ONE},
+  publisher     = {Public Library of Science},
+  volume        = {16},
+  number        = {11},
+  pages         = {1--19},
+  doi           = {10.1371/journal.pone.0260060},
+  url           = {https://doi.org/10.1371/journal.pone.0260060}
+}
+@software{pylayers,
+  title         = {{A}dvanced {R}adio {C}hannel {S}imulator},
+  author        = {Bernard Uguen and Nicolas Amiot and Mohamed Laaraiedh and Meriem Mhedhbi and Stephane Avrillon and Roxana Burghelea and Eric Plouhinec and Friedman Tchoffo Talom and Taguhi Chaluyman and Yu Lei},
+  year          = {2014},
+  url           = {http://github.com/pylayers/pylayers},
+  version       = {0.5}
+}
 @misc{sionnart,
   title         = {Sionna RT: Differentiable Ray Tracing for Radio Propagation Modeling},
   author        = {Jakob Hoydis and Fay\c{c}al A\"{\i}t Aoudia and Sebastian Cammerer and Merlin Nimier-David and Nikolaus Binder and Guillermo Marcus and Alexander Keller},
@@ -61,63 +82,10 @@ Taguhi Chaluyman and Yu Lei},
   archiveprefix = {arXiv},
   primaryclass  = {cs.IT}
 }
-@article{opal,
-    doi = {10.1371/journal.pone.0260060},
-    author = {Egea-Lopez, Esteban AND Molina-Garcia-Pardo, Jose Maria AND Lienard, Martine AND Degauque, Pierre},
-    journal = {PLOS ONE},
-    publisher = {Public Library of Science},
-    title = {Opal: An open source ray-tracing propagation simulator for electromagnetic characterization},
-    year = {2021},
-    month = {11},
-    volume = {16},
-    url = {https://doi.org/10.1371/journal.pone.0260060},
-    pages = {1-19},
-    number = {11}
-}
 @misc{tensorflow,
-title={ {TensorFlow}: Large-Scale Machine Learning on Heterogeneous Systems},
-url={https://www.tensorflow.org/},
-note={Software available from tensorflow.org},
-author={
-    Mart\'{i}n~Abadi and
-    Ashish~Agarwal and
-    Paul~Barham and
-    Eugene~Brevdo and
-    Zhifeng~Chen and
-    Craig~Citro and
-    Greg~S.~Corrado and
-    Andy~Davis and
-    Jeffrey~Dean and
-    Matthieu~Devin and
-    Sanjay~Ghemawat and
-    Ian~Goodfellow and
-    Andrew~Harp and
-    Geoffrey~Irving and
-    Michael~Isard and
-    Yangqing Jia and
-    Rafal~Jozefowicz and
-    Lukasz~Kaiser and
-    Manjunath~Kudlur and
-    Josh~Levenberg and
-    Dandelion~Man\'{e} and
-    Rajat~Monga and
-    Sherry~Moore and
-    Derek~Murray and
-    Chris~Olah and
-    Mike~Schuster and
-    Jonathon~Shlens and
-    Benoit~Steiner and
-    Ilya~Sutskever and
-    Kunal~Talwar and
-    Paul~Tucker and
-    Vincent~Vanhoucke and
-    Vijay~Vasudevan and
-    Fernanda~Vi\'{e}gas and
-    Oriol~Vinyals and
-    Pete~Warden and
-    Martin~Wattenberg and
-    Martin~Wicke and
-    Yuan~Yu and
-    Xiaoqiang~Zheng},
-  year={2015},
+  title         = {{TensorFlow}: Large-Scale Machine Learning on Heterogeneous Systems},
+  author        = {Mart\'{i}n~Abadi and Ashish~Agarwal and Paul~Barham and Eugene~Brevdo and Zhifeng~Chen and Craig~Citro and Greg~S.~Corrado and Andy~Davis and Jeffrey~Dean and Matthieu~Devin and Sanjay~Ghemawat and Ian~Goodfellow and Andrew~Harp and Geoffrey~Irving and Michael~Isard and Yangqing Jia and Rafal~Jozefowicz and Lukasz~Kaiser and Manjunath~Kudlur and Josh~Levenberg and Dandelion~Man\'{e} and Rajat~Monga and Sherry~Moore and Derek~Murray and Chris~Olah and Mike~Schuster and Jonathon~Shlens and Benoit~Steiner and Ilya~Sutskever and Kunal~Talwar and Paul~Tucker and Vincent~Vanhoucke and Vijay~Vasudevan and Fernanda~Vi\'{e}gas and Oriol~Vinyals and Pete~Warden and Martin~Wattenberg and Martin~Wicke and Yuan~Yu and Xiaoqiang~Zheng},
+  year          = {2015},
+  url           = {https://www.tensorflow.org/},
+  note          = {Software available from tensorflow.org}
 }
