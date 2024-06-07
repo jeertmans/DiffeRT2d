@@ -28,40 +28,66 @@ bibliography: paper.bib
 
 # Summary
 
-Ray Tracing (RT) is arguably one of the most prevalent methodologies in the field of radio propagation modeling.
-However, the access to RT software is often constrained by its closed-source nature, licensing costs,
+Ray Tracing (RT) is arguably one of the most prevalent methodologies
+in the field of radio propagation modeling. However, the access to RT
+software is often constrained by its closed-source nature, licensing costs,
 or the requirement of high-performance computing resources.
 While this is typically acceptable for large-scale applications,
-it can present significant limitations for researchers who require more flexibility in their approach,
-while working on more simple use cases.
-We present DiffeRT2d, a 2D Open Source differentiable ray tracer that addresses the aforementioned gaps.
-DiffeRT2d employs the power of JAX [@jax2018github] to provide a simple, fast, and differentiable solution.
-Our library can be utilized to model complex objects, such as reconfigurable intelligent surfaces,
-or to solve optimization problems that require tracing the paths between one or more pairs of nodes.
-Moreover, DiffeRT2d adheres to numerous high-quality Open Source standards, including automated testing,
-documented code and library, and Python type-hinting.
+it can present significant limitations for researchers who require
+more flexibility in their approach, while working on more simple use cases.
+We present DiffeRT2d, a 2D Open Source differentiable ray tracer
+that addresses the aforementioned gaps.
+DiffeRT2d employs the power of JAX [@jax2018github] to provide a simple,
+fast, and differentiable solution. Our library can be utilized to
+model complex objects, such as reconfigurable intelligent surfaces,
+or to solve optimization problems that require tracing
+the paths between one or more pairs of nodes.
+Moreover, DiffeRT2d adheres to numerous high-quality Open Source standards, including
+automated testing, documented code and library, and Python type-hinting.
 
 # Statement of Need
 
-In the domain of radio propagation modeling, a significant portion of the RT tools available to researchers
+In the domain of radio propagation modeling,
+a significant portion of the RT tools available to researchers
 are either closed-source or locked behind commercial licenses.
-This restricts accessibility, limits customization, and impedes collaborative advances in the field.
-Among the limited Open Source alternatives, tools such as PyLayers [@pylayers] and Opal [@opal]
-fall short in offering the capability to easily differentiate code with respect to various parameters.
-This limitation presents a substantial challenge for tasks involving network optimization,
-where the ability to efficiently compute gradients is crucial.
-To our knowledge, SionnaRT [@sionnart] is one of the few radio propagation-oriented ray tracers that
-incorporates a differentiable framework, leveraging TensorFlow [@tensorflow] to enable differentiation.
-Despite its capabilities, SionnaRT's complexity can be a barrier for researchers seeking a straightforward
-solution for fundamental studies in RT applied to radio propagation.
-Moreover, we believe that the research is lacking a simple-to-use and highly-interpretable RT framework.
+This restricts accessibility, limits customization,
+and impedes collaborative advances in the field.
+Among the limited Open Source alternatives,
+tools such as PyLayers [@pylayers] and Opal [@opal]
+fall short in offering the capability to easily differentiate
+code with respect to various parameters.
+This limitation presents a substantial challenge for tasks
+involving network optimization, where the ability to efficiently
+compute gradients is crucial.
+To our knowledge, SionnaRT [@sionnart] is one of the few
+radio propagation-oriented ray tracers that incorporates a
+differentiable framework, leveraging TensorFlow [@tensorflow]
+to enable differentiation.
+Despite its capabilities, SionnaRT's complexity can be a barrier
+for researchers seeking a straightforward solution for fundamental
+studies in RT applied to radio propagation.
+Moreover, we believe that the research is lacking a simple-to-use
+and highly interpretable RT framework.
 
-DiffeRT2d addresses these shortcomings by providing a comprehensive, Open Source,
-and easily accessible framework specifically designed for 2D RT.
-It integrates seamlessly with Python, ensuring ease of use while maintaining robust functionality.
-By leveraging JAX for automatic differentiation, DiffeRT2d simplifies the process of parameter tuning and optimization,
-making it an invaluable tool for both academic research and practical applications in wireless communications.
-This framework democratizes access to advanced RT capabilities, thereby fostering innovation and facilitating rigorous exploration in the field.
+DiffeRT2d addresses these shortcomings by providing a comprehensive,
+Open Source, and easily accessible framework specifically designed for 2D RT.
+It integrates seamlessly with Python,
+ensuring ease of use while maintaining robust functionality.
+By leveraging JAX for automatic differentiation,
+DiffeRT2d simplifies the process of parameter tuning and optimization,
+making it an invaluable tool for both academic research and practical
+applications in wireless communications.
+
+Moreover, in contrast to the majority of other RT tools,
+DiffeRT2d is capable of supporting a multitude of RT methods.
+These include the image method [@imagemethod],
+path minimization based on Fermat's principle [@fpt],
+and the Min-Path-Tracing method (MPT) [@mpt-eucap2023].
+Each of these methods represents a distinct compromise between speed and
+the type of interaction that can be simulated, such as reflection or diffraction.
+
+DiffeRT2d democratizes access to advanced RT capabilities,
+thereby fostering innovation and facilitating rigorous exploration in the field.
 
 # Easy to Use Commitment
 
@@ -99,7 +125,7 @@ of novel characteristics for a given object. This is exemplified by metasurfaces
 which typically exhibit a deviation from the conventional law of specular
 reflection. Consequently, a distinct procedure must be employed for their treatment.
 
-Using the Min-Path-Tracing method (MPT) [@mpt-eucap2023],
+Using MPT,
 that is one of the path tracing methods implemented in DiffeRT2d,
 we can easily accommodate those object,
 thanks to the object-oriented structure of the code.
@@ -122,7 +148,7 @@ from differt2d.utils import received_power
 scene = Scene.square_scene()
 ris = RIS(
     xys=jnp.array([[0.5, 0.3], [0.5, 0.7]]),
-    phi=jnp.pi / 4, 
+    phi=jnp.pi / 4,
 )
 scene = scene.add_objects(ris)
 
@@ -148,7 +174,7 @@ is available throughout DiffeRT2d via an optional `approx`
 (for *approximation*) parameter, or via a global config variable.
 
 \autoref{fig:opt} shows how we used the Adam optimizer [@adam],
-provided by the Optax library, to sucessfully solve some optimization problem.
+provided by the Optax library, to successfully solve some optimization problem.
 
 ![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimizate_steps.pdf){ width="100%" }
 
