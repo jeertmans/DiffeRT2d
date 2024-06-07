@@ -24,9 +24,9 @@ date: 7 June 2024
 bibliography: paper.bib
 ---
 
-# Summary
+![DiffeRT2d' logo.\label{fig:logo}](logo.png){ width="30%" }
 
-![DiffeRT2d' logo.\label{fig:logo}](logo.png){ width = 30% }
+# Summary
 
 Ray Tracing (RT) is arguably one of the most prevalent methodologies in the field of radio propagation modeling.
 However, the access to RT software is often constrained by its closed-source nature, licensing costs,
@@ -105,7 +105,7 @@ we can easily accommodate those object,
 thanks to the object-oriented structure of the code.
 We also provide a very simple reflecting intelligent surface (RIS) to this end.
 
-![The following figure depicts a coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. It is evident that the RIS reflects rays with an angle of 45°. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width = 70% }
+![The following figure depicts a coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. It is evident that the RIS reflects rays with an angle of 45°. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width="70%" }
 
 \autoref{fig:rispowermap} can be reproduced[^1] with the following code:
 
@@ -150,7 +150,7 @@ is available throughout DiffeRT2d via an optional `approx`
 \autoref{fig:opt} shows how we used the Adam optimizer [@adam],
 provided by the Optax library, to sucessfully solve some optimization problem.
 
-![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimization_steps.pdf){ width = 100% }
+![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimizate_steps.pdf){ width="100%" }
 
 ## Machine Learning
 

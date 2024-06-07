@@ -126,6 +126,7 @@ venvPath = "."
 addopts = [
   "--ignore=benchmark.py",
   "--ignore=examples",
+  "--ignore=papers",
   "--doctest-modules",
   "--doctest-ignore-import-errors",
   "--doctest-glob=*.md",
