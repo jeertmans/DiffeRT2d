@@ -2,7 +2,7 @@
 Plot received power over a grid
 ===============================
 
-This examples shows how one can plot the received power map, i.e.,
+This example shows how one can plot the received power map, i.e.,
 the power received at each (x, y) coordinate as the sum of the power from
 each transmitter.
 

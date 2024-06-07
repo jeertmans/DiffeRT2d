@@ -2,7 +2,7 @@
 Plot received power with RIS over a grid
 ========================================
 
-This examples shows how one can plot the received power map, i.e.,
+This example shows how one can plot the received power map, i.e.,
 the power received at each (x, y) coordinate as the sum of the power from
 each transmitter.
 
@@ -24,7 +24,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from jaxtyping import Array, Float
 
-from differt2d.geometry import MinPath, RIS
+from differt2d.geometry import RIS, MinPath
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
 
@@ -60,7 +60,14 @@ scene.plot(
 )
 
 P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, path_cls=MinPath, min_order=1, reduce_all=True, path_cls_kwargs={"steps": 1000}, key=key
+    X,
+    Y,
+    fun=received_power,
+    path_cls=MinPath,
+    min_order=1,
+    reduce_all=True,
+    path_cls_kwargs={"steps": 1000},
+    key=key,
 )  # type: ignore
 
 PdB = 10.0 * jnp.log10(P / P0)
