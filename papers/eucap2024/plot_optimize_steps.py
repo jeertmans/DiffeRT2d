@@ -8,11 +8,11 @@ import jax.numpy as jnp
 import optax
 from jaxtyping import Array, Float
 from matplotlib.colors import LogNorm
-from utils import create_fig_for_paper
 
 from differt2d.geometry import Point
 from differt2d.scene import Scene
 from differt2d.utils import P0, received_power
+from utils import create_fig_for_paper  # type: ignore[reportMissingImports]
 
 scene = Scene.square_scene_with_obstacle()
 

@@ -4,7 +4,7 @@ from pathlib import Path
 if sys.version_info >= (3, 11):
     from tomllib import load
 else:
-    from tomli import load
+    from tomli import load  # type: ignore[reportMissingImports]
 
 from differt2d.__version__ import __version__
 
