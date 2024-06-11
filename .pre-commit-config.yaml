@@ -32,8 +32,10 @@ repos:
   - id: codespell
     additional_dependencies:
     - tomli
-- repo: https://github.com/njzjz/mirrors-bibtex-tidy
-  rev: v1.13.0
+- repo: https://github.com/flying-sheep/bibfmt
+  rev: v4.3.0
   hooks:
-  - id: bibtex-tidy
-    args: [--no-backup, --sort, --sort-fields]
+  - id: bibfmt
+    args:
+    - --sort-by-bibkey
+    - --drop=abstract
