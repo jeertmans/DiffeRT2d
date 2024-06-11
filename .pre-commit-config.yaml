@@ -15,7 +15,7 @@ repos:
   - id: pretty-format-toml
     args: [--autofix, --trailing-commas]
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.4.7
+  rev: v0.4.8
   hooks:
   - id: ruff
     args: [--fix]
@@ -32,8 +32,10 @@ repos:
   - id: codespell
     additional_dependencies:
     - tomli
-- repo: https://github.com/FlamingTempura/bibtex-tidy
-  rev: v1.9.0  # DO NOT CHANGE, see https://github.com/FlamingTempura/bibtex-tidy/issues/419
+- repo: https://github.com/flying-sheep/bibfmt
+  rev: v4.3.0
   hooks:
-  - id: bibtex-tidy
-    args: [--no-backup, --sort, --sort-fields]
+  - id: bibfmt
+    args:
+    - --sort-by-bibkey
+    - --drop=abstract

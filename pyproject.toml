@@ -93,7 +93,7 @@ search = "<!-- start changelog -->"
 builtin = "clear,rare,informal,usage,names,en-GB_to_en-US"
 check-hidden = true
 ignore-words-list = "master,fpt"
-skip = "requirements.lock,requirements-dev.lock,papers/joss/paper.bib"
+skip = "*.lock,*.ipynb,*.bib"
 
 [tool.coverage.report]
 exclude_lines = [
