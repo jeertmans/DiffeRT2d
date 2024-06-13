@@ -7,9 +7,6 @@ revealOptions:
   navigationMode: 'linear'
   slideNumber: 'h/v'
   transition: 'slide'
-mermaid:
-  themeVariables:
-    lineColor: '#fff'
 ---
 
 <img alt="DiffeRT2d's logo" src="static/logo.png" width="300">
@@ -186,7 +183,7 @@ Note: We think the research community is lacking simple
 
 **DiffeRT2d**
 
-What it is:
+<div data-id="what">What it is:</div>
 
 * a object-oriented Python library; <!-- .element: class="fragment" -->
 * a 2D Ray Tracing framework; <!-- .element: class="fragment" -->
@@ -205,11 +202,12 @@ Note: Our tool ticks the following.
 
 **DiffeRT2d**
 
-What it **is not**:
+
+<div data-id="what">What it isn't:</div>
 
 * a replacement of SionnaRT; <!-- .element: class="fragment" -->
 * a fully featured radio-link simulator; <!-- .element: class="fragment" -->
-* or a 3D library.
+* or a 3D library. <!-- .element: class="fragment" -->
 
 Note: What our tool is not.
 
