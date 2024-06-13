@@ -131,3 +131,4 @@ for frame, alpha in enumerate(alphas):
 folder = Path(__file__).parent
 
 fig.savefig(folder / "optimize_steps.pdf", dpi=300, bbox_inches="tight")
+fig.savefig(folder / "optimize_steps.png", dpi=300, bbox_inches="tight")

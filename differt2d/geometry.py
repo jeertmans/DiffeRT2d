@@ -592,11 +592,14 @@ class RIS(Wall, eqx.Module):
     def evaluate_cartesian(  # noqa: D102
         self, ray_path: Float[Array, "3 2"]
     ) -> Float[Array, " "]:
-        v2 = ray_path[2, :] - ray_path[1, :]
-        n = self.normal()
-        sinx = jnp.cross(n, v2)  # |v2| * sin(x)
-        sina = jnp.linalg.norm(v2) * jnp.sin(self.phi)
-        return (sinx - sina) ** 2  # + (cosx - cosa) ** 2
+        r = ray_path[2, :] - ray_path[1, :]  # Reflected
+        n = self.normal()  # Normal
+        r, _ = normalize(r)
+        sin_a = jnp.cross(-r, n)
+        cos_a = jnp.dot(-r, n)
+        sin_p = jnp.sin(self.phi)
+        cos_p = jnp.cos(self.phi)
+        return (sin_a - sin_p) ** 2 + (cos_a - cos_p) ** 2
 
     @jaxtyped(typechecker=typechecker)
     def plot(  # noqa: D102

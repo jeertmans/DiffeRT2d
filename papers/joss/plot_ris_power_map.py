@@ -61,3 +61,4 @@ ax.set_ylabel("y coordinate")
 folder = Path(__file__).parent
 
 fig.savefig(folder / "ris_power_map.pdf", dpi=300, bbox_inches="tight")
+fig.savefig(folder / "ris_power_map.png", dpi=300, bbox_inches="tight")
