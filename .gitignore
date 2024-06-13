@@ -15,3 +15,6 @@ papers/eucap2024/pgf/
 papers/joss/paper.pdf
 papers/joss/paper.jats
 papers/joss/media/
+
+# Slides
+_static/

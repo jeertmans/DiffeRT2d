@@ -24,7 +24,7 @@ date: 7 June 2024
 bibliography: paper.bib
 ---
 
-![DiffeRT2d' logo.\label{fig:logo}](logo.png){ width="30%" }
+![DiffeRT2d' logo.\label{fig:logo}](static/logo.png){ width="30%" }
 
 # Summary
 
