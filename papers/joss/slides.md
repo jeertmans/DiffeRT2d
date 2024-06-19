@@ -120,7 +120,7 @@ Note: Does it provide an API in a relatively user-friend programming language,
 * [MURT](https://github.com/tamsri/murt) <!-- .element: style="opacity: 0.5;" -->
 * [Wavetrace](https://github.com/NZRS/wavetrace) <!-- .element: style="opacity: 0.5;" -->
 
-<div data-id="question">Provides audomatic differentiation?</div>
+<div data-id="question">Provides automatic differentiation?</div>
 
 Note: Does it use an auto-diff framework?
   AD has been recently pushed to RT software and enable computing
