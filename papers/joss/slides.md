@@ -192,7 +192,7 @@ Note: We think the research community is lacking simple
 * and it supports the following methods: <!-- .element: class="fragment" -->
   + image method; <!-- .element: class="fragment" -->
   + Fermat's principle base minimization; <!-- .element: class="fragment" -->
-  + and Min-Path Tracing; <!-- .element: class="fragment" -->
+  + and Min-Path-Tracing; <!-- .element: class="fragment" -->
 
 Note: Our tool ticks the following.
 
