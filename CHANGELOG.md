@@ -10,8 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/0.3.2...HEAD)
 
+(unreleased-chore)=
+### Chore
+
++ Fixed broken links and added test to check for links.
+  [#68](https://github.com/jeertmans/DiffeRT2d/pull/68)
+
 (v0.3.2)=
 ## [v0.3.2](https://github.com/jeertmans/DiffeRT2d/compare/0.3.1...HEAD)
+
+Small documentation enhancements.
 
 (v0.3.1)=
 ## [v0.3.1](https://github.com/jeertmans/DiffeRT2d/compare/0.3.0...HEAD)

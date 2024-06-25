@@ -59,7 +59,7 @@ pip install differt2d
 An alternative way to install DiffeRT2d is to clone the git repository,
 and install from there:
 read the
-[contributing guide](https://eertmans.be/DiffeRT2d/contributing/workflow.html)
+[contributing guide](https://eertmans.be/DiffeRT2d/latest/contributing/workflow.html)
 to know how.
 
 <!-- end install -->
@@ -70,7 +70,7 @@ For a quick introduction to DiffeRT2d, check you our
 [Quickstart](https://eertmans.be/DiffeRT2d/latest/quickstart.html) tutorial!
 
 You may find a multitude of usage examples across the documentation
-or the [examples](https://github.com/jeertmans/DiffeRT2d/latest/tree/main/examples)
+or the [examples](https://github.com/jeertmans/DiffeRT2d/tree/main/examples)
 folder, or directly in the
 [examples gallery](https://eertmans.be/DiffeRT2d/latest/examples_gallery/index.html).
 
