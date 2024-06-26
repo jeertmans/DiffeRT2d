@@ -345,9 +345,8 @@ class TestScene:
 
         # Index of RIS is 3
         expected = [
-            jnp.array([[]], dtype=jnp.int32),
-            jnp.array([[3]], dtype=jnp.int32),
-            jnp.empty((0, 2), dtype=jnp.int32),
+            jnp.empty(0, dtype=jnp.int32),
+            jnp.array([3], dtype=jnp.int32),
         ]
         got = scene.all_path_candidates(
             filter_objects=lambda o: isinstance(o, RIS), min_order=0, max_order=2
