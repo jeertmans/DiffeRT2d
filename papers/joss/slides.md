@@ -91,10 +91,10 @@ Note: Is is actively (in the past 3 years) maintained?
 **Ray Tracing Software for Radio Propagation:**
 
 * [SionnaRT](https://github.com/NVlabs/sionna)
-* [MatLab](https://www.mathworks.com/help/comm/ref/rfprop.raytracing.html) <!-- .element: style="opacity: 0.5;" -->
+* [MatLab](https://www.mathworks.com/help/comm/ref/rfprop.raytracing.html)
 * [Wireless InSite](https://www.remcom.com/wireless-insite-propagation-software) <!-- .element: style="opacity: 0.5;" -->
 * [PyLayers](https://github.com/pylayers/pylayers)
-* [Opal](https://gitlab.com/esteban.egea/opal)
+* [Opal](https://gitlab.com/esteban.egea/opal) <!-- .element: style="opacity: 0.5;" -->
 * [CloudRT](http://world.raytracer.cloud/go-to-cloudrt) <!-- .element: style="opacity: 0.5;" -->
 * [MURT](https://github.com/tamsri/murt)
 * [Wavetrace](https://github.com/NZRS/wavetrace)
@@ -120,7 +120,7 @@ Note: Does it provide an API in a relatively user-friend programming language,
 * [MURT](https://github.com/tamsri/murt) <!-- .element: style="opacity: 0.5;" -->
 * [Wavetrace](https://github.com/NZRS/wavetrace) <!-- .element: style="opacity: 0.5;" -->
 
-<div data-id="question">Provides audomatic differentiation?</div>
+<div data-id="question">Provides automatic differentiation?</div>
 
 Note: Does it use an auto-diff framework?
   AD has been recently pushed to RT software and enable computing
@@ -192,7 +192,7 @@ Note: We think the research community is lacking simple
 * and it supports the following methods: <!-- .element: class="fragment" -->
   + image method; <!-- .element: class="fragment" -->
   + Fermat's principle base minimization; <!-- .element: class="fragment" -->
-  + and Min-Path Tracing; <!-- .element: class="fragment" -->
+  + and Min-Path-Tracing; <!-- .element: class="fragment" -->
 
 Note: Our tool ticks the following.
 
