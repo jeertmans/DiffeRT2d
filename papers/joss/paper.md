@@ -213,7 +213,8 @@ https://github.com/jeertmans/DiffeRT2d/blob/main/papers/joss/plot_optimize_steps
 
 ## Machine Learning
 
-In a separate study presented at a scientific meeting in Helsinki, June 2024,
+In [@mlhelsinki],
+presented at a scientific meeting in Helsinki, June 2024,
 as part of the European Cooperation in Science and Technology (COST)
 action [*INTERACT*](https://interactca20120.org/) (CA20120),
 we developed an ML model that learns how to sample path candidates
@@ -221,8 +222,7 @@ to accelerate RT in general.
 
 The model and its training were implemented using the DiffeRT2d library,
 and a detailed notebook is available
-[online](https://eertmans.be/r/cost20120-helsinki), and one can access
-the *preprint* paper here: http://hdl.handle.net/2078/288635.
+[online](https://eertmans.be/r/cost20120-helsinki).
 
 # Stability and releases
 
