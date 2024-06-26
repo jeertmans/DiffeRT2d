@@ -183,6 +183,11 @@ class TestVertex:
             vertex.intersects_cartesian(jnp.empty((2, 2)), approx=approx), approx=approx
         )
 
+    @point
+    def test_evaluate_cartesian(self, point: list):
+        vertex = Vertex(xy=jnp.array(point))
+        chex.assert_trees_all_equal(vertex.evaluate_cartesian(jnp.empty((3, 2))), 0.0)
+
 
 class TestRay:
     @origin_dest
