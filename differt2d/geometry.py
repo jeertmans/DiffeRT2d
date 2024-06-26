@@ -336,6 +336,84 @@ class Point(Plottable, eqx.Module):
 
 
 @jaxtyped(typechecker=typechecker)
+class Vertex(Point, Object, eqx.Module):
+    """
+    A vertex for corner diffraction.
+
+    .. plot::
+        :include-source: true
+
+        import matplotlib.pyplot as plt
+        import jax.numpy as jnp
+        from differt2d.geometry import Wall
+
+        ax = plt.gca()
+        wall = Wall(xys=jnp.array([[0., 0.], [1., 0.]]))
+        _ = wall.plot(ax)
+        for vertex in wall.get_vertices():
+            _ = vertex.plot(ax)
+        plt.show()  # doctest: +SKIP
+
+    """
+
+    @staticmethod
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def parameters_count() -> int:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
+        return 0
+
+    @jax.jit
+    @jaxtyped(typechecker=typechecker)
+    def parametric_to_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
+        self,
+        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
+    ) -> Float[Array, "2"]:
+        return self.xy
+
+    @jax.jit
+    @jaxtyped(typechecker=typechecker)
+    def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
+        self, carte_coords: Float[Array, "2"]
+    ) -> Float[Array, " {self.parameters_count()}"]:  # type: ignore[reportUndefinedVariable]
+        return jnp.empty_like(carte_coords, shape=0)
+
+    @partial(jax.jit, static_argnames=("approx", "function"))
+    @jaxtyped(typechecker=typechecker)
+    def contains_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
+        self,
+        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
+        approx: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Truthy:
+        return true_value(approx=approx)
+
+    @partial(jax.jit, static_argnames=("approx", "function"))
+    @jaxtyped(typechecker=typechecker)
+    def intersects_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
+        self,
+        ray: Float[Array, "2 2"],
+        patch: ScalarFloat = DEFAULT_PATCH,
+        approx: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Truthy:
+        return false_value(approx=approx)
+
+    @jax.jit
+    @jaxtyped(typechecker=typechecker)
+    def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
+        return jnp.array(0.0, dtype=ray_path.dtype)
+
+    @jaxtyped(typechecker=typechecker)
+    def plot(  # noqa: D102
+        self, ax: Axes, *args: Any, **kwargs: Any
+    ) -> MutableSequence[Artist]:  # pragma: no cover
+        kwargs.setdefault("color", "yellow")
+        kwargs.setdefault("markersize", 15)
+        kwargs.setdefault("fillstyle", "none")
+        return super().plot(ax, *args, **kwargs)
+
+
+@jaxtyped(typechecker=typechecker)
 class Ray(Plottable, eqx.Module):
     """
     A ray object with origin and destination points.
@@ -572,6 +650,16 @@ class Wall(Ray, Object, eqx.Module):
         i = point - self.origin()
         return point - 2.0 * jnp.dot(i, self.normal()) * self.normal()
 
+    @jax.jit
+    @jaxtyped(typechecker=typechecker)
+    def get_vertices(self) -> tuple[Vertex, Vertex]:
+        """
+        Returns the two vertices of this wall.
+
+        :return: The two vertices.
+        """
+        return Vertex(xy=self.xys[0, :]), Vertex(xy=self.xys[1, :])
+
 
 @jaxtyped(typechecker=typechecker)
 class RIS(Wall, eqx.Module):
@@ -740,7 +828,7 @@ class Path(Plottable, eqx.Module):
         return contains
 
     @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
-    @jaxtyped(typechecker=None)
+    @jaxtyped(typechecker=typechecker)
     def intersects_with_objects(
         self,
         objects: Sequence[Interactable],
@@ -765,9 +853,7 @@ class Path(Plottable, eqx.Module):
         :return: Whether this path intersects any of the objects.
         """
         interacting_object_indices = [-1] + [i for i in path_candidate] + [-1]
-        intersects = false_value(
-            approx=approx
-        )  # TODO(fixme): why is this a NumPy array?
+        intersects = false_value(approx=approx)
 
         for i in range(self.xys.shape[0] - 1):
             ray_path = self.xys[i : i + 2, :]

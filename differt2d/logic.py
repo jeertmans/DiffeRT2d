@@ -597,10 +597,10 @@ def true_value(approx: Optional[bool] = None) -> Truthy:
     """
     if approx is None:
         approx = ENABLE_APPROX
-    return jnp.array(1.0) if approx else jnp.array(True)
+    return jnp.array(1.0) if approx else jnp.array(True, dtype=bool)
 
 
-@partial(jax.jit, inline=True, static_argnames=("approx",))
+@partial(jax.jit, inline=False, static_argnames=("approx",))
 @jaxtyped(typechecker=typechecker)
 def false_value(approx: Optional[bool] = None) -> Truthy:
     """
@@ -613,4 +613,4 @@ def false_value(approx: Optional[bool] = None) -> Truthy:
     """
     if approx is None:
         approx = ENABLE_APPROX
-    return jnp.array(0.0) if approx else jnp.array(False)
+    return jnp.array(0.0) if approx else jnp.array(False, dtype=bool)

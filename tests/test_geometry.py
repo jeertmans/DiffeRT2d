@@ -13,6 +13,7 @@ from differt2d.geometry import (
     Path,
     Point,
     Ray,
+    Vertex,
     Wall,
     path_length,
     segments_intersect,
@@ -300,6 +301,12 @@ class TestWall:
         with pytest.raises(AssertionError):
             chex.assert_trees_all_close(expected, got)
         chex.assert_shape(got, ())
+
+    def test_get_vertices(self):
+        wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 0.0]]))
+        expected = (Vertex(xy=jnp.array([0.0, 0.0])), Vertex(xy=jnp.array([4.0, 0.0])))
+        got = wall.get_vertices()
+        chex.assert_trees_all_close(expected, got)
 
 
 class TestRIS:

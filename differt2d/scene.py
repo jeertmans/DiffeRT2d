@@ -4,12 +4,11 @@ __all__ = ("Scene", "SceneName")
 
 import json
 from abc import abstractmethod
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from functools import singledispatchmethod
 from itertools import groupby, product
 from typing import (
     Any,
-    Callable,
     Generic,
     Literal,
     Optional,
@@ -23,7 +22,7 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
-from differt_core.rt.graph import CompleteGraph
+from differt_core.rt.graph import CompleteGraph, DiGraph
 from jaxtyping import Array, Float, Int, PRNGKeyArray, jaxtyped
 from matplotlib.artist import Artist
 
@@ -100,6 +99,59 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
         return len(self._keys)
 
 
+@eqx.filter_jit
+def all_path_candidates(
+    num_nodes: int,
+    min_order: int = 0,
+    max_order: int = 1,
+    *,
+    order: Optional[int] = None,
+    filter_nodes: Optional[tuple[int, ...]] = None,
+) -> list[Int[Array, "num_path_candidates order"]]:
+    """
+    Returns all path candidates, as a list of array of indices.
+
+    This function is a lower-level version of :meth:`Scene.all_path_candidates`
+    that utilizes caching for more efficient computations.
+
+    In practice, you should not use this function directly, but rather
+    :meth:`Scene.all_path_candidates`.
+
+    :param num_nodes: The number of nodes, i.e., the objects,
+        present in the `graph`. This excludes the transmitting
+        and receiving nodes.
+    :param min_order: The minimum order of the path, i.e., the
+        number of interactions.
+    :param max_order: The maximum order of the path, i.e., the
+        number of interactions.
+    :param order: If provided, it is equivalent to setting
+        ``min_order=order`` and ``max_order=order``.
+    :param filter_nodes: An optional list of nodes, i.e., object indices,
+        to not visit.
+    :return: The list of list of indices.
+    """
+    if filter_nodes is None:
+        graph = CompleteGraph(num_nodes)
+        from_ = num_nodes
+        to = from_ + 1
+    else:
+        graph = DiGraph.from_complete_graph(CompleteGraph(num_nodes))
+        from_, to = graph.insert_from_and_to_nodes()
+        graph.disconnect_nodes(*filter_nodes)
+
+    if order is not None:
+        min_order = order
+        max_order = order
+
+    return [
+        jnp.asarray(path_candidate, dtype=jnp.int32)
+        for order in range(min_order, max_order + 1)
+        for path_candidate in graph.all_paths(
+            from_, to, order + 2, include_from_and_to=False
+        )
+    ]
+
+
 class Scene(Plottable, eqx.Module, Generic[_O]):
     """2D Scene made of objects, one or more transmitting node(s), and one or more receiving node(s)."""
 
@@ -149,6 +201,51 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :return: The new scene.
         """
         return eqx.tree_at(lambda s: s.objects, self, tuple(objects))
+
+    @jaxtyped(typechecker=typechecker)
+    def filter_objects(self, filter_spec: Callable[[Object], bool]) -> "Scene":
+        """
+        Returns a copy of this scene, with the given objects filtered out.
+
+        :param filter_spec: A callable indicating
+            which objects should be kept.
+        :return: The new scene.
+
+        :Examples:
+
+        A practical use case for this function is to plot a basic scene,
+        but only perform ray tracing on a subset of the objects, e.g.,
+        simulating only vertex diffraction.
+
+        .. warning::
+            If you only want to simulate vertex diffraction,
+            but still take the objects into account for possible
+            obstruction, prefer using the ``filter_objects``
+            parameter in :meth:`all_path_candidates` and
+            associated methods.
+
+        .. plot::
+            :include-source:
+
+            import matplotlib.pyplot as plt
+            from differt2d.geometry import Vertex
+            from differt2d.scene import Scene
+
+            ax = plt.gca()
+            scene = Scene.square_scene_with_wall()
+            wall = scene.objects[-1]
+            scene = scene.add_objects(*wall.get_vertices())
+            _ = scene.plot(ax)
+            scene = scene.filter_objects(lambda o: isinstance(o, Vertex))
+
+            for _, _, path, _ in scene.all_valid_paths():
+                path.plot(ax)
+
+            plt.show()  # doctest: +SKIP
+        """
+        return eqx.tree_at(
+            lambda s: s.objects, self, tuple(filter(filter_spec, self.objects))
+        )
 
     @jaxtyped(typechecker=typechecker)
     def update_transmitters(self, **transmitters: Point) -> "Scene":
@@ -271,7 +368,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
 
         .. plot::
-            :include-source: true
+            :include-source: false
 
             import matplotlib.pyplot as plt
             from differt2d.scene import Scene
@@ -514,7 +611,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         :Examples:
 
-        .. code-block::
+        .. plot::
+            :include-source:
 
             import matplotlib.pyplot as plt
             import jax
@@ -902,6 +1000,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         max_order: int = 1,
         *,
         order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
     ) -> list[Int[Array, "num_path_candidates order"]]:
         """
         Returns all path candidates, from any of the :attr:`transmitters` to any of the :attr:`receivers`, as a list of array of indices.
@@ -919,26 +1018,27 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             number of interactions.
         :param order: If provided, it is equivalent to setting
             ``min_order=order`` and ``max_order=order``.
+        :param filter_objects: A callable indicating
+            which objects should be used for path candidates.
         :return: The list of list of indices.
         """
         num_nodes = len(self.objects)
 
-        graph = CompleteGraph(num_nodes)
+        if filter_objects is None:
+            filter_nodes = None
+        else:
+            filter_nodes = ()
+            for i, obj in enumerate(self.objects):
+                if not filter_objects(obj):
+                    filter_nodes = (*filter_nodes, i)
 
-        from_ = num_nodes
-        to = from_ + 1
-
-        if order is not None:
-            min_order = order
-            max_order = order
-
-        return [
-            jnp.asarray(path_candidate, dtype=jnp.int32)
-            for order in range(min_order, max_order + 1)
-            for path_candidate in graph.all_paths(
-                from_, to, order + 2, include_from_and_to=False
-            )
-        ]
+        return all_path_candidates(
+            num_nodes,
+            min_order=min_order,
+            max_order=max_order,
+            order=order,
+            filter_nodes=filter_nodes,
+        )
 
     def get_interacting_objects(
         self, path_candidate: Int[Array, " order"]
@@ -962,6 +1062,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         min_order: int = 0,
         max_order: int = 1,
         order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs: Any,
@@ -978,6 +1079,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             number of interactions.
         :param order: If provided, it is equivalent to setting
             ``min_order=order`` and ``max_order=order``.
+        :param filter_objects: A callable indicating
+            which objects should be used for path candidates.
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
@@ -995,6 +1098,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             min_order=min_order,
             max_order=max_order,
             order=order,
+            filter_objects=filter_objects,
         )
 
         for (tx_key, transmitter), (
@@ -1123,6 +1227,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         min_order: int = 0,
         max_order: int = 1,
         order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs,
@@ -1172,6 +1277,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             The maximum order of the path, i.e., the number of interactions.
         :param order: If provided, it is equivalent to setting
             ``min_order=order`` and ``max_order=order``.
+        :param filter_objects: A callable indicating
+            which objects should be used for path candidates.
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
@@ -1194,6 +1301,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             min_order=min_order,
             max_order=max_order,
             order=order,
+            filter_objects=filter_objects,
         )
 
         pairs = list(scene.all_transmitter_receiver_pairs())
@@ -1282,6 +1390,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         min_order: int = 0,
         max_order: int = 1,
         order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs,
@@ -1320,6 +1429,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             The maximum order of the path, i.e., the number of interactions.
         :param order: If provided, it is equivalent to setting
             ``min_order=order`` and ``max_order=order``.
+        :param filter_objects: A callable indicating
+            which objects should be used for path candidates.
         :param key: The random key to be used to find the paths.
             Depending on ``path_cls``, this can be mandatory.
         :param kwargs:
@@ -1342,6 +1453,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             min_order=min_order,
             max_order=max_order,
             order=order,
+            filter_objects=filter_objects,
         )
 
         pairs = list(scene.all_transmitter_receiver_pairs())
