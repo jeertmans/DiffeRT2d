@@ -2,7 +2,7 @@ API Reference
 =============
 
 On this page, you will find a documented reference for all the
-public functions and classes present in the Differt2D package.
+public functions and classes present in the DiffeRT2d package.
 
 .. toctree::
    :maxdepth: 1
