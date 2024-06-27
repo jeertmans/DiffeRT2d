@@ -6,7 +6,7 @@ This project is open source,
 and we welcome contributions of all forms.
 
 This section is here to help fist-time contributors know how they can help this
-project grow. Whether you are already familiar with Manim or GitHub,
+project grow. Whether you are already familiar with DiffeRT2d or GitHub,
 it is worth taking a few minutes to read those documents!
 
 ```{toctree}
@@ -29,7 +29,7 @@ how DiffeRT2d is built and how the various parts of it work.
 :end-before: <!-- end reporting-an-issue -->
 ```
 
-## Seeking for Help
+## Seeking Help
 
 ```{include} ../../../README.md
 :start-after: <!-- start seeking-for-help -->
