@@ -54,7 +54,7 @@ are **immutable**. Hence, for compatibility with JAX's philosophy,
 DiffeRT2d's objects are also **immutable PyTrees**.
 
 As such, every method these objects expose is likely to return
-a **new object instance**. e.g.:
+a **new object instance**, e.g.:
 
 ```python
 from differt.geometry import Point
