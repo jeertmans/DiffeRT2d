@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- start changelog -->
 
 (unreleased)=
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/0.3.2...HEAD)
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.2...HEAD)
 
 (unreleased-chore)=
 ### Chore
@@ -17,12 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#68](https://github.com/jeertmans/DiffeRT2d/pull/68)
 
 (v0.3.2)=
-## [v0.3.2](https://github.com/jeertmans/DiffeRT2d/compare/0.3.1...HEAD)
+## [v0.3.2](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.1...v0.3.2)
 
 Small documentation enhancements.
 
 (v0.3.1)=
-## [v0.3.1](https://github.com/jeertmans/DiffeRT2d/compare/0.3.0...HEAD)
+## [v0.3.1](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.0...v0.3.1)
 
 (v0.3.1-added)=
 ### Added
@@ -135,7 +135,7 @@ Small documentation enhancements.
 + Fixed how path candidates are computed, which actually removes the
   `get_visibility` matrix method and changes the output type of `all_path_candidates`
   to a list of arrays.
-  [#48](https://github.com/jeertmans/DiffeRT2d/pull/458)
+  [#48](https://github.com/jeertmans/DiffeRT2d/pull/48)
 
 ## [v0.1.0](https://github.com/jeertmans/DiffeRT2d/commits/v0.1.0)
 
