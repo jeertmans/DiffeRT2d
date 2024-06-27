@@ -8,11 +8,11 @@ og:description: 2D Toolbox for Differentiable Ray Tracing
 DiffeRT2d is a Python toolbox for 2D differentiable Ray Tracing,
 with a focus on Radio Propagation applications[^1].
 
-[^1]: This means we are mostly interesting in simulating paths from
+[^1]: This means we are mostly interested in simulating paths from
   one node (transmitter) to another (receiver),
-  i.e., Point-to-Point Ray Tracing,
-  and not a highly efficient image renderer, like in computer gaphics,
-  that will usually favor Ray Launching instead.
+  i.e., Point-to-Point Ray Tracing.
+  DiffeRT2d is not designed as a highly efficient image renderer, like in computer graphics.
+  A renderer will usually favor a Ray Launching method instead.
 
 The present tool is thoroughly documented, so please have a look at the
 following sections:
