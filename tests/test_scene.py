@@ -6,7 +6,7 @@ import chex
 import jax.numpy as jnp
 import pytest
 
-from differt2d.geometry import Point, Wall, stack_leaves
+from differt2d.geometry import RIS, Point, Wall, stack_leaves
 from differt2d.logic import is_true
 from differt2d.scene import PyTreeDict, Scene, SceneName
 
@@ -85,6 +85,18 @@ class TestScene:
         scene = scene.with_objects(Wall())
 
         assert len(scene.objects) == 1
+
+    def test_filter_objects(self):
+        scene = Scene(objects=[Wall(), Wall()])
+        ris = RIS()
+        scene = scene.add_objects(ris)
+
+        assert len(scene.objects) == 3
+
+        scene = scene.filter_objects(lambda o: isinstance(o, RIS))
+
+        assert len(scene.objects) == 1
+        assert isinstance(scene.objects[0], RIS)
 
     def test_update_transmitters(self):
         scene = Scene(transmitters={"a": Point(), "b": Point()})
@@ -323,6 +335,24 @@ class TestScene:
         got = scene.all_path_candidates(order=0)
         assert len(got) == 1
         assert len(got[0]) == 0
+
+    def test_all_path_candidates_filter_objects(self):
+        scene = Scene(objects=[Wall(), Wall(), Wall()])
+        ris = RIS()
+        scene = scene.add_objects(ris, Wall(), Wall())
+
+        assert len(scene.objects) == 6
+
+        # Index of RIS is 3
+        expected = [
+            jnp.empty(0, dtype=jnp.int32),
+            jnp.array([3], dtype=jnp.int32),
+        ]
+        got = scene.all_path_candidates(
+            filter_objects=lambda o: isinstance(o, RIS), min_order=0, max_order=2
+        )
+
+        chex.assert_trees_all_equal(got, expected)
 
     @pytest.mark.parametrize(
         ("min_order", "max_order"), [(0, 0), (1, 1), (2, 2), (0, 2)]

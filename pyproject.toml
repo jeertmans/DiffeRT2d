@@ -16,11 +16,12 @@ classifiers = [
 ]
 dependencies = [
   "beartype>=0.17.2",
-  "differt-core==0.0.14",
+  "differt-core==0.0.17",
   "equinox>=0.11.2",
   "jax>=0.4.7",
   "jaxtyping>=0.2.24",
   "matplotlib>=3.7.1",
+  "numpy>=1.24",
   "optax>=0.1.5",
   "typing-extensions>=4.9.0;python_version<'3.11'",
 ]

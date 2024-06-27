@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.2...HEAD)
 
+(unreleased-added)=
+### Added
+
++ Added `Vertex` class for basic vertex diffraction.
+  [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
++ Added `get_vertices` method to `Wall`.
+  [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
++ Added `filter_objects` method to `Scene`.
+  [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
++ Added `filter_objects` parameters to `Scene.all_path_candidates`
+  and related methods.
+  [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
++ Added a lower-level, cached, variant of `all_path_candidates`.
+  [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
+
 (unreleased-chore)=
 ### Chore
 

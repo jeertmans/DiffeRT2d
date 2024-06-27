@@ -13,6 +13,7 @@ from differt2d.geometry import (
     Path,
     Point,
     Ray,
+    Vertex,
     Wall,
     path_length,
     segments_intersect,
@@ -151,6 +152,41 @@ class TestPoint:
         got = Point(xy=xy).bounding_box()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2, 2))
+
+
+class TestVertex:
+    @point
+    def test_parametric_to_cartesian(self, point: list):
+        vertex = Vertex(xy=jnp.array(point))
+        chex.assert_trees_all_equal(
+            vertex.parametric_to_cartesian(jnp.empty(0)), vertex.xy
+        )
+
+    @point
+    def test_cartesian_to_parametric(self, point: list):
+        vertex = Vertex(xy=jnp.array(point))
+        assert vertex.cartesian_to_parametric(jnp.empty(2)).size == 0
+
+    @point
+    @approx
+    def test_contains_parametric(self, point: list, approx: bool):
+        vertex = Vertex(xy=jnp.array(point))
+        assert is_true(
+            vertex.contains_parametric(jnp.empty(0), approx=approx), approx=approx
+        )
+
+    @point
+    @approx
+    def test_intersects_cartesian(self, point: list, approx: bool):
+        vertex = Vertex(xy=jnp.array(point))
+        assert is_false(
+            vertex.intersects_cartesian(jnp.empty((2, 2)), approx=approx), approx=approx
+        )
+
+    @point
+    def test_evaluate_cartesian(self, point: list):
+        vertex = Vertex(xy=jnp.array(point))
+        chex.assert_trees_all_equal(vertex.evaluate_cartesian(jnp.empty((3, 2))), 0.0)
 
 
 class TestRay:
@@ -300,6 +336,12 @@ class TestWall:
         with pytest.raises(AssertionError):
             chex.assert_trees_all_close(expected, got)
         chex.assert_shape(got, ())
+
+    def test_get_vertices(self):
+        wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 0.0]]))
+        expected = (Vertex(xy=jnp.array([0.0, 0.0])), Vertex(xy=jnp.array([4.0, 0.0])))
+        got = wall.get_vertices()
+        chex.assert_trees_all_close(expected, got)
 
 
 class TestRIS:

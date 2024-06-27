@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 absl-py==2.1.0
@@ -19,7 +20,7 @@ contourpy==1.2.1
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-differt-core==0.0.14
+differt-core==0.0.17
     # via differt2d
 equinox==0.11.4
     # via differt2d
@@ -43,10 +44,11 @@ matplotlib==3.8.4
 ml-dtypes==0.4.0
     # via jax
     # via jaxlib
-numpy==1.26.4
+numpy==2.0.0
     # via chex
     # via contourpy
     # via differt-core
+    # via differt2d
     # via jax
     # via jaxlib
     # via jaxtyping
