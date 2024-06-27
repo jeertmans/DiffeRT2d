@@ -67,15 +67,18 @@ annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
 key = jax.random.PRNGKey(1234)
 X, Y = scene.grid(n=300)
 
+scene = scene.filter_objects(
+    lambda obj: not eqx.tree_equal(obj, wall)  # We remove the 'wall' from the scene
+)
+
 scene.plot(
     ax,
     transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
     receivers=False,
 )
+wall.plot(ax, linestyle="--")
 
-P: Float[Array, "300 300"] = scene.filter_objects(
-    lambda obj: not eqx.tree_equal(obj, wall)  # We remove the 'wall' from the scene
-).accumulate_on_receivers_grid_over_paths(
+P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
     X,
     Y,
     fun=received_power,
@@ -83,7 +86,6 @@ P: Float[Array, "300 300"] = scene.filter_objects(
     filter_objects=lambda obj: isinstance(obj, Vertex),  # Vertex diffraction
     path_cls=FermatPath,
     reduce_all=True,
-    #  patch=-0.01,  # You can use a (small) negative patch instead
     key=key,
 )  # type: ignore
 

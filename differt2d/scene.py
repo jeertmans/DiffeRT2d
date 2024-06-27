@@ -228,7 +228,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             :include-source:
 
             import matplotlib.pyplot as plt
-            from differt2d.geometry import Vertex
+            from differt2d.geometry import FermaPath, Vertex
             from differt2d.scene import Scene
 
             ax = plt.gca()
@@ -238,7 +238,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             _ = scene.plot(ax)
             scene = scene.filter_objects(lambda o: isinstance(o, Vertex))
 
-            for _, _, path, _ in scene.all_valid_paths():
+            for _, _, path, _ in scene.all_valid_paths(path_cls=FermatPath):
                 path.plot(ax)
 
             plt.show()  # doctest: +SKIP
