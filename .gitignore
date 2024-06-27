@@ -1,6 +1,8 @@
 # Python artifacts
 __pycache__/
+.coverage
 .ipynb_checkpoints/
+coverage.xml
 
 # Docs build artifacts
 docs/build/

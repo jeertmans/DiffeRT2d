@@ -125,7 +125,11 @@ venvPath = "."
 
 [tool.pytest.ini_options]
 addopts = [
+  "-n=auto",
+  "--cov-report=xml",
+  "--cov=differt2d",
   "--ignore=benchmark.py",
+  "--ignore=docs/source/examples_gallery",
   "--ignore=examples",
   "--ignore=papers",
   "--doctest-modules",
@@ -137,6 +141,7 @@ doctest_optionflags = ["NORMALIZE_WHITESPACE"]
 env = [
   "JAX_DEBUG_NANS=True",
   "JAX_PLATFORM_NAME=cpu",
+  "MPLBACKEND=Agg",
 ]
 filterwarnings = [
   "error",
