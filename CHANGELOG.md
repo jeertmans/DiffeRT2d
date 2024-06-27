@@ -10,12 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.2...HEAD)
 
-(unreleased-chore)=
-### Chore
-
-+ Fixed broken links and added test to check for links.
-  [#68](https://github.com/jeertmans/DiffeRT2d/pull/68)
-
 (unreleased-added)=
 ### Added
 
@@ -30,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
 + Added a lower-level, cached, variant of `all_path_candidates`.
   [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
+
+(unreleased-chore)=
+### Chore
+
++ Fixed broken links and added test to check for links.
+  [#68](https://github.com/jeertmans/DiffeRT2d/pull/68)
 
 (v0.3.2)=
 ## [v0.3.2](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.1...v0.3.2)
