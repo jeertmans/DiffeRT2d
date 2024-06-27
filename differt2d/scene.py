@@ -227,7 +227,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         .. plot::
             :include-source:
 
+            import jax
             import matplotlib.pyplot as plt
+
             from differt2d.geometry import FermatPath, Vertex
             from differt2d.scene import Scene
 
@@ -237,8 +239,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             scene = scene.add_objects(*wall.get_vertices())
             _ = scene.plot(ax)
             scene = scene.filter_objects(lambda o: isinstance(o, Vertex))
+            key = jax.random.PRNGKey(1234)
 
-            for _, _, path, _ in scene.all_valid_paths(path_cls=FermatPath):
+            for _, _, path, _ in scene.all_valid_paths(path_cls=FermatPath, key=key):
                 path.plot(ax)
 
             plt.show()  # doctest: +SKIP
