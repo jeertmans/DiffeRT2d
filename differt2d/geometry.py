@@ -307,12 +307,14 @@ class Point(Plottable, eqx.Module):
 
         x, y = self.xy
 
-        artists: MutableSequence[Artist] = ax.plot(
-            [x],
-            [y],
-            *args,
-            **kwargs,
-        )  # type: ignore[reportGeneralTypeIssues]
+        artists: list[Artist] = [
+            ax.scatter(
+                x,
+                y,
+                *args,
+                **kwargs,
+            )
+        ]
 
         if annotate:
             xytext: tuple[float, float] = self.xy + jnp.asarray(
@@ -407,9 +409,9 @@ class Vertex(Point, Object, eqx.Module):
     def plot(  # noqa: D102
         self, ax: Axes, *args: Any, **kwargs: Any
     ) -> MutableSequence[Artist]:  # pragma: no cover
-        kwargs.setdefault("color", "yellow")
-        kwargs.setdefault("markersize", 15)
-        kwargs.setdefault("fillstyle", "none")
+        kwargs.setdefault("edgecolors", "black")
+        kwargs.setdefault("facecolors", (1.0, 1.0, 0.0, 0.5))
+        kwargs.setdefault("linestyle", "dashed")
         return super().plot(ax, *args, **kwargs)
 
 

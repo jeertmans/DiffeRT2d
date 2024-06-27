@@ -241,7 +241,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             scene = scene.filter_objects(lambda o: isinstance(o, Vertex))
             key = jax.random.PRNGKey(1234)
 
-            for _, _, path, _ in scene.all_valid_paths(path_cls=FermatPath, key=key):
+            for _, _, path, _ in scene.all_valid_paths(
+                order=1,
+                path_cls=FermatPath,
+                key=key,
+            ):
                 path.plot(ax)
 
             plt.show()  # doctest: +SKIP
