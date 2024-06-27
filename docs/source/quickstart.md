@@ -78,7 +78,7 @@ you can easily plot a scene (and other objects) to see how it renders:
     plt.show()
 
 
-If you need, you can directly load scene from OpenStreeMap using
+If you need to, you can directly load any scene from OpenStreetMap using
 :meth:`Scene.from_geojson<differt2d.scene.Scene.from_geojson>`.
 
 Tracing rays
@@ -229,4 +229,4 @@ both
 
 ## More examples
 
-For usage examples, see the [Examples Gallery](examples_gallery/index) section.
+For more usage examples, see the [Examples Gallery](examples_gallery/index) section.
