@@ -202,7 +202,6 @@ Note: Our tool ticks the following.
 
 **DiffeRT2d**
 
-
 <div data-id="what">What it isn't:</div>
 
 * a replacement of SionnaRT; <!-- .element: class="fragment" -->

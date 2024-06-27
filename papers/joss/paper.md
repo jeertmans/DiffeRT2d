@@ -96,7 +96,8 @@ a comprehensive solution for path tracing,
 while avoiding the need to compute electromagnetic (EM) fields.
 Consequently, we provide a rough approximation of the received power,
 which ignores the local phase of the wave, to allow the user to focus
-on higher-level concepts, such as the number of multipath components, angle of arrival.
+on higher-level concepts, such as the number of multipath components
+and the angle of arrival.
 As an object-oriented package with curated default values,
 constructing a basic RT scenario can be performed in a minimal amount of lines of
 code while keeping the code extremely expressive.
@@ -127,11 +128,11 @@ reflection. Consequently, a distinct procedure must be employed for their treatm
 
 Using MPT,
 that is one of the path tracing methods implemented in DiffeRT2d,
-we can easily accommodate those object,
+we can easily accommodate those surfaces,
 thanks to the object-oriented structure of the code.
 We also provide a very simple reflecting intelligent surface (RIS) to this end.
 
-![The following figure depicts a coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. It is evident that the RIS reflects rays with an angle of 45°. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width="70%" }
+![The following figure illustrates a coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. The RIS, situated in the center, reflects rays at an angle of 45°, as evidenced by the fixed reflection angle of the reflected rays, irrespective of the angle of incidence. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width="70%" }
 
 \autoref{fig:rispowermap} can be reproduced[^1] with the following code:
 
@@ -140,10 +141,11 @@ We also provide a very simple reflecting intelligent surface (RIS) to this end.
 ```python
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 
 from differt2d.geometry import RIS, MinPath
 from differt2d.scene import Scene
-from differt2d.utils import received_power
+from differt2d.utils import P0, received_power
 
 scene = Scene.square_scene()
 ris = RIS(
@@ -152,8 +154,18 @@ ris = RIS(
 )
 scene = scene.add_objects(ris)
 
-key = jax.random.PRNGKey(1234)  # Needed to start MPT minimization
+fig, ax = plt.subplots()
+
+annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
+
+key = jax.random.PRNGKey(1234)
 X, Y = scene.grid(n=300)
+
+scene.plot(
+    ax,
+    transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+    receivers=False,
+)
 
 P = scene.accumulate_on_receivers_grid_over_paths(
     X,
@@ -162,8 +174,26 @@ P = scene.accumulate_on_receivers_grid_over_paths(
     path_cls=MinPath,
     order=1,
     reduce_all=True,
+    path_cls_kwargs={"steps": 1000},
     key=key,
 )
+
+PdB = 10.0 * jnp.log10(P / P0)
+
+im = ax.pcolormesh(
+    X,
+    Y,
+    PdB,
+    vmin=-50,
+    vmax=5,
+    zorder=-1,
+)
+cbar = fig.colorbar(im, ax=ax)
+cbar.ax.set_ylabel("Power (dB)")
+
+ax.set_xlabel("x coordinate")
+ax.set_ylabel("y coordinate")
+plt.show()
 ```
 
 ## Network optimization
@@ -178,9 +208,15 @@ provided by the Optax library, to successfully solve some optimization problem.
 
 ![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimize_steps.pdf){ width="100%" }
 
+The code to reproduce the above results can be obtained here:
+https://github.com/jeertmans/DiffeRT2d/blob/main/papers/joss/plot_optimize_steps.py.
+
 ## Machine Learning
 
-In a separate study presented at this COST meeting,
+In [@mlhelsinki],
+presented at a scientific meeting in Helsinki, June 2024,
+as part of the European Cooperation in Science and Technology (COST)
+action [*INTERACT*](https://interactca20120.org/) (CA20120),
 we developed an ML model that learns how to sample path candidates
 to accelerate RT in general.
 
@@ -190,7 +226,11 @@ and a detailed notebook is available
 
 # Stability and releases
 
-A significant amount of effort has been invested in the documentation and testing of our code. All public functions are annotated, primarily through the use of the jaxtyping library [@jaxtyping2024github], which enables static type checking. Furthermore, we aim to maintain a code coverage metric of 100%.
+A significant amount of effort has been invested in the documentation and
+testing of our code.
+All public functions are annotated, primarily through the use of the
+jaxtyping library [@jaxtyping2024github], which enables static type checking.
+Furthermore, we aim to maintain a code coverage metric of 100%.
 
 Our project adheres to semantic versioning,
 and we document all significant changes in a changelog file.
