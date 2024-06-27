@@ -192,7 +192,7 @@ def func(alpha: float) -> list:
 
         # Plotting prior to updating
         scenes[i] = scene.with_transmitters(tx=Point(xy=tx_coords))
-        transmitter_artists[i].set_data([tx_coords[0]], [tx_coords[1]])
+        transmitter_artists[i].set_offsets([tx_coords[0], tx_coords[1]])
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
 
