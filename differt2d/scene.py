@@ -228,7 +228,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             :include-source:
 
             import matplotlib.pyplot as plt
-            from differt2d.geometry import FermaPath, Vertex
+            from differt2d.geometry import FermatPath, Vertex
             from differt2d.scene import Scene
 
             ax = plt.gca()
