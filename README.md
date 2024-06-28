@@ -1,12 +1,12 @@
 # DiffeRT2d
 
-<img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
-
 [![Latest Release][pypi-version-badge]][pypi-version-url]
 [![Python version][pypi-python-version-badge]][pypi-version-url]
 [![Documentation][documentation-badge]][documentation-url]
 [![DOI][doi-badge]][doi-url]
 [![Codecov][codecov-badge]][codecov-url]
+
+<img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
 
 Differentiable Ray Tracing Python Framework for Radio Propagation.
 
