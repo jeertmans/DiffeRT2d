@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 + Fixed broken links and added test to check for links.
   [#68](https://github.com/jeertmans/DiffeRT2d/pull/68)
++ Enhanced the documentation homepage.
+  [#77](https://github.com/jeertmans/DiffeRT2d/pull/77)
 
 (v0.3.2)=
 ## [v0.3.2](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.1...v0.3.2)
