@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- start changelog -->
 
 (unreleased)=
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.2...HEAD)
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.3...HEAD)
 
-(unreleased-added)=
+(v0.3.3)=
+## [v0.3.3](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.2...v0.3.3)
+
+(v0.3.3-added)=
 ### Added
 
 + Added `Vertex` class for basic vertex diffraction.
@@ -25,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Added a lower-level, cached, variant of `all_path_candidates`.
   [#70](https://github.com/jeertmans/DiffeRT2d/pull/70)
 
-(unreleased-chore)=
+(v0.3.3-chore)=
 ### Chore
 
 + Fixed broken links and added test to check for links.
