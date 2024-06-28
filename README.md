@@ -12,7 +12,7 @@ Differentiable Ray Tracing Python Framework for Radio Propagation.
 
 <!-- start description -->
 
-DiffeRT2d is built on top of the 
+DiffeRT2d is built on top of the
 [JAX](https://github.com/google/jax)
 library to provide a program that is *differentiable everywhere*.
 With that, performing gradient-based optimization, or training
