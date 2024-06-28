@@ -111,7 +111,7 @@ for optimization problems or Equinox [@kidger2021equinox] for Machine Learning (
 # Usage Examples
 
 The documentation contains
-[an example gallery](https://differt2d.readthedocs.io/latest/examples_gallery/),
+[an example gallery](https://web.archive.org/web/20240628154659/https://differt2d.eertmans.be/latest/examples_gallery/),
 as well as numerous other usage examples disseminated throughout the
 application programming interface (API) documentation.
 
@@ -208,21 +208,23 @@ provided by the Optax library, to successfully solve some optimization problem.
 
 ![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimize_steps.pdf){ width="100%" }
 
-The code to reproduce the above results can be obtained here:
-https://github.com/jeertmans/DiffeRT2d/blob/main/papers/joss/plot_optimize_steps.py.
+The code to reproduce the above results can be found in the
+[GitHub repository](https://web.archive.org/web/20240628155050/https://github.com/jeertmans/DiffeRT2d/blob/main/papers/joss/plot_optimize_steps.py).
 
 ## Machine Learning
 
 In [@mlhelsinki],
 presented at a scientific meeting in Helsinki, June 2024,
 as part of the European Cooperation in Science and Technology (COST)
-action [*INTERACT*](https://interactca20120.org/) (CA20120),
+action
+[*INTERACT*](https://web.archive.org/web/20240628155127/https://interactca20120.org/)
+(CA20120),
 we developed an ML model that learns how to sample path candidates
 to accelerate RT in general.
 
 The model and its training were implemented using the DiffeRT2d library,
 and a detailed notebook is available
-[online](https://eertmans.be/r/cost20120-helsinki).
+[online](https://web.archive.org/web/20240628154718/https://differt2d.eertmans.be/latest/notebooks/cost20120_helsinki_model.html).
 
 # Stability and releases
 

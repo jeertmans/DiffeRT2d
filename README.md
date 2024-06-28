@@ -10,6 +10,25 @@
 
 Differentiable Ray Tracing Python Framework for Radio Propagation.
 
+<!-- start description -->
+
+DiffeRT2d is built on top of the 
+[JAX](https://github.com/google/jax)
+library to provide a program that is *differentiable everywhere*.
+With that, performing gradient-based optimization, or training
+Machine Learning models with Ray Tracing (RT) becomes straightforward!
+Moreover, the extensive use of the object-oriented paradigm
+facilitates the simulation of complex objects, such as metasurfaces,
+and the use of more advanced path tracing methods.
+
+The objective of this tool is to provide a **simple-to-use** and
+**highly interpretable** RT framework **for researchers** engaged
+in fundamental studies of RT applied to radio propagation,
+or any researcher interested in the various paths radio waves
+can take in a given environment.
+
+<!-- end description -->
+
 > [!IMPORTANT]
 > For 3D scenarios at city-scales,
 > checkout [DiffeRT](https://github.com/jeertmans/DiffeRT).
