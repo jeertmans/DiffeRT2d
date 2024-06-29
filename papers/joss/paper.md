@@ -29,7 +29,7 @@ bibliography: paper.bib
 # Summary
 
 Ray Tracing (RT) is arguably one of the most prevalent methodologies
-in the field of radio propagation modeling. However, the access to RT
+in the field of radio propagation modeling. However, access to RT
 software is often constrained by its closed-source nature, licensing costs,
 or the requirement of high-performance computing resources.
 While this is typically acceptable for large-scale applications,
@@ -54,7 +54,7 @@ This restricts accessibility, limits customization,
 and impedes collaborative advances in the field.
 Among the limited Open Source alternatives,
 tools such as PyLayers [@pylayers] and Opal [@opal]
-fall short in offering the capability to easily differentiate
+fall short by not offering the capability to easily differentiate
 code with respect to various parameters.
 This limitation presents a substantial challenge for tasks
 involving network optimization, where the ability to efficiently
@@ -66,7 +66,7 @@ to enable differentiation.
 Despite its capabilities, SionnaRT's complexity can be a barrier
 for researchers seeking a straightforward solution for fundamental
 studies in RT applied to radio propagation.
-Moreover, we believe that the research is lacking a simple-to-use
+We believe that researchers need a simple-to-use
 and highly interpretable RT framework.
 
 DiffeRT2d addresses these shortcomings by providing a comprehensive,
@@ -99,7 +99,7 @@ which ignores the local phase of the wave, to allow the user to focus
 on higher-level concepts, such as the number of multipath components
 and the angle of arrival.
 As an object-oriented package with curated default values,
-constructing a basic RT scenario can be performed in a minimal amount of lines of
+constructing a basic RT scenario can be performed in a minimal number of lines of
 code while keeping the code extremely expressive.
 
 Moreover, DiffeRT2d is designed to maximize its compatibility with the JAX ecosystem.
@@ -127,12 +127,12 @@ which typically exhibit a deviation from the conventional law of specular
 reflection. Consequently, a distinct procedure must be employed for their treatment.
 
 Using MPT,
-that is one of the path tracing methods implemented in DiffeRT2d,
+which is one of the path tracing methods implemented in DiffeRT2d,
 we can easily accommodate those surfaces,
 thanks to the object-oriented structure of the code.
 We also provide a very simple reflecting intelligent surface (RIS) to this end.
 
-![The following figure illustrates a coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. The RIS, situated in the center, reflects rays at an angle of 45°, as evidenced by the fixed reflection angle of the reflected rays, irrespective of the angle of incidence. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width="70%" }
+![A coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. The RIS, situated in the center, reflects rays at an angle of 45°, as evidenced by the fixed reflection angle of the reflected rays, irrespective of the angle of incidence. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width="70%" }
 
 \autoref{fig:rispowermap} can be reproduced[^1] with the following code:
 
@@ -198,7 +198,7 @@ plt.show()
 
 ## Network optimization
 
-In a previous work, we presented a smoothing technique [@eertmans2024eucap]
+In previous work, we presented a smoothing technique [@eertmans2024eucap]
 that makes RT differentiable everywhere. The aforementioned technique
 is available throughout DiffeRT2d via an optional `approx`
 (for *approximation*) parameter, or via a global config variable.
@@ -206,14 +206,14 @@ is available throughout DiffeRT2d via an optional `approx`
 \autoref{fig:opt} shows how we used the Adam optimizer [@adam],
 provided by the Optax library, to successfully solve some optimization problem.
 
-![Illustration of the different iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimize_steps.pdf){ width="100%" }
+!Different numbers of iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimize_steps.pdf){ width="100%" }
 
 The code to reproduce the above results can be found in the
 [GitHub repository](https://web.archive.org/web/20240628155050/https://github.com/jeertmans/DiffeRT2d/blob/main/papers/joss/plot_optimize_steps.py).
 
 ## Machine Learning
 
-In [@mlhelsinki],
+In @mlhelsinki,
 presented at a scientific meeting in Helsinki, June 2024,
 as part of the European Cooperation in Science and Technology (COST)
 action
