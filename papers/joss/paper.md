@@ -134,9 +134,7 @@ We also provide a very simple reflecting intelligent surface (RIS) to this end.
 
 ![A coverage map for single-reflection paths (i.e., no line-of-sight) in a scene containing a RIS. The RIS, situated in the center, reflects rays at an angle of 45°, as evidenced by the fixed reflection angle of the reflected rays, irrespective of the angle of incidence. The minor noise observed around the edges is attributed to convergence issues with the MPT method, which can be mitigated by increasing the number of minimization steps.\label{fig:rispowermap}](ris_power_map.pdf){ width="70%" }
 
-\autoref{fig:rispowermap} can be reproduced[^1] with the following code:
-
-[^1]: The code to plot the coverage map has been removed for clarity.
+\autoref{fig:rispowermap} can be reproduced with the following code:
 
 ```python
 import jax
@@ -244,9 +242,9 @@ in the field of radio propagation who are interested in simulating
 relatively simple scenarios. In such cases, the ease of use, flexibility,
 and interpretability of the software are of greater importance than
 performing city-scale simulations or computing
-electromagnetic fields[^2] with high accuracy.
+electromagnetic fields[^1] with high accuracy.
 
-[^2]: While this is currently not part of our API, we do not omit the possibility
+[^1]: While this is currently not part of our API, we do not omit the possibility
     to include more complex EM routines in the future.
 
 # Acknowledgments
