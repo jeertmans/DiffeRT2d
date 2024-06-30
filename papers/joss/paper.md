@@ -204,7 +204,7 @@ is available throughout DiffeRT2d via an optional `approx`
 \autoref{fig:opt} shows how we used the Adam optimizer [@adam],
 provided by the Optax library, to successfully solve some optimization problem.
 
-![Different numbers of iterations converging towards the maximum of the objective function, see [@eertmans2024eucap] for all details.\label{fig:opt}](optimize_steps.pdf){ width="100%" }
+![Different numbers of iterations converging towards the maximum of the objective function, see @eertmans2024eucap for all details.\label{fig:opt}](optimize_steps.pdf){ width="100%" }
 
 The code to reproduce the above results can be found in the
 [GitHub repository](https://web.archive.org/web/20240628155050/https://github.com/jeertmans/DiffeRT2d/blob/main/papers/joss/plot_optimize_steps.py).
@@ -229,7 +229,8 @@ and a detailed notebook is available
 A significant amount of effort has been invested in the documentation and
 testing of our code.
 All public functions are annotated, primarily through the use of the
-jaxtyping library [@jaxtyping2024github], which enables static type checking.
+jaxtyping library [@jaxtyping2024github], which enables both static and
+dynamic type checking.
 Furthermore, we aim to maintain a code coverage metric of 100%.
 
 Our project adheres to semantic versioning,
