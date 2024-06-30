@@ -22,7 +22,7 @@ keywords:
   - JAX
   - Radio Propagation
 license: MIT
-version: v0.3.3
+version: v0.3.4
 preferred-citation:
   publisher:
     name: IEEE
