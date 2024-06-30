@@ -4,6 +4,7 @@
 [![Python version][pypi-python-version-badge]][pypi-version-url]
 [![Documentation][documentation-badge]][documentation-url]
 [![DOI][doi-badge]][doi-url]
+[![JOSS Paper][joss-badge]][joss-url]
 [![Codecov][codecov-badge]][codecov-url]
 
 <img alt="DiffeRT2d Logo" align="right" width="512px" src="https://raw.githubusercontent.com/jeertmans/DiffeRT2d/main/static/logo_light_transparent.png">
@@ -150,7 +151,9 @@ you can do so at: [jeertmans@icloud.com](mailto:jeertmans@icloud.com).
 [pypi-python-version-badge]: https://img.shields.io/pypi/pyversions/DiffeRT2d
 [documentation-badge]: https://img.shields.io/website?down_color=lightgrey&down_message=offline&label=documentation&up_color=green&up_message=online&url=https%3A%2F%2Feertmans.be%2FDiffeRT2d%2F
 [documentation-url]: https://eertmans.be/DiffeRT2d/
-[doi-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.11386517.svg
-[doi-url]: https://doi.org/10.5281/zenodo.11386517
+[doi-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.12600658.svg
+[doi-url]: https://doi.org/10.5281/zenodo.12600658
+[joss-badge]: https://joss.theoj.org/papers/10.21105/joss.06915/status.svg
+[joss-url]: https://doi.org/10.21105/joss.06915
 [codecov-badge]: https://codecov.io/gh/jeertmans/DiffeRT2d/branch/main/graph/badge.svg?token=1dJ1AKWMR5
 [codecov-url]: https://codecov.io/gh/jeertmans/DiffeRT2d

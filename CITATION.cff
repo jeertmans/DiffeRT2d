@@ -1,17 +1,25 @@
-# This CITATION.cff file was generated with cffinit.
-# Visit https://bit.ly/cffinit to generate yours today!
-
-cff-version: 1.2.0
-title: DiffeRT
-message: >-
-  If you use this software, please cite it using the
-  metadata from this file.
+cff-version: "1.2.0"
+authors:
+- family-names: Eertmans
+  given-names: Jérome
+  orcid: "https://orcid.org/0000-0002-5579-5360"
+- family-names: Oestges
+  given-names: Claude
+  orcid: "https://orcid.org/0000-0002-0902-4565"
+- family-names: Jacques
+  given-names: Laurent
+  orcid: "https://orcid.org/0000-0002-6261-0328"
+doi: 10.5281/zenodo.12600658
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+repository-code: 'https://github.com/jeertmans/DiffeRT2d'
+license: MIT
+version: v0.3.4
 type: software
 authors:
   - name: Jérome Eertmans
     orcid: 'https://orcid.org/0000-0002-5579-5360'
     website: 'https://eertmans.be'
-repository-code: 'https://github.com/jeertmans/DiffeRT2d'
 url: 'https://eertmans.be/DiffeRT2d'
 abstract: >-
   2D Toolbox for Differentiable Ray Tracing, for
@@ -21,23 +29,29 @@ keywords:
   - Differentiable
   - JAX
   - Radio Propagation
-license: MIT
-version: v0.3.4
 preferred-citation:
-  publisher:
-    name: IEEE
-  type: conference-paper
   authors:
-    - name: Jérome Eertmans
-      orcid: 'https://orcid.org/0000-0002-5579-5360'
-    - name: Laurent Jacques
-      orcid: 'https://orcid.org/0000-0002-6261-0328'
-    - name: Claude Oestges
-      orcid: 'https://orcid.org/0000-0002-0902-4565'
-  doi: 10.23919/EuCAP60739.2024.10501570
-  booktitle: '2024 18th European Conference on Antennas and Propagation (EuCAP)'
-  month: 4
-  year: 2024
-  title: 'Fully Differentiable Ray Tracing via Discontinuity Smoothing for Radio Network Optimization'
-  start: 1
-  end: 5
+  - family-names: Eertmans
+    given-names: Jérome
+    orcid: "https://orcid.org/0000-0002-5579-5360"
+  - family-names: Oestges
+    given-names: Claude
+    orcid: "https://orcid.org/0000-0002-0902-4565"
+  - family-names: Jacques
+    given-names: Laurent
+    orcid: "https://orcid.org/0000-0002-6261-0328"
+  date-published: 2024-06-30
+  doi: 10.21105/joss.06915
+  issn: 2475-9066
+  issue: 98
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6915
+  title: "DiffeRT2d: A Differentiable Ray Tracing Python Framework for
+    Radio Propagation"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.06915"
+  volume: 9
+title: "DiffeRT2d: A Differentiable Ray Tracing Python Framework for
+  Radio Propagation"
