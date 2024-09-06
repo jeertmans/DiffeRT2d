@@ -270,6 +270,16 @@ class TestWall:
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2,))
 
+    @origin_dest
+    @approx
+    def test_sample_roundtrip(
+        self, origin: list, dest: list, approx: bool, key: PRNGKeyArray
+    ):
+        w = Wall(xys=jnp.array([origin, dest]))
+        point = w.sample(key=key)
+        param = w.cartesian_to_parametric(point)
+        assert is_true(w.contains_parametric(param, approx=approx), approx=approx)
+
     def test_cartesian_to_parametric(self):
         wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
         expected = jnp.array([0.5])

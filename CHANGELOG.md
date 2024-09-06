@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.4...HEAD)
 
+(unreleased-added)=
+### Added
+
++ Added `Interactable.sample` method to randomly sample a point on an object.
+  [#80](https://github.com/jeertmans/DiffeRT2d/pull/80)
+
 (unreleased-fixed)=
 ### Fixed
 
