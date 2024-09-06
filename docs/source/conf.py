@@ -56,7 +56,6 @@ rst_prolog = """
 
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
-autodoc_type_aliases = {"PRNGKeyArray": "jaxtyping.PRNGKeyArray"}
 typehints_defaults = "comma"
 
 # -- MyST-nb and MyST-parser settings
