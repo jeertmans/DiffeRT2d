@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 + Added `Interactable.sample` method to randomly sample a point on an object.
   [#80](https://github.com/jeertmans/DiffeRT2d/pull/80)
-+ Added optional second axis size in `Interactable.grid`.
++ Added optional y-axis size in `Interactable.grid`.
   [#82](https://github.com/jeertmans/DiffeRT2d/pull/82)
 
 (unreleased-fixed)=

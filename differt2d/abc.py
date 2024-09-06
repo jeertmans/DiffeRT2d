@@ -60,18 +60,19 @@ class Plottable(ABC):
         self,
         m: int = 50,
         n: Optional[int] = None,
-    ) -> tuple[Float[Array, "{m} n_or_m"], Float[Array, "{m} n_or_m"]]:
+    ) -> tuple[Float[Array, "n_or_m {m}"], Float[Array, "n_or_m {m}"]]:
         """
         Returns a (mesh) grid that overlays the current object.
 
-        :param m: The number of sample along first axis.
-        :param n: The number of sample along second axis,
+        :param m: The number of sample along x dimension.
+        :param n: The number of sample along y dimension,
             defaults to ``m`` is left unspecified.
         :return: A tuple of (X, Y) coordinates.
         """
         bounding_box = self.bounding_box()
 
-        n = n or m
+        if n is None:
+            n = m
 
         x = jnp.linspace(bounding_box[0, 0], bounding_box[1, 0], m)
         y = jnp.linspace(bounding_box[0, 1], bounding_box[1, 1], n)
