@@ -21,8 +21,8 @@ class TestPlottable:
 
         X, Y = wall.grid(25, 50)
 
-        assert X.shape == (25, 50)
-        assert Y.shape == (25, 50)
+        assert X.shape == (50, 25)
+        assert Y.shape == (50, 25)
         assert float(X.min()) == 0.0
         assert float(X.max()) == 1.0
         assert float(Y.min()) == 0.0
