@@ -19,6 +19,15 @@ class TestPlottable:
         assert float(Y.min()) == 0.0
         assert float(Y.max()) == 2.0
 
+        X, Y = wall.grid(25, 50)
+
+        assert X.shape == (25, 50)
+        assert Y.shape == (25, 50)
+        assert float(X.min()) == 0.0
+        assert float(X.max()) == 1.0
+        assert float(Y.min()) == 0.0
+        assert float(Y.max()) == 2.0
+
     def test_center(self):
         wall = Wall(xys=jnp.array([[0.0, 1.0], [1.0, 2.0]]))
 
