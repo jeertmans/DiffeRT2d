@@ -146,11 +146,11 @@ class Interactable(ABC):
         """
         pass  # pragma: no cover
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
-    def sample(self, *, key: PRNGKeyArray) -> Float[Array, "2"]:
+    def sample(self, key: PRNGKeyArray) -> Float[Array, "2"]:
         """
-        Sample a random point on this object.
+        Samples a random point on this object.
 
         :param key: The random key to be used.
         :return: The cartesian coordinates of the point.
