@@ -148,7 +148,9 @@ def segments_intersect(
     b = A[0] * C[1] - A[1] * C[0]  # beta numerator
     d = A[1] * B[0] - A[0] * B[1]  # both denominator
 
-    def test(num, den):
+    @partial(jax.jit, inline=True)
+    @jaxtyped(typechecker=typechecker)
+    def test(num: Float[Array, " "], den: Float[Array, " "]) -> Truthy:
         den_is_zero = den == 0.0
         den = jnp.where(den_is_zero, 1.0, den)
         t = jnp.where(den_is_zero, jnp.inf, num / den)
@@ -1158,12 +1160,14 @@ class FermatPath(Path, eqx.Module):
 
         n_unknowns = sum([obj.parameters_count() for obj in objects])
 
+        @jax.jit
         @jaxtyped(typechecker=typechecker)
         def loss_fun(theta: Float[Array, " n_unknowns"]) -> Float[Array, " "]:
             cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)
 
             return path_length(cartesian_coords)
 
+        @jax.jit
         @jaxtyped(typechecker=typechecker)
         def path_loss(
             cartesian_coords: Float[Array, " n_cartesian_unknowns 2"],
@@ -1250,6 +1254,7 @@ class MinPath(Path, eqx.Module):
 
         n_unknowns = sum(obj.parameters_count() for obj in objects)
 
+        @jax.jit
         @jaxtyped(typechecker=typechecker)
         def loss_fun(theta: Float[Array, " n_unknowns"]) -> Float[Array, " "]:
             cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)

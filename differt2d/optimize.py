@@ -173,6 +173,7 @@ def minimize_many_random_uniform(
 
     keys = jax.random.split(key, num=many)
 
+    @jax.jit
     def _minimize(_key):
         return minimize_random_uniform(fun, _key, n, **kwargs)
 
