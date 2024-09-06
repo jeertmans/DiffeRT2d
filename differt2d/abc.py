@@ -60,7 +60,7 @@ class Plottable(ABC):
         self,
         m: int = 50,
         n: Optional[int] = None,
-    ) -> tuple[Float[Array, "{m} {n or m}"], Float[Array, "{m} {n or n}"]]:
+    ) -> tuple[Float[Array, "{m} n_or_m"], Float[Array, "{m} n_or_m"]]:
         """
         Returns a (mesh) grid that overlays the current object.
 
