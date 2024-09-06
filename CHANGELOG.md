@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Added optional y-axis size in `Interactable.grid`.
   [#82](https://github.com/jeertmans/DiffeRT2d/pull/82)
 
+(unreleased-chore)=
+### Chore
+
++ Changed `pyperf` to `pytest-benchmark` for benchmarks.
+  [#83](https://github.com/jeertmans/DiffeRT2d/pull/83)
+
 (unreleased-fixed)=
 ### Fixed
 
