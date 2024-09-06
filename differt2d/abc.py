@@ -56,7 +56,9 @@ class Plottable(ABC):
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def grid(
-        self, m: int = 50, n: Optional[int] = None,
+        self,
+        m: int = 50,
+        n: Optional[int] = None,
     ) -> tuple[Float[Array, "{m} {n or m}"], Float[Array, "{m} {n or n}"]]:
         """
         Returns a (mesh) grid that overlays the current object.
