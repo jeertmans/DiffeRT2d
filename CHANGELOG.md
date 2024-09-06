@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.4...HEAD)
 
+(unreleased-fixed)=
+### Fixed
+
++ Fixed issues with `jax>0.4.28`.
+  [#81](https://github.com/jeertmans/DiffeRT2d/pull/81)
+
 (v0.3.4)=
 ## [v0.3.4](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.3...v0.3.4)
 

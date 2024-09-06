@@ -17,7 +17,7 @@ classifiers = [
 dependencies = [
   "beartype>=0.17.2",
   "differt-core==0.0.17",
-  "equinox>=0.11.2",
+  "equinox>=0.11.5",
   "jax>=0.4.7",
   "jaxtyping>=0.2.24",
   "matplotlib>=3.7.1",
@@ -32,6 +32,11 @@ keywords = ["ray tracing", "differentiable"]
 license = "MIT"
 name = "DiffeRT2d"
 requires-python = ">=3.9"
+
+[project.optional-dependencies]
+cuda = [
+  "jax[cuda]>=0.4.31",
+]
 
 [project.urls]
 Changelog = "https://github.com/jeertmans/DiffeRT2d/releases"

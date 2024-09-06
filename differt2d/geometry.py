@@ -148,7 +148,6 @@ def segments_intersect(
     b = A[0] * C[1] - A[1] * C[0]  # beta numerator
     d = A[1] * B[0] - A[0] * B[1]  # both denominator
 
-    @partial(jax.jit, inline=True)
     def test(num, den):
         den_is_zero = den == 0.0
         den = jnp.where(den_is_zero, 1.0, den)
@@ -331,7 +330,7 @@ class Point(Plottable, eqx.Module):
 
         return artists
 
-    @partial(jax.jit, inline=True)
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def bounding_box(self) -> Float[Array, "2 2"]:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         return jnp.vstack([self.xy, self.xy])
@@ -364,7 +363,7 @@ class Vertex(Point, Object, eqx.Module):
     def parameters_count() -> int:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         return 0
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def parametric_to_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
@@ -372,14 +371,14 @@ class Vertex(Point, Object, eqx.Module):
     ) -> Float[Array, "2"]:
         return self.xy
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self, carte_coords: Float[Array, "2"]
     ) -> Float[Array, " {self.parameters_count()}"]:  # type: ignore[reportUndefinedVariable]
         return jnp.empty_like(carte_coords, shape=0)
 
-    @partial(jax.jit, static_argnames=("approx", "function"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def contains_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
@@ -389,7 +388,7 @@ class Vertex(Point, Object, eqx.Module):
     ) -> Truthy:
         return true_value(approx=approx)
 
-    @partial(jax.jit, static_argnames=("approx", "function"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def intersects_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
@@ -400,7 +399,7 @@ class Vertex(Point, Object, eqx.Module):
     ) -> Truthy:
         return false_value(approx=approx)
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         return jnp.array(0.0, dtype=ray_path.dtype)
@@ -562,7 +561,7 @@ class Wall(Ray, Object, eqx.Module):
     def parameters_count() -> int:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         return 1
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def parametric_to_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
@@ -570,7 +569,7 @@ class Wall(Ray, Object, eqx.Module):
     ) -> Float[Array, "2"]:
         return self.origin() + param_coords * self.t()
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self, carte_coords: Float[Array, "2"]
@@ -580,7 +579,7 @@ class Wall(Ray, Object, eqx.Module):
         squared_length = jnp.where(squared_length == 0.0, 1.0, squared_length)
         return jnp.dot(self.t(), other).reshape(-1) / squared_length
 
-    @partial(jax.jit, static_argnames=("approx", "function"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def contains_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
@@ -603,7 +602,7 @@ class Wall(Ray, Object, eqx.Module):
         )
         return logical_and(ge, le, approx=approx)
 
-    @partial(jax.jit, static_argnames=("approx", "function"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def intersects_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
@@ -621,7 +620,7 @@ class Wall(Ray, Object, eqx.Module):
             **kwargs,
         )
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         i = ray_path[1, :] - ray_path[0, :]  # Incident
@@ -632,7 +631,7 @@ class Wall(Ray, Object, eqx.Module):
         e = r - (i - 2 * jnp.dot(i, n) * n)
         return jnp.dot(e, e)
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def image_of(self, point: Float[Array, "2"]) -> Float[Array, "2"]:
         """
@@ -652,7 +651,7 @@ class Wall(Ray, Object, eqx.Module):
         i = point - self.origin()
         return point - 2.0 * jnp.dot(i, self.normal()) * self.normal()
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def get_vertices(self) -> tuple[Vertex, Vertex]:
         """
@@ -677,7 +676,7 @@ class RIS(Wall, eqx.Module):
     )
     """The constant angle of reflection."""
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def evaluate_cartesian(  # noqa: D102
         self, ray_path: Float[Array, "3 2"]
@@ -727,6 +726,7 @@ class Path(Plottable, eqx.Module):
     """The loss value for the given path."""
 
     @classmethod
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def from_tx_objects_rx(
         cls,
@@ -784,7 +784,7 @@ class Path(Plottable, eqx.Module):
         xys = jnp.vstack([tx, *xys, rx])
         return cls(xys=xys)
 
-    @jax.jit
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def length(self) -> Float[Array, " "]:
         """
@@ -794,7 +794,7 @@ class Path(Plottable, eqx.Module):
         """
         return path_length(self.xys)
 
-    @partial(jax.jit, static_argnames=("approx", "function"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def on_objects(
         self,
@@ -829,7 +829,7 @@ class Path(Plottable, eqx.Module):
 
         return contains
 
-    @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def intersects_with_objects(
         self,
@@ -881,7 +881,7 @@ class Path(Plottable, eqx.Module):
 
         return intersects
 
-    @partial(jax.jit, inline=True, static_argnames=("approx", "function"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def is_valid(
         self,
@@ -991,7 +991,7 @@ class ImagePath(Path, eqx.Module):
     """A path object that was obtained with the Image method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=("cls",))
+    @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def from_tx_objects_rx(  # type: ignore
         cls,
@@ -1050,7 +1050,6 @@ class ImagePath(Path, eqx.Module):
 
         walls = stack_leaves(objects)
 
-        @jax.jit
         @jaxtyped(typechecker=typechecker)
         def path_loss(
             cartesian_coords: Float[Array, "path_length 2"],
@@ -1097,7 +1096,7 @@ class FermatPath(Path, eqx.Module):
     """A path object that was obtained with the Fermat's Principle Tracing method."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=("cls", "steps", "many", "optimizer"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=None)
     def from_tx_objects_rx(  # type: ignore
         cls,
@@ -1159,14 +1158,12 @@ class FermatPath(Path, eqx.Module):
 
         n_unknowns = sum([obj.parameters_count() for obj in objects])
 
-        @jax.jit
         @jaxtyped(typechecker=typechecker)
         def loss_fun(theta: Float[Array, " n_unknowns"]) -> Float[Array, " "]:
             cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)
 
             return path_length(cartesian_coords)
 
-        @jax.jit
         @jaxtyped(typechecker=typechecker)
         def path_loss(
             cartesian_coords: Float[Array, " n_cartesian_unknowns 2"],
@@ -1179,9 +1176,7 @@ class FermatPath(Path, eqx.Module):
 
         kwargs.setdefault("many", 1)
 
-        theta, _ = minimize_many_random_uniform(
-            fun=loss_fun, n=n_unknowns, key=key, **kwargs
-        )
+        theta, _ = minimize_many_random_uniform(loss_fun, key, n_unknowns, **kwargs)
 
         xys = parametric_to_cartesian(objects, theta, n, tx, rx)
 
@@ -1193,7 +1188,7 @@ class MinPath(Path, eqx.Module):
     """A path object that was obtained with the Min-Path-Tracing method :cite:`mpt-eucap2023`."""
 
     @classmethod
-    @partial(jax.jit, static_argnames=("cls", "steps", "many", "optimizer"))
+    @eqx.filter_jit
     @jaxtyped(typechecker=None)
     def from_tx_objects_rx(  # type: ignore
         cls,
@@ -1255,7 +1250,6 @@ class MinPath(Path, eqx.Module):
 
         n_unknowns = sum(obj.parameters_count() for obj in objects)
 
-        @jax.jit
         @jaxtyped(typechecker=typechecker)
         def loss_fun(theta: Float[Array, " n_unknowns"]) -> Float[Array, " "]:
             cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)
@@ -1267,9 +1261,7 @@ class MinPath(Path, eqx.Module):
 
         kwargs.setdefault("many", 1)
 
-        theta, loss = minimize_many_random_uniform(
-            fun=loss_fun, n=n_unknowns, key=key, **kwargs
-        )
+        theta, loss = minimize_many_random_uniform(loss_fun, key, n_unknowns, **kwargs)
 
         xys = parametric_to_cartesian(objects, theta, n, tx, rx)
 

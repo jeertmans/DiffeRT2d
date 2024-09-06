@@ -7,6 +7,7 @@
 #   all-features: false
 #   with-sources: false
 #   generate-hashes: false
+#   universal: false
 
 -e file:.
 absl-py==2.1.0
@@ -22,17 +23,18 @@ cycler==0.12.1
     # via matplotlib
 differt-core==0.0.17
     # via differt2d
-equinox==0.11.4
+equinox==0.11.5
     # via differt2d
 fonttools==4.51.0
     # via matplotlib
-jax==0.4.28
+jax==0.4.31
     # via chex
     # via differt2d
     # via equinox
     # via optax
-jaxlib==0.4.28
+jaxlib==0.4.31
     # via chex
+    # via jax
     # via optax
 jaxtyping==0.2.28
     # via differt2d
