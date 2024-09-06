@@ -94,7 +94,9 @@ jobs:
       with:
         message: |
           Benchmark results:
+          ```
           ${{ steps.compare.outputs.results }}
+          ```
         comment_tag: benchmarks
 
       id: comment
@@ -103,7 +105,9 @@ jobs:
       if: steps.comment.outcome != 'success'
       run: |
         echo '### Benchmark results' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
         echo '${{ steps.compare.outputs.results }}' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
 
   markdown-link-check:
     runs-on: ubuntu-latest
