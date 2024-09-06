@@ -130,10 +130,9 @@ venvPath = "."
 
 [tool.pytest.ini_options]
 addopts = [
-  "-n=auto",
+  "--numprocesses=logical",
   "--cov-report=xml",
   "--cov=differt2d",
-  "--ignore=benchmark.py",
   "--ignore=docs/source/examples_gallery",
   "--ignore=examples",
   "--ignore=papers",
@@ -141,6 +140,10 @@ addopts = [
   "--doctest-ignore-import-errors",
   "--doctest-glob=*.md",
   "--doctest-glob=*.rst",
+  "--benchmark-columns=mean,stddev,ops",
+  "--benchmark-group-by=group",
+  "--benchmark-warmup=on",
+  "--benchmark-skip",
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE"]
 env = [
@@ -173,7 +176,6 @@ isort = {known-first-party = ["differt2d", "tests", "utils"]}
 [tool.ruff.lint.per-file-ignores]
 "**.ipynb" = ["F821", "T201"]
 "**/{docs,examples,papers,tests}/*" = ["D"]
-"benchmark.py" = ["D"]
 
 [tool.rye]
 dev-dependencies = [
@@ -199,8 +201,8 @@ dev-dependencies = [
   "tqdm>=4.66.4",
   # tests
   "chex>=0.1.84",
-  "pyperf>=2.6.1",
   "pytest>=7.4.0",
+  "pytest-benchmark>=4.0.0",
   "pytest-cov>=4.1.0",
   "pytest-env>=0.8.2",
   "pytest-xdist>=3.3.1",

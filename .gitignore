@@ -3,6 +3,7 @@ __pycache__/
 .coverage
 .ipynb_checkpoints/
 coverage.xml
+.benchmarks/
 
 # Docs build artifacts
 docs/build/

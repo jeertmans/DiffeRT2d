@@ -65,10 +65,10 @@ jobs:
         rye pin '3.11'
 
     - name: Install Differt2D (on changes)
-      run: rye sync
+      run: rye sync --reset -f
 
     - name: Run Benchmarks on changes
-      run: rye run python benchmark.py -o changes.json
+      run: rye run pytest --benchmark-only --benchmark-save=changes tests/benchmarks
 
     - uses: actions/checkout@v4
       with:
@@ -76,15 +76,15 @@ jobs:
         clean: false
 
     - name: Install Differt2D (before changes)
-      run: rye sync
+      run: rye sync --reset -f
 
     - name: Run Benchmarks before changes
-      run: rye run python benchmark.py -o before.json
+      run: rye run pytest --benchmark-only --benchmark-save=before tests/benchmarks
 
     - name: Compare benchmarks
       run: |
         echo 'results<<EOF' >> $GITHUB_OUTPUT
-        rye run python -m pyperf compare_to --table --table-format md before.json changes.json >> $GITHUB_OUTPUT
+        rye run pytest-benchmark compare --group-by=name --columns="mean,stddev,ops" >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
       id: compare
 

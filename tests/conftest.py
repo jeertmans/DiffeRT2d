@@ -1,5 +1,3 @@
-from collections.abc import Iterator
-
 import jax
 import matplotlib.pyplot as plt
 import pytest
@@ -8,15 +6,15 @@ from matplotlib.axes import Axes
 
 
 @pytest.fixture
-def ax() -> Iterator[Axes]:
-    yield plt.gca()
+def ax() -> Axes:
+    return plt.gca()
 
 
-@pytest.fixture
-def seed() -> Iterator[int]:
-    yield 1234
+@pytest.fixture(scope="session")
+def seed() -> int:
+    return 1234
 
 
-@pytest.fixture
-def key(seed: int) -> Iterator[PRNGKeyArray]:
-    yield jax.random.PRNGKey(seed)
+@pytest.fixture(scope="session")
+def key(seed: int) -> PRNGKeyArray:
+    return jax.random.PRNGKey(seed)
