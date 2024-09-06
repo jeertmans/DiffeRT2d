@@ -12,9 +12,10 @@ from collections.abc import MutableSequence
 from typing import Any, Literal, Optional
 
 import equinox as eqx
+import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
-from jaxtyping import Array, Float, jaxtyped
+from jaxtyping import Array, Float, PRNGKeyArray, jaxtyped
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 
@@ -144,6 +145,29 @@ class Interactable(ABC):
         :return: Cartesian coordinates.
         """
         pass  # pragma: no cover
+
+    @eqx.filter_jit
+    @jaxtyped(typechecker=typechecker)
+    def sample(self, key: PRNGKeyArray) -> Float[Array, "2"]:
+        """
+        Samples a random point on this object.
+
+        :param key: The random key to be used.
+        :return: The cartesian coordinates of the point.
+
+        :Examples:
+
+        >>> from differt2d.geometry import Wall
+        >>> import jax
+        >>> import jax.numpy as jnp
+        >>> key = jax.random.PRNGKey(1234)
+        >>> wall = Wall(xys=jnp.array([[0.0, 0.0], [3.0, 4.0]]))
+        >>> wall.sample(key=key)
+        Array([0.88359046, 1.1781206 ], dtype=float32)
+        """
+        return self.parametric_to_cartesian(
+            jax.random.uniform(key=key, shape=(self.parameters_count(),))
+        )
 
     @abstractmethod
     def cartesian_to_parametric(
