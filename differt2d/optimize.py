@@ -25,9 +25,9 @@ Examples
 """
 
 import sys
-from functools import partial
 from typing import Any, Callable, Optional
 
+import equinox as eqx
 import jax
 import jax.numpy as jnp
 import optax
@@ -41,7 +41,7 @@ else:  # pragma: no cover
 Ts = TypeVarTuple("Ts")
 
 
-@partial(jax.jit, static_argnames=("fun", "steps", "optimizer"))
+@eqx.filter_jit
 @jaxtyped(typechecker=None)
 def minimize(
     fun: Callable[[Float[Array, " n"], *Ts], Float[Array, " "]],
@@ -97,7 +97,7 @@ def minimize(
     return x, losses[-1]
 
 
-@partial(jax.jit, static_argnames=("fun", "n", "steps", "optimizer"))
+@eqx.filter_jit
 @jaxtyped(typechecker=None)
 def minimize_random_uniform(
     fun: Callable[[Float[Array, " {n}"], *Ts], Float[Array, " "]],
@@ -130,10 +130,10 @@ def minimize_random_uniform(
     >>> chex.assert_trees_all_close(y, 0.0, atol=1e-3)
     """
     x0 = jax.random.uniform(key, shape=(n,))
-    return minimize(fun=fun, x0=x0, **kwargs)
+    return minimize(fun, x0, **kwargs)
 
 
-@partial(jax.jit, static_argnames=("fun", "n", "many", "steps", "optimizer"))
+@eqx.filter_jit
 @jaxtyped(typechecker=None)
 def minimize_many_random_uniform(
     fun: Callable[[Float[Array, " {n}"], *Ts], Float[Array, " "]],
@@ -169,12 +169,13 @@ def minimize_many_random_uniform(
     >>> chex.assert_trees_all_close(y, 0.0, atol=1e-4)
     """
     if many == 1:
-        return minimize_random_uniform(fun=fun, key=key, n=n, **kwargs)
+        return minimize_random_uniform(fun, key, n, **kwargs)
 
     keys = jax.random.split(key, num=many)
 
-    def _minimize(key):
-        return minimize_random_uniform(fun=fun, key=key, n=n, **kwargs)
+    @jax.jit
+    def _minimize(_key):
+        return minimize_random_uniform(fun, _key, n, **kwargs)
 
     xs, losses = jax.vmap(_minimize, in_axes=0)(keys)
 
