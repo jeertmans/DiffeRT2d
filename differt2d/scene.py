@@ -26,9 +26,17 @@ from differt_core.rt.graph import CompleteGraph, DiGraph
 from jaxtyping import Array, Float, Int, PRNGKeyArray, jaxtyped
 from matplotlib.artist import Artist
 
-from ._typing import ScalarFloat
+from ._typing import ScalarFloat, ScalarInt
 from .abc import Interactable, Loc, Object, Plottable
-from .geometry import ImagePath, Path, Point, Wall, closest_point
+from .geometry import (
+    ImagePath,
+    Path,
+    Point,
+    Wall,
+    closest_point,
+    stack_leaves,
+    unstack_leaves,
+)
 from .logic import Truthy, is_true
 
 PathFun = Callable[[Point, Point, Path, list[Interactable]], Float[Array, " "]]
@@ -298,6 +306,37 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         return self.with_objects(*self.objects, *objects)
 
+    @eqx.filter_jit
+    @jaxtyped(typechecker=typechecker)
+    def get_object(self, index: ScalarInt) -> Object:
+        """
+        Returns the object at a corresponding index.
+
+        This method provides a way to index :attr:`objects` with
+        a traced value.
+
+        :param index: The scalar index,
+            clamped between 0 and :python:`len(self.objects) - 1`.
+        :return: The object.
+        :raises TypeError: If the all objects are not of the same type.
+        """
+        branches = [lambda i=i: self.objects[i] for i in range(len(self.objects))]
+        return jax.lax.switch(index, branches)
+
+    @eqx.filter_jit
+    @jaxtyped(typechecker=typechecker)
+    def stacked_objects(self) -> Object:
+        """
+        Returns an object that is the result of stacking all objects in the scene.
+
+        :return: The stacked objects.
+
+        .. seealso::
+
+            Calls :func:`differt2d.geometry.stack_leaves`.
+        """
+        return stack_leaves(self.objects)
+
     @jaxtyped(typechecker=typechecker)
     def rename_transmitters(self, **transmitter_names: str) -> "Scene":
         """
@@ -329,6 +368,26 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             receivers[name] = point
 
         return self.with_receivers(**receivers)
+
+    @classmethod
+    @eqx.filter_jit
+    @jaxtyped(typechecker=typechecker)
+    def from_stacked_objects(cls, objects: Object) -> "Scene":
+        """
+        Creates an empty scene from stacked objects.
+
+        :param walls: Stacked object.
+        :return: The new scene.
+
+        .. seealso::
+
+            Calls :func:`differt2d.geometry.unstack_leaves`.
+        """
+        return cls(
+            transmitters={},  # type: ignore[reportArgumentType]
+            receivers={},  # type: ignore[reportArgumentType]
+            objects=unstack_leaves(objects),
+        )
 
     @classmethod
     @jaxtyped(typechecker=typechecker)

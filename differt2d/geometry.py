@@ -49,6 +49,7 @@ def stack_leaves(
     :param axis: Axis along which leaves are stacked.
     :param is_leaf: See eponym parameter from :func:`jax.tree_util.tree_map`.
     :return: A new Pytree with leaves stacked along the new axis.
+    :raise ValueError: If the all PyTrees are not of the same type.
     """
     return jax.tree_util.tree_map(
         lambda *xs: jnp.stack(xs, axis=axis), *pytrees, is_leaf=is_leaf
@@ -64,6 +65,7 @@ def unstack_leaves(pytrees) -> list[PyTree]:
     :return: A list of Pytrees, where each Pytree has the same structure
         as the input Pytree, but each leaf contains only one part of the
         original leaf.
+    :raise ValueError: If the input is not the result of stacked PyTrees.
     """
     leaves, treedef = jax.tree_util.tree_flatten(pytrees)
     return [treedef.unflatten(leaf) for leaf in zip(*leaves)]

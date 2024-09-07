@@ -87,7 +87,7 @@ def test_stack_and_unstack_leaves(key: PRNGKeyArray):
         chex.assert_trees_all_equal(w1, w2)
 
 
-def test_stack_and_unstack_different_pytrees(key: PRNGKeyArray):
+def test_stack_different_pytrees(key: PRNGKeyArray):
     scene = Scene.random_uniform_scene(key=key, n_walls=2)
     walls = list(scene.objects)
     walls[0] = RIS(xys=walls[0].xys)
