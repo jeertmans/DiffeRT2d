@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#80](https://github.com/jeertmans/DiffeRT2d/pull/80)
 + Added optional y-axis size in `Interactable.grid`.
   [#82](https://github.com/jeertmans/DiffeRT2d/pull/82)
++ Added `Scene.{get_objet,stacked_objects,from_stacked_objects}` methods.
+  [#85](https://github.com/jeertmans/DiffeRT2d/pull/85)
 
 (unreleased-chore)=
 ### Chore

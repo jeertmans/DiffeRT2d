@@ -97,6 +97,9 @@ def test_stack_and_unstack_different_pytrees(key: PRNGKeyArray):
     with pytest.raises(ValueError):
         _ = stack_leaves(walls)
 
+    with pytest.raises(ValueError):
+        _ = unstack_leaves(Wall())
+
 
 @approx
 def test_segments_intersect(approx: bool):

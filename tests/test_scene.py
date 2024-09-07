@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import get_args
 
 import chex
+import jax
 import jax.numpy as jnp
 import pytest
 
@@ -124,6 +125,40 @@ class TestScene:
         scene = scene.add_objects(Wall())
 
         assert len(scene.objects) == 3
+
+    def test_get_object(self, key):
+        scene = Scene(objects=[Wall(), Wall()])
+
+        @jax.jit
+        def jitted_function(scene: Scene):
+            index = jax.random.randint(key, (), 0, 3)
+            return scene.get_object(index)
+        
+        got = jitted_function(scene)
+
+        assert got in scene.objects
+
+        got = scene.get_object(0)
+
+        chex.assert_trees_all_equal(got, scene.objects[0])
+
+        scene = scene.add_objects(RIS())
+    
+        with pytest.raises(TypeError):
+            _ = scene.get_object(0)
+
+    def test_stacked_objects(self):
+        scene = Scene(objects=[Wall(), Wall()])
+        objects = scene.stacked_objects()
+        got = Scene.from_stacked_objects(objects)
+
+        chex.assert_trees_all_equal(got, scene)
+
+        ris = RIS()
+        scene = scene.add_objects(ris)
+
+        with pytest.raises(ValueError):
+            _ = scene.stacked_objects()
 
     def test_rename_transmitters(self):
         scene = Scene(transmitters={"a": Point(), "b": Point()})
