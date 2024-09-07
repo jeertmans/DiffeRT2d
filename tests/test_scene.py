@@ -133,7 +133,7 @@ class TestScene:
         def jitted_function(scene: Scene):
             index = jax.random.randint(key, (), 0, 3)
             return scene.get_object(index)
-        
+
         got = jitted_function(scene)
 
         assert got in scene.objects
@@ -143,7 +143,7 @@ class TestScene:
         chex.assert_trees_all_equal(got, scene.objects[0])
 
         scene = scene.add_objects(RIS())
-    
+
         with pytest.raises(TypeError):
             _ = scene.get_object(0)
 

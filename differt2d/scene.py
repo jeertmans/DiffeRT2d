@@ -28,7 +28,15 @@ from matplotlib.artist import Artist
 
 from ._typing import ScalarFloat, ScalarInt
 from .abc import Interactable, Loc, Object, Plottable
-from .geometry import ImagePath, Path, Point, Wall, closest_point, stack_leaves, unstack_leaves
+from .geometry import (
+    ImagePath,
+    Path,
+    Point,
+    Wall,
+    closest_point,
+    stack_leaves,
+    unstack_leaves,
+)
 from .logic import Truthy, is_true
 
 PathFun = Callable[[Point, Point, Path, list[Interactable]], Float[Array, " "]]
