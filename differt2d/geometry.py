@@ -1182,7 +1182,7 @@ class FermatPath(Path, eqx.Module):
 
         kwargs.setdefault("many", 1)
 
-        theta, _ = minimize_many_random_uniform(loss_fun, key, n_unknowns, **kwargs)
+        theta, _ = minimize_many_random_uniform(loss_fun, key, n_unknowns, **kwargs)  # type: ignore[reportArgumentType]
 
         xys = parametric_to_cartesian(objects, theta, n, tx, rx)
 
@@ -1268,7 +1268,7 @@ class MinPath(Path, eqx.Module):
 
         kwargs.setdefault("many", 1)
 
-        theta, loss = minimize_many_random_uniform(loss_fun, key, n_unknowns, **kwargs)
+        theta, loss = minimize_many_random_uniform(loss_fun, key, n_unknowns, **kwargs)  # type: ignore[reportArgumentType]
 
         xys = parametric_to_cartesian(objects, theta, n, tx, rx)
 

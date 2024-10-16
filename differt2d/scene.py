@@ -96,12 +96,12 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
     def __getitem__(self, key: _K) -> _V:
         try:
             index = self._keys.index(key)
-            return self._values[index]
+            return self._values[index]  # type: ignore[reportReturnType]
         except ValueError as e:
             raise KeyError from e
 
     def __iter__(self) -> Iterator[_K]:
-        return iter(self._keys)
+        return iter(self._keys)  # type: ignore[reportReturnType]
 
     def __len__(self) -> int:
         return len(self._keys)
@@ -401,7 +401,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         return cls(
             transmitters={},  # type: ignore[reportArgumentType]
             receivers={},  # type: ignore[reportArgumentType]
-            objects=[Wall(xys=xys) for xys in walls],
+            objects=[Wall(xys=xys) for xys in walls],  # type: ignore[reportArgumentType]
         )
 
     @singledispatchmethod
@@ -705,7 +705,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             Wall(xys=points[2 * i + n_transmitters : 2 * i + 2 + n_transmitters, :])
             for i in range(n_walls)
         ]
-        return cls(transmitters=transmitters, receivers=receivers, objects=walls)
+        return cls(
+            transmitters=transmitters,
+            receivers=receivers,
+            objects=walls,  # type: ignore[reportArgumentType]
+        )
 
     @classmethod
     def basic_scene(
@@ -759,7 +763,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             Wall(xys=jnp.array([[0.1, 0.4], [0.0, 0.4]])),
         ]
 
-        return cls(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
+        return cls(
+            transmitters={"tx": tx},
+            receivers={"rx": rx},
+            objects=walls,  # type: ignore[reportArgumentType]
+        )
 
     @classmethod
     def square_scene(
@@ -808,7 +816,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             Wall(xys=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
         ]
 
-        return cls(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
+        return cls(
+            transmitters={"tx": tx},
+            receivers={"rx": rx},
+            objects=walls,  # type: ignore[reportArgumentType]
+        )
 
     @classmethod
     def square_scene_with_wall(

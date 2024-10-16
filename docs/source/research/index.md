@@ -22,6 +22,7 @@ Publications in 2024.
 :hidden:
 
 ../notebooks/cost20120_helsinki_model
+../notebooks/cost20120_helsinki_improved_model
 ```
 
 At the COST Meeting held in Helsinkin, June 2024,
@@ -32,6 +33,12 @@ data, and (2) constructing the actual ray paths from the sampled path candidates
 
 The model is completely open source and is detailed in
 [this notebook](../notebooks/cost20120_helsinki_model.ipynb).
+
+:::{note}
+A work-in-progress improved version of this
+model can be found in
+[this notebook](../notebooks/cost20120_helsinki_improved_model.ipynb).
+:::
 
 ### Journal of Open Source Software
 
