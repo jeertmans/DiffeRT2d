@@ -23,7 +23,6 @@ __all__ = (
     "ENABLE_APPROX",
     "Truthy",
     "activation",
-    "set_approx",
     "disable_approx",
     "enable_approx",
     "greater",
@@ -38,6 +37,7 @@ __all__ = (
     "logical_any",
     "logical_not",
     "logical_or",
+    "set_approx",
     "sigmoid",
 )
 
