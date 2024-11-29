@@ -13,7 +13,7 @@ plt.rcParams.update(
         "text.usetex": True,
         "pgf.rcfonts": False,
         "image.cmap": "plasma",
-    }
+    },
 )
 
 

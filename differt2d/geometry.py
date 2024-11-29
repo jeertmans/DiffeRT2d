@@ -1,5 +1,6 @@
 """Geometrical objects to be placed in a :class:`differt2d.scene.Scene`."""
 
+import sys
 from collections.abc import Iterable, Mapping, MutableSequence, Sequence
 from functools import partial
 from typing import Any, Callable, Optional, TypeVar, Union
@@ -29,6 +30,11 @@ from .logic import (
 )
 from .optimize import minimize_many_random_uniform
 
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 T = TypeVar("T")
 P = TypeVar("P", bound=PyTree)
 
@@ -52,7 +58,9 @@ def stack_leaves(
     :raise ValueError: If the all PyTrees are not of the same type.
     """
     return jax.tree_util.tree_map(
-        lambda *xs: jnp.stack(xs, axis=axis), *pytrees, is_leaf=is_leaf
+        lambda *xs: jnp.stack(xs, axis=axis),
+        *pytrees,
+        is_leaf=is_leaf,
     )
 
 
@@ -162,9 +170,7 @@ def segments_intersect(
             approx=approx,
         )
 
-    intersect = logical_and(test(a, d), test(b, d), approx=approx)
-
-    return intersect
+    return logical_and(test(a, d), test(b, d), approx=approx)
 
 
 @partial(jax.jit, inline=True)
@@ -227,7 +233,8 @@ def normalize(vector: Float[Array, "2"]) -> tuple[Float[Array, "2"], Float[Array
 @partial(jax.jit, inline=True)
 @jaxtyped(typechecker=typechecker)
 def closest_point(
-    points: Float[Array, "N 2"], target: Float[Array, "2"]
+    points: Float[Array, "N 2"],
+    target: Float[Array, "2"],
 ) -> tuple[Int[Array, " "], Float[Array, " "]]:
     """
     Returns the index of the closest point to some target, and the actual distance.
@@ -261,7 +268,7 @@ def closest_point(
 
 
 @jaxtyped(typechecker=typechecker)
-class Point(Plottable, eqx.Module):
+class Point(eqx.Module, Plottable):
     """
     A point object defined by its coordinates.
 
@@ -282,7 +289,8 @@ class Point(Plottable, eqx.Module):
     """
 
     xy: Float[Array, "2"] = eqx.field(
-        converter=jnp.asarray, default_factory=lambda: jnp.zeros(2)
+        converter=jnp.asarray,
+        default_factory=lambda: jnp.zeros(2),
     )
     """Cartesian coordinates."""
 
@@ -316,12 +324,13 @@ class Point(Plottable, eqx.Module):
                 y,
                 *args,
                 **kwargs,
-            )
+            ),
         ]
 
         if annotate:
             xytext: tuple[float, float] = self.xy + jnp.asarray(
-                annotate_offset, dtype=float
+                annotate_offset,
+                dtype=float,
             )  # type: ignore
             artists.append(
                 ax.annotate(
@@ -329,7 +338,7 @@ class Point(Plottable, eqx.Module):
                     xy=(x, y),
                     xytext=(xytext[0], xytext[1]),
                     **annotate_kwargs,
-                )
+                ),
             )
 
         return artists
@@ -341,7 +350,7 @@ class Point(Plottable, eqx.Module):
 
 
 @jaxtyped(typechecker=typechecker)
-class Vertex(Point, Object, eqx.Module):
+class Vertex(Point, Object):
     """
     A vertex for corner diffraction.
 
@@ -378,7 +387,8 @@ class Vertex(Point, Object, eqx.Module):
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
-        self, carte_coords: Float[Array, "2"]
+        self,
+        carte_coords: Float[Array, "2"],
     ) -> Float[Array, " {self.parameters_count()}"]:  # type: ignore[reportUndefinedVariable]
         return jnp.empty_like(carte_coords, shape=0)
 
@@ -410,7 +420,10 @@ class Vertex(Point, Object, eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     def plot(  # noqa: D102
-        self, ax: Axes, *args: Any, **kwargs: Any
+        self,
+        ax: Axes,
+        *args: Any,
+        **kwargs: Any,
     ) -> MutableSequence[Artist]:  # pragma: no cover
         kwargs.setdefault("edgecolors", "black")
         kwargs.setdefault("facecolors", (1.0, 1.0, 0.0, 0.5))
@@ -419,7 +432,7 @@ class Vertex(Point, Object, eqx.Module):
 
 
 @jaxtyped(typechecker=typechecker)
-class Ray(Plottable, eqx.Module):
+class Ray(eqx.Module):
     """
     A ray object with origin and destination points.
 
@@ -474,12 +487,12 @@ class Ray(Plottable, eqx.Module):
         return self.dest() - self.origin()
 
     @partial(jax.jit, inline=True)
-    @jaxtyped(typechecker=typechecker)
+    @jaxtyped(typechecker=None)
     def rotate(
         self,
         angle: ScalarFloat,
         around: Optional[Union[Float[Array, "2"], Point]] = None,
-    ) -> "Ray":
+    ) -> Self:
         """
         Returns a rotated copy of this ray.
 
@@ -527,7 +540,7 @@ class Ray(Plottable, eqx.Module):
 
 
 @jaxtyped(typechecker=typechecker)
-class Wall(Ray, Object, eqx.Module):
+class Wall(Ray, Object):
     """
     A wall object defined by its corners.
 
@@ -576,7 +589,8 @@ class Wall(Ray, Object, eqx.Module):
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
-        self, carte_coords: Float[Array, "2"]
+        self,
+        carte_coords: Float[Array, "2"],
     ) -> Float[Array, " {self.parameters_count()}"]:  # type: ignore[reportUndefinedVariable]
         other = carte_coords - self.origin()
         squared_length = jnp.dot(self.t(), self.t())
@@ -667,7 +681,7 @@ class Wall(Ray, Object, eqx.Module):
 
 
 @jaxtyped(typechecker=typechecker)
-class RIS(Wall, eqx.Module):
+class RIS(Wall):
     """
     A very basic Reflective Intelligent Surface (RIS) object.
 
@@ -676,14 +690,16 @@ class RIS(Wall, eqx.Module):
     """
 
     phi: Float[Array, " "] = eqx.field(
-        converter=jnp.asarray, default_factory=lambda: jnp.array(jnp.pi / 4)
+        converter=jnp.asarray,
+        default_factory=lambda: jnp.array(jnp.pi / 4),
     )
     """The constant angle of reflection."""
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def evaluate_cartesian(  # noqa: D102
-        self, ray_path: Float[Array, "3 2"]
+        self,
+        ray_path: Float[Array, "3 2"],
     ) -> Float[Array, " "]:
         r = ray_path[2, :] - ray_path[1, :]  # Reflected
         n = self.normal()  # Normal
@@ -696,14 +712,17 @@ class RIS(Wall, eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     def plot(  # noqa: D102
-        self, ax: Axes, *args: Any, **kwargs: Any
+        self,
+        ax: Axes,
+        *args: Any,
+        **kwargs: Any,
     ) -> MutableSequence[Artist]:  # pragma: no cover
         kwargs.setdefault("color", "green")
         return super().plot(ax, *args, **kwargs)
 
 
 @jaxtyped(typechecker=typechecker)
-class Path(Plottable, eqx.Module):
+class Path(eqx.Module, Plottable):
     """
     A path object with at least two points.
 
@@ -725,13 +744,14 @@ class Path(Plottable, eqx.Module):
     """Array of cartesian coordinates."""
 
     loss: Float[Array, " "] = eqx.field(
-        converter=jnp.asarray, default_factory=lambda: jnp.array(0.0)
+        converter=jnp.asarray,
+        default_factory=lambda: jnp.array(0.0),
     )
     """The loss value for the given path."""
 
     @classmethod
     @eqx.filter_jit
-    @jaxtyped(typechecker=typechecker)
+    @jaxtyped(typechecker=None)
     def from_tx_objects_rx(
         cls,
         tx: Union[Float[Array, "2"], Point],
@@ -740,7 +760,7 @@ class Path(Plottable, eqx.Module):
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs: Any,
-    ) -> "Path":
+    ) -> Self:
         """
         Returns a path from TX to RX, traversing each object in the list in the provided order.
 
@@ -858,7 +878,7 @@ class Path(Plottable, eqx.Module):
             :func:`activation<differt2d.logic.activation>`.
         :return: Whether this path intersects any of the objects.
         """
-        interacting_object_indices = [-1] + [i for i in path_candidate] + [-1]
+        interacting_object_indices = [-1, *list(path_candidate), -1]
         intersects = false_value(approx=approx)
 
         for i in range(self.xys.shape[0] - 1):
@@ -939,7 +959,7 @@ class Path(Plottable, eqx.Module):
                 ),
                 less(self.loss, jnp.asarray(tol), approx=approx, **kwargs),
                 approx=approx,
-            )
+            ),
         )
 
     @jaxtyped(typechecker=typechecker)
@@ -983,7 +1003,7 @@ def parametric_to_cartesian(  # noqa: D103
     for i, obj in enumerate(objects):
         size = obj.parameters_count()
         cartesian_coords = cartesian_coords.at[i + 1].set(
-            parametric_to_cartesian_from_slice(obj, parametric_coords, j, size)
+            parametric_to_cartesian_from_slice(obj, parametric_coords, j, size),
         )
         j += size
 
@@ -991,12 +1011,12 @@ def parametric_to_cartesian(  # noqa: D103
 
 
 @jaxtyped(typechecker=typechecker)
-class ImagePath(Path, eqx.Module):
+class ImagePath(Path):
     """A path object that was obtained with the Image method."""
 
     @classmethod
     @eqx.filter_jit
-    @jaxtyped(typechecker=typechecker)
+    @jaxtyped(typechecker=None)
     def from_tx_objects_rx(  # type: ignore
         cls,
         tx: Union[Float[Array, "2"], Point],
@@ -1005,7 +1025,7 @@ class ImagePath(Path, eqx.Module):
         *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs: Any,
-    ) -> "ImagePath":
+    ) -> Self:
         """
         Returns a path with minimal length.
 
@@ -1066,14 +1086,16 @@ class ImagePath(Path, eqx.Module):
 
         @jaxtyped(typechecker=typechecker)
         def forward(
-            image: Float[Array, "2"], wall: Wall
+            image: Float[Array, "2"],
+            wall: Wall,
         ) -> tuple[Float[Array, "2"], Float[Array, "2"]]:
             image = wall.image_of(image)
             return image, image
 
         @jaxtyped(typechecker=typechecker)
         def backward(
-            point: Float[Array, "2"], x: tuple[Wall, Float[Array, "2"]]
+            point: Float[Array, "2"],
+            x: tuple[Wall, Float[Array, "2"]],
         ) -> tuple[Float[Array, "2"], Float[Array, "2"]]:
             wall, image = x
             p = wall.origin()
@@ -1096,7 +1118,7 @@ class ImagePath(Path, eqx.Module):
 
 
 @jaxtyped(typechecker=typechecker)
-class FermatPath(Path, eqx.Module):
+class FermatPath(Path):
     """A path object that was obtained with the Fermat's Principle Tracing method."""
 
     @classmethod
@@ -1110,7 +1132,7 @@ class FermatPath(Path, eqx.Module):
         *,
         key: PRNGKeyArray,
         **kwargs: Any,
-    ) -> "FermatPath":
+    ) -> Self:
         """
         Returns a path with minimal length.
 
@@ -1160,7 +1182,7 @@ class FermatPath(Path, eqx.Module):
             xys = jnp.vstack([tx, rx])
             return cls(xys=xys, loss=jnp.array(0.0))
 
-        n_unknowns = sum([obj.parameters_count() for obj in objects])
+        n_unknowns = sum(obj.parameters_count() for obj in objects)
 
         @jax.jit
         @jaxtyped(typechecker=typechecker)
@@ -1190,7 +1212,7 @@ class FermatPath(Path, eqx.Module):
 
 
 @jaxtyped(typechecker=typechecker)
-class MinPath(Path, eqx.Module):
+class MinPath(Path):
     """A path object that was obtained with the Min-Path-Tracing method :cite:`mpt-eucap2023`."""
 
     @classmethod
@@ -1204,7 +1226,7 @@ class MinPath(Path, eqx.Module):
         *,
         key: PRNGKeyArray,
         **kwargs: Any,
-    ) -> "MinPath":
+    ) -> Self:
         """
         Returns a path that minimizes the sum of interactions.
 

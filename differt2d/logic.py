@@ -23,7 +23,6 @@ __all__ = (
     "ENABLE_APPROX",
     "Truthy",
     "activation",
-    "set_approx",
     "disable_approx",
     "enable_approx",
     "greater",
@@ -38,13 +37,14 @@ __all__ = (
     "logical_any",
     "logical_not",
     "logical_or",
+    "set_approx",
     "sigmoid",
 )
 
 import os
 from contextlib import contextmanager
 from functools import partial
-from threading import Lock
+from threading import RLock
 from typing import Any, Callable, Optional, Union
 
 import jax
@@ -58,14 +58,14 @@ from .defaults import DEFAULT_ALPHA
 ENABLE_APPROX: bool = "ENABLE_APPROX" in os.environ
 """Enable approximation using some activation function."""
 
-_LOCK = Lock()
+_LOCK = RLock()
 """Lock to prevent mutating ``ENABLE_APPROX`` in multiple threads."""
 
 Truthy = Union[Bool[Array, " *batch"], Float[Array, " *batch"]]
 """An array of truthy values, either booleans or floats between 0 and 1."""
 
 
-def set_approx(enable: bool):
+def set_approx(enable: bool) -> None:
     """
     Enable or disable the approximation in future function calls.
 
@@ -87,7 +87,8 @@ def set_approx(enable: bool):
     """
     global ENABLE_APPROX
 
-    ENABLE_APPROX = enable
+    with _LOCK:
+        ENABLE_APPROX = enable
 
 
 @contextmanager

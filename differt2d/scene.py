@@ -3,9 +3,11 @@
 __all__ = ("Scene", "SceneName")
 
 import json
+import operator
+import sys
 from abc import abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from functools import singledispatchmethod
+from functools import cache, singledispatchmethod
 from itertools import groupby, product
 from typing import (
     Any,
@@ -39,6 +41,12 @@ from .geometry import (
 )
 from .logic import Truthy, is_true
 
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
+
 PathFun = Callable[[Point, Point, Path, list[Interactable]], Float[Array, " "]]
 
 S = Union[str, bytes, bytearray]
@@ -68,20 +76,23 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
     time is linear with the size of the mapping.
     """
 
-    _keys: tuple[_K, ...] = eqx.field(converter=lambda seq: tuple(seq), static=True)
+    _keys: tuple[_K, ...] = eqx.field(converter=tuple, static=True)
     """The sequence of keys."""
-    _values: tuple[_V, ...] = eqx.field(converter=lambda seq: tuple(seq))
+    _values: tuple[_V, ...] = eqx.field(converter=tuple)
     """The sequence of values."""
 
     def __check_init__(self):
         if len(self._keys) != len(self._values):
-            raise ValueError(
+            msg = (
                 "Number of keys must match number of values, "
                 f"got {len(self._keys)} and {len(self._values)}."
             )
+            raise ValueError(
+                msg,
+            )
 
     @classmethod
-    def from_mapping(cls, mapping: Mapping[_K, _V]) -> "PyTreeDict":
+    def from_mapping(cls, mapping: Mapping[_K, _V]) -> Self:
         """
         Constructs an immutable mapping from another mapping.
 
@@ -107,7 +118,7 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
         return len(self._keys)
 
 
-@eqx.filter_jit
+@cache
 def all_path_candidates(
     num_nodes: int,
     min_order: int = 0,
@@ -155,29 +166,32 @@ def all_path_candidates(
         jnp.asarray(path_candidate, dtype=jnp.int32)
         for order in range(min_order, max_order + 1)
         for path_candidate in graph.all_paths(
-            from_, to, order + 2, include_from_and_to=False
+            from_,
+            to,
+            order + 2,
+            include_from_and_to=False,
         )
     ]
 
 
-class Scene(Plottable, eqx.Module, Generic[_O]):
+class Scene(eqx.Module, Plottable, Generic[_O]):
     """2D Scene made of objects, one or more transmitting node(s), and one or more receiving node(s)."""
 
     transmitters: Mapping[str, Point] = eqx.field(
-        converter=lambda d: PyTreeDict.from_mapping(d),
+        converter=PyTreeDict.from_mapping,
         default_factory=lambda: PyTreeDict.from_mapping({}),
     )
     """The transmitting nodes."""
     receivers: Mapping[str, Point] = eqx.field(
-        converter=lambda d: PyTreeDict.from_mapping(d),
+        converter=PyTreeDict.from_mapping,
         default_factory=lambda: PyTreeDict.from_mapping({}),
     )
     """The receiving nodes."""
     objects: Sequence[_O] = ()
     """The sequence of objects in the scene."""
 
-    @jaxtyped(typechecker=typechecker)
-    def with_transmitters(self, **transmitters: Point) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def with_transmitters(self, **transmitters: Point) -> Self:
         """
         Returns a copy of this scene, with the given transmitters.
 
@@ -185,11 +199,13 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :return: The new scene.
         """
         return eqx.tree_at(
-            lambda s: s.transmitters, self, PyTreeDict.from_mapping(transmitters)
+            lambda s: s.transmitters,
+            self,
+            PyTreeDict.from_mapping(transmitters),
         )
 
-    @jaxtyped(typechecker=typechecker)
-    def with_receivers(self, **receivers: Point) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def with_receivers(self, **receivers: Point) -> Self:
         """
         Returns a copy of this scene, with the given receivers.
 
@@ -197,11 +213,13 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         :return: The new scene.
         """
         return eqx.tree_at(
-            lambda s: s.receivers, self, PyTreeDict.from_mapping(receivers)
+            lambda s: s.receivers,
+            self,
+            PyTreeDict.from_mapping(receivers),
         )
 
-    @jaxtyped(typechecker=typechecker)
-    def with_objects(self, *objects: Object) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def with_objects(self, *objects: Object) -> Self:
         """
         Returns a copy of this scene, with the given objects.
 
@@ -210,8 +228,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         return eqx.tree_at(lambda s: s.objects, self, tuple(objects))
 
-    @jaxtyped(typechecker=typechecker)
-    def filter_objects(self, filter_spec: Callable[[Object], bool]) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def filter_objects(self, filter_spec: Callable[[Object], bool]) -> Self:
         """
         Returns a copy of this scene, with the given objects filtered out.
 
@@ -259,11 +277,13 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             plt.show()  # doctest: +SKIP
         """
         return eqx.tree_at(
-            lambda s: s.objects, self, tuple(filter(filter_spec, self.objects))
+            lambda s: s.objects,
+            self,
+            tuple(filter(filter_spec, self.objects)),
         )
 
-    @jaxtyped(typechecker=typechecker)
-    def update_transmitters(self, **transmitters: Point) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def update_transmitters(self, **transmitters: Point) -> Self:
         """
         Returns a copy of this scene, with the updated transmitters.
 
@@ -279,8 +299,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             PyTreeDict.from_mapping({**self.transmitters, **transmitters}),
         )
 
-    @jaxtyped(typechecker=typechecker)
-    def update_receivers(self, **receivers: Point) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def update_receivers(self, **receivers: Point) -> Self:
         """
         Returns a copy of this scene, with the updated receivers.
 
@@ -296,8 +316,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             PyTreeDict.from_mapping({**self.receivers, **receivers}),
         )
 
-    @jaxtyped(typechecker=typechecker)
-    def add_objects(self, *objects: Object) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def add_objects(self, *objects: Object) -> Self:
         """
         Returns a copy of this scene, with the given objects, plus the scene objects.
 
@@ -337,8 +357,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         return stack_leaves(self.objects)
 
-    @jaxtyped(typechecker=typechecker)
-    def rename_transmitters(self, **transmitter_names: str) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def rename_transmitters(self, **transmitter_names: str) -> Self:
         """
         Returns a copy of this scene, with the specified transmitters renamed.
 
@@ -353,8 +373,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         return self.with_transmitters(**transmitters)
 
-    @jaxtyped(typechecker=typechecker)
-    def rename_receivers(self, **receiver_names: str) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def rename_receivers(self, **receiver_names: str) -> Self:
         """
         Returns a copy of this scene, with the specified receivers renamed.
 
@@ -371,8 +391,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
     @classmethod
     @eqx.filter_jit
-    @jaxtyped(typechecker=typechecker)
-    def from_stacked_objects(cls, objects: Object) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def from_stacked_objects(cls, objects: Object) -> Self:
         """
         Creates an empty scene from stacked objects.
 
@@ -390,8 +410,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         )
 
     @classmethod
-    @jaxtyped(typechecker=typechecker)
-    def from_walls_array(cls, walls: Float[Array, "num_walls 2 2"]) -> "Scene":
+    @jaxtyped(typechecker=None)
+    def from_walls_array(cls, walls: Float[Array, "num_walls 2 2"]) -> Self:
         """
         Creates an empty scene from an array of walls.
 
@@ -407,8 +427,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
     @singledispatchmethod
     @classmethod
     def from_geojson(
-        cls, s_or_fp: Union[S, Readable], tx_loc: Loc = "NW", rx_loc: Loc = "SE"
-    ) -> "Scene":
+        cls,
+        s_or_fp: Union[S, Readable],
+        tx_loc: Loc = "NW",
+        rx_loc: Loc = "SE",
+    ) -> Self:
         r"""
         Creates a scene from a GEOJSON file, generating one Wall per line segment. TX and RX positions are located on the corner of the bounding box.
 
@@ -598,13 +621,14 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             scene = Scene.from_geojson(s)
             _ = scene.plot(ax)
         """
-        raise NotImplementedError(f"Unsupported type {type(s_or_fp)}")
+        msg = f"Unsupported type {type(s_or_fp)}"
+        raise NotImplementedError(msg)
 
     @from_geojson.register(str)
     @from_geojson.register(bytes)
     @from_geojson.register(bytearray)
     @classmethod
-    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> "Scene":
+    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> Self:
         dictionary = json.loads(s)
 
         features = dictionary.get("features", [])
@@ -620,7 +644,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                 if _type == "Polygon":
                     for i in range(n):
                         xys = jnp.array(
-                            [coordinates[i - 1], coordinates[i]], dtype=float
+                            [coordinates[i - 1], coordinates[i]],
+                            dtype=float,
                         )
                         wall = Wall(xys=xys)
                         walls.append(wall)
@@ -638,13 +663,11 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
     @from_geojson.register(Readable)
     @classmethod
-    def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> "Scene":
+    def _(cls, fp: Readable, *args: Any, **kwargs: Any) -> Self:
         return cls.from_geojson(fp.read(), *args, **kwargs)
 
     @classmethod
-    def from_scene_name(
-        cls, scene_name: SceneName, *args: Any, **kwargs: Any
-    ) -> "Scene":
+    def from_scene_name(cls, scene_name: SceneName, *args: Any, **kwargs: Any) -> Self:
         """
         Generates a new scene from the given scene name.
 
@@ -665,7 +688,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         n_receivers: int = 1,
         *,
         key: PRNGKeyArray,
-    ) -> "Scene":
+    ) -> Self:
         """
         Generates a random scene, drawing coordinates from a random distribution.
 
@@ -692,7 +715,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         """
         points = jax.random.uniform(
-            key, (n_transmitters + 2 * n_walls + n_receivers, 2)
+            key,
+            (n_transmitters + 2 * n_walls + n_receivers, 2),
         )
         transmitters = {
             f"tx_{i}": Point(xy=points[i, :]) for i in range(n_transmitters)
@@ -712,7 +736,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         cls,
         tx_coords: Float[Array, "2"] = jnp.array([0.1, 0.1]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.302, 0.2147]),  # noqa: B008
-    ) -> "Scene":
+    ) -> Self:
         """
         Instantiates a basic scene with a main room, and a second inner room in the lower left corner, with a small entrance.
 
@@ -766,7 +790,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         cls,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.2]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.5, 0.6]),  # noqa: B008
-    ) -> "Scene":
+    ) -> Self:
         """
         Instantiates a square scene with one main room.
 
@@ -813,10 +837,10 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
     @classmethod
     def square_scene_with_wall(
         cls,
-        ratio: float = 0.1,
+        ratio: float = 0.6,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.5]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.8, 0.5]),  # noqa: B008
-    ) -> "Scene":
+    ) -> Self:
         """
         Instantiates a square scene with one main room, and vertical wall in the middle.
 
@@ -852,14 +876,16 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         """
         scene = Scene.square_scene(tx_coords=tx_coords, rx_coords=rx_coords)
 
-        scene = scene.add_objects(Wall(xys=jnp.array([[0.5, 0.2], [0.5, 0.8]])))
-
-        return scene
+        return scene.add_objects(
+            Wall(xys=jnp.array([[0.5, 0.5 * (1 - ratio)], [0.5, 0.5 * (1 + ratio)]])),
+        )
 
     @classmethod
     def square_scene_with_obstacle(
-        cls, ratio: ScalarFloat = 0.1, **kwargs: Any
-    ) -> "Scene":
+        cls,
+        ratio: ScalarFloat = 0.1,
+        **kwargs: Any,
+    ) -> Self:
         """
         Instantiates a square scene with one main room, and one square obstacle in the center.
 
@@ -900,14 +926,12 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         x0, x1 = 0.5 - hl, 0.5 + hl
         y0, y1 = 0.5 - hl, 0.5 + hl
 
-        scene = scene.add_objects(
+        return scene.add_objects(
             Wall(xys=jnp.array([[x0, y0], [x1, y0]])),
             Wall(xys=jnp.array([[x1, y0], [x1, y1]])),
             Wall(xys=jnp.array([[x1, y1], [x0, y1]])),
             Wall(xys=jnp.array([[x0, y1], [x0, y0]])),
         )
-
-        return scene
 
     def plot(
         self,
@@ -971,13 +995,13 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                         annotate=tx_key if annotate else None,
                         **transmitters_kwargs,
                         **kwargs,
-                    )
+                    ),
                 )
 
         if objects:
             for obj in self.objects:
                 artists.extend(
-                    obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs)  # type: ignore[union-attr]
+                    obj.plot(ax, *objects_args, *args, **objects_kwargs, **kwargs),  # type: ignore[union-attr]
                 )
 
         if receivers:
@@ -990,7 +1014,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                         annotate=rx_key if annotate else None,
                         **receivers_kwargs,
                         **kwargs,
-                    )
+                    ),
                 )
 
         return artists
@@ -1007,12 +1031,13 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             [
                 jnp.min(bounding_boxes[0, :, :], axis=1),
                 jnp.max(bounding_boxes[1, :, :], axis=1),
-            ]
+            ],
         )
 
     @jaxtyped(typechecker=typechecker)
     def get_closest_transmitter(
-        self, coords: Float[Array, "2"]
+        self,
+        coords: Float[Array, "2"],
     ) -> tuple[str, Float[Array, " "]]:
         """
         Returns the closest transmitter to the given coordinates.
@@ -1028,7 +1053,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
     @jaxtyped(typechecker=typechecker)
     def get_closest_receiver(
-        self, coords: Float[Array, "2"]
+        self,
+        coords: Float[Array, "2"],
     ) -> tuple[str, Float[Array, " "]]:
         """
         Returns the closest receivers to the given coordinates.
@@ -1107,7 +1133,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
         )
 
     def get_interacting_objects(
-        self, path_candidate: Int[Array, " order"]
+        self,
+        path_candidate: Int[Array, " order"],
     ) -> list[Interactable]:
         """
         Returns the list of interacting objects from a path candidate.
@@ -1209,7 +1236,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
             (transmitter name, receiver name, path, path_candidate) tuples.
         """
         for tx_key, rx_key, valid, path, path_candidate in self.all_paths(
-            approx=approx, **kwargs
+            approx=approx,
+            **kwargs,
         ):
             if is_true(valid, approx=approx):
                 yield (tx_key, rx_key, path, path_candidate)
@@ -1248,7 +1276,8 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
 
         def results() -> Iterator[tuple[str, str, Float[Array, " "]]]:
             for (tx_key, rx_key), paths_group in groupby(
-                self.all_paths(**kwargs), lambda key: key[:2]
+                self.all_paths(**kwargs),
+                operator.itemgetter(slice(2)),
             ):
                 acc = jnp.array(0.0)
                 transmitter = self.transmitters[tx_key]
@@ -1274,8 +1303,7 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                 Z = Z + p
 
             return Z
-        else:
-            return results()
+        return results()
 
     def accumulate_on_transmitters_grid_over_paths(  # noqa: C901
         self,
@@ -1431,14 +1459,12 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     dZ = dZ + dp
 
                 return Z, dZ
-            else:
-                Z = jnp.array(0.0)
-                for _, p in results():
-                    Z = Z + p
+            Z = jnp.array(0.0)
+            for _, p in results():
+                Z = Z + p
 
-                return Z
-        else:
-            return results()
+            return Z
+        return results()
 
     def accumulate_on_receivers_grid_over_paths(  # noqa: C901
         self,
@@ -1585,11 +1611,9 @@ class Scene(Plottable, eqx.Module, Generic[_O]):
                     dZ = dZ + dp
 
                 return Z, dZ
-            else:
-                Z = jnp.array(0.0)
-                for _, p in results():
-                    Z = Z + p
+            Z = jnp.array(0.0)
+            for _, p in results():
+                Z = Z + p
 
-                return Z
-        else:
-            return results()
+            return Z
+        return results()

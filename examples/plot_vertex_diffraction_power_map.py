@@ -62,18 +62,18 @@ scene = scene.add_objects(vertex)
 
 fig, ax = plt.subplots()
 
-annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
+annotate_kwargs = {"color": "white", "fontsize": 12, "fontweight": "bold"}
 
 key = jax.random.PRNGKey(1234)
 X, Y = scene.grid(n=300)
 
 scene = scene.filter_objects(
-    lambda obj: not eqx.tree_equal(obj, wall)  # We remove the 'wall' from the scene
+    lambda obj: not eqx.tree_equal(obj, wall),  # We remove the 'wall' from the scene
 )
 
 scene.plot(
     ax,
-    transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+    transmitters_kwargs={"annotate_kwargs": annotate_kwargs},
     receivers=False,
 )
 wall.plot(ax, linestyle="--")

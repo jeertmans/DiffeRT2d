@@ -15,13 +15,13 @@ def test_accumulate_on_transmitters_grid_over_paths(
     key: PRNGKeyArray,
     benchmark: BenchmarkFixture,
 ) -> None:
-    X, Y = scene.grid(n)
+    _X, _Y = scene.grid(n)
 
     _ = benchmark(
-        lambda: path_cls.from_tx_objects_rx(
+        path_cls.from_tx_objects_rx(
             scene.transmitters["tx"],
             scene.objects,
             scene.receivers["rx"],
             key=key,
-        ).loss.block_until_ready()  # type: ignore[reportAttributeAccessIssue]
+        ).loss.block_until_ready,  # type: ignore[reportAttributeAccessIssue]
     )

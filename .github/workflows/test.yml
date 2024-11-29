@@ -10,30 +10,19 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest]
-        pyversion: ['3.9', '3.10', '3.11', '3.12']
+        pyversion: ['3.10', '3.11', '3.12']
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Rye
-      env:
-        RYE_TOOLCHAIN_VERSION: ${{ matrix.pyversion}}
-        RYE_INSTALL_OPTION: --yes
-      run: |
-        curl -sSf https://rye.astral.sh/get | bash
-        echo "$HOME/.rye/shims" >> $GITHUB_PATH
-
-    - name: Configure Rye
-      run: |
-        rye config --set-bool behavior.use-uv=true
-        rye pin ${{ matrix.pyversion }}
-
-    - name: Install Differt2D
-      run: rye sync
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
 
     - name: Run Pytest
-      run: rye run pytest
+      run: uv run --python ${{ matrix.pyversion }} --frozen --no-dev --extra tests pytest
 
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v4
@@ -43,71 +32,19 @@ jobs:
 
   benchmark:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    env:
-      JAX_PLATFORM_NAME: cpu
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Rye
-      env:
-        RYE_TOOLCHAIN_VERSION: '3.11'
-        RYE_INSTALL_OPTION: --yes
-      run: |
-        curl -sSf https://rye.astral.sh/get | bash
-        echo "$HOME/.rye/shims" >> $GITHUB_PATH
-
-    - name: Configure Rye
-      run: |
-        rye config --set-bool behavior.use-uv=true
-        rye pin '3.11'
-
-    - name: Install Differt2D (on changes)
-      run: rye sync --reset -f
-
-    - name: Run Benchmarks on changes
-      run: rye run pytest --benchmark-only --benchmark-save=changes tests/benchmarks
-
-    - uses: actions/checkout@v4
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
       with:
-        ref: ${{ github.event.pull_request.base.sha }}
-        clean: false
+        enable-cache: true
 
-    - name: Install Differt2D (before changes)
-      run: rye sync --reset -f
-
-    - name: Run Benchmarks before changes
-      run: rye run pytest --benchmark-only --benchmark-save=before tests/benchmarks
-
-    - name: Compare benchmarks
-      run: |
-        echo 'results<<EOF' >> $GITHUB_OUTPUT
-        rye run pytest-benchmark compare --group-by=name --columns="mean,stddev,ops" >> $GITHUB_OUTPUT
-        echo 'EOF' >> $GITHUB_OUTPUT
-      id: compare
-
-    - name: Comment PR with benchmarks
-      uses: thollander/actions-comment-pull-request@v2
-      continue-on-error: true
+    - name: Run CodSpeed benchmarks
+      uses: CodSpeedHQ/action@v3
       with:
-        message: |
-          Benchmark results:
-          ```
-          ${{ steps.compare.outputs.results }}
-          ```
-        comment_tag: benchmarks
-
-      id: comment
-
-    - name: If PR comment failed, write to PR summary
-      if: steps.comment.outcome != 'success'
-      run: |
-        echo '### Benchmark results' >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
-        echo '${{ steps.compare.outputs.results }}' >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
+        run: uv run --python ${{ matrix.pyversion }} --frozen --no-dev --extra tests pytest tests/benchmarks --codspeed
 
   markdown-link-check:
     runs-on: ubuntu-latest

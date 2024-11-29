@@ -41,7 +41,7 @@ class Plottable(ABC):
             function.
         :return: The artist(s).
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     @abstractmethod
     def bounding_box(self) -> Float[Array, "2 2"]:
@@ -52,7 +52,7 @@ class Plottable(ABC):
 
         :return: The min. and max. coordinates of this object.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
@@ -111,17 +111,17 @@ class Plottable(ABC):
         xavg = 0.5 * (xmin + xmax)
         yavg = 0.5 * (ymin + ymax)
 
-        x, y = dict(
-            N=(xavg, ymax),
-            E=(xmax, yavg),
-            S=(xavg, ymin),
-            W=(xmin, yavg),
-            C=(xavg, yavg),
-            NE=(xmax, ymax),
-            NW=(xmin, ymax),
-            SE=(xmax, ymin),
-            SW=(xmin, ymin),
-        )[location]
+        x, y = {
+            "N": (xavg, ymax),
+            "E": (xmax, yavg),
+            "S": (xavg, ymin),
+            "W": (xmin, yavg),
+            "C": (xavg, yavg),
+            "NE": (xmax, ymax),
+            "NW": (xmin, ymax),
+            "SE": (xmax, ymin),
+            "SW": (xmin, ymin),
+        }[location]
 
         return jnp.array([x, y])
 
@@ -139,7 +139,7 @@ class Interactable(ABC):
 
         :return: The number of parameters.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     @abstractmethod
     def parametric_to_cartesian(
@@ -152,7 +152,7 @@ class Interactable(ABC):
         :param param_coords: Parametric coordinates.
         :return: Cartesian coordinates.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
@@ -174,12 +174,13 @@ class Interactable(ABC):
         Array([0.88359046, 1.1781206 ], dtype=float32)
         """
         return self.parametric_to_cartesian(
-            jax.random.uniform(key=key, shape=(self.parameters_count(),))
+            jax.random.uniform(key=key, shape=(self.parameters_count(),)),
         )
 
     @abstractmethod
     def cartesian_to_parametric(
-        self, carte_coords: Float[Array, "2"]
+        self,
+        carte_coords: Float[Array, "2"],
     ) -> Float[Array, " {self.parameters_counts()}"]:  # type: ignore[reportUndefinedVariable]
         """
         Converts cartesian coordinates to parametric coordinates.
@@ -187,7 +188,7 @@ class Interactable(ABC):
         :param carte_coords: Cartesian coordinates.
         :return: Parametric coordinates.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     @abstractmethod
     def contains_parametric(
@@ -205,7 +206,7 @@ class Interactable(ABC):
             :func:`activation<differt2d.logic.activation>`.
         :return: True if object contains these coordinates.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     @abstractmethod
     def intersects_cartesian(
@@ -231,7 +232,7 @@ class Interactable(ABC):
             :func:`activation<differt2d.logic.activation>`.
         :return: True if it intersects.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     @abstractmethod
     def evaluate_cartesian(self, ray_path: Float[Array, "3 2"]) -> Float[Array, " "]:
@@ -252,7 +253,7 @@ class Interactable(ABC):
         :param ray_path: Ray path coordinates.
         :return: Interaction score.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
 
 class Object(Plottable, Interactable):
@@ -263,5 +264,3 @@ class Object(Plottable, Interactable):
     using :python:`typing.Union[Plottable, Interactable]` is understood
     as implementing one of either classes, not both.
     """
-
-    pass

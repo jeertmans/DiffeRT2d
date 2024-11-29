@@ -76,7 +76,10 @@ def objective_function(
 
 
 def loss(
-    tx_coords: Float[Array, "2"], scene: Scene, *args: Any, **kwargs: Any
+    tx_coords: Float[Array, "2"],
+    scene: Scene,
+    *args: Any,
+    **kwargs: Any,
 ) -> Float[Array, " "]:
     """Loss function, to be minimized."""
     scene = scene.with_transmitters(tx=Point(xy=tx_coords))
@@ -86,7 +89,7 @@ def loss(
 
 
 f_and_df = jax.value_and_grad(
-    loss
+    loss,
 )  # Generates a function that evaluates f and its gradient
 
 # %%
@@ -105,11 +108,12 @@ f_and_df = jax.value_and_grad(
 
 fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
-annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
+annotate_kwargs = {"color": "red", "fontsize": 12, "fontweight": "bold"}
 
 scene = scene.with_transmitters(tx=Point(xy=jnp.array([0.5, 0.7])))
 scene = scene.with_receivers(
-    rx_0=Point(xy=jnp.array([0.3, 0.1])), rx_1=Point(xy=jnp.array([0.5, 0.1]))
+    rx_0=Point(xy=jnp.array([0.3, 0.1])),
+    rx_1=Point(xy=jnp.array([0.5, 0.1])),
 )
 
 X, Y = scene.grid(n=300)
@@ -122,14 +126,18 @@ scenes = [scene, copy(scene)]  # Need a copy, because scenes will diverge
 for ax, approx, scene in zip(axes, [False, True], scenes):
     scene_artists = scene.plot(
         ax,
-        transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
-        receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
+        transmitters_kwargs={"annotate_kwargs": annotate_kwargs},
+        receivers_kwargs={"annotate_kwargs": annotate_kwargs},
     )
     transmitter_artists.append(scene_artists[0])
     annotate_artists.append(scene_artists[1])
 
     im = ax.pcolormesh(
-        X, Y, jnp.ones_like(X), norm=LogNorm(vmin=1e-4, vmax=1e0), zorder=-1
+        X,
+        Y,
+        jnp.ones_like(X),
+        norm=LogNorm(vmin=1e-4, vmax=1e0),
+        zorder=-1,
     )
     im_artists.append(im)
 
@@ -196,7 +204,7 @@ def func(alpha: float) -> list:
         annotate_artists[i].set_x(tx_coords[0])
         annotate_artists[i].set_y(tx_coords[1])
 
-        loss, grads = f_and_df(
+        _loss, grads = f_and_df(
             tx_coords,
             scenes[i],
             fun=received_power,
@@ -208,7 +216,12 @@ def func(alpha: float) -> list:
         F = objective_function(
             power  # type: ignore
             for _, power in scenes[i].accumulate_on_transmitters_grid_over_paths(
-                X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
+                X,
+                Y,
+                fun=received_power,
+                max_order=0,
+                approx=approx,
+                alpha=alpha,
             )
         )
         im_artists[i].set_array(F)
@@ -220,7 +233,7 @@ def func(alpha: float) -> list:
 
         if approx:
             alpha_str = f"{alpha:.2e}"
-            base, expo = alpha_str.split("e")
+            _base, expo = alpha_str.split("e")
             expo = str(int(expo))  # Remove trailing zeros and +
             axes[i].set_title(f"With approximation - $\\alpha={alpha:.2e}$")
 

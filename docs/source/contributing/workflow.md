@@ -25,15 +25,15 @@ the repository, and clone it locally.
 
 As for every Python project, using virtual environment is recommended to avoid
 conflicts between modules.
-For this project, we use [Rye](https://rye.astral.sh/) to easily manage project
+For this project, we use [uv](https://docs.astral.sh/uv/) to easily manage project
 and development dependencies. If not already, please install this tool.
 
 ## Installing Python modules
 
-With Rye, installation becomes straightforward:
+With uv, installation becomes straightforward:
 
 ```bash
-rye sync --all-features
+uv sync
 ```
 
 ## Running commands
@@ -42,7 +42,7 @@ The following commands assume that you installed
 the project locally with:
 
 ```bash
-rye sync
+uv sync --all-extras
 ```
 
 and that you activated the corresponding Python virtual environment:

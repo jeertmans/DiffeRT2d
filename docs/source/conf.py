@@ -204,8 +204,8 @@ def get_doc(obj):
     return doc
 
 
-def merge_documentation_from_parent(app, what, name, obj, options, lines):
-    if what in ["method", "function"]:
+def merge_documentation_from_parent(app, what, name, obj, options, lines) -> None:
+    if what in {"method", "function"}:
         lines[:] = dedent(get_doc(obj)).splitlines()
 
 
@@ -217,6 +217,7 @@ def unskip_jitted(app, what, name, obj, skip, options):
     if skip and what == "class" and "Pjit" in repr(obj):
         obj.__doc__ = get_doc(obj._fun)
         return obj.__doc__ == ""
+    return None
 
 
 NOTE_ABOUT_ABSTRACT = r"""
@@ -225,7 +226,7 @@ NOTE_ABOUT_ABSTRACT = r"""
 """.splitlines()
 
 
-def add_note_about_abstract(app, what, name, obj, options, lines):
+def add_note_about_abstract(app, what, name, obj, options, lines) -> None:
     if getattr(obj, "__isabstractmethod__", False):
         lines.extend(NOTE_ABOUT_ABSTRACT)
 
@@ -234,7 +235,7 @@ def is_singledispatch_classmethod(obj):
     return hasattr(obj, "register") and isclassmethod(obj.__wrapped__, None)
 
 
-def patch_singledispatch_classmethod_signature(app, obj, bound_method):
+def patch_singledispatch_classmethod_signature(app, obj, bound_method) -> None:
     # TODO: fix [source] not appearing
     if bound_method and is_singledispatch_classmethod(obj):
         original = obj.__wrapped__.__func__
@@ -247,7 +248,7 @@ def patch_singledispatch_classmethod_signature(app, obj, bound_method):
                     pass  # Cannot set this
 
 
-def setup(app):
+def setup(app) -> None:
     app.connect(
         "autodoc-skip-member",
         unskip_jitted,

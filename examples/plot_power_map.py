@@ -45,7 +45,7 @@ scene = Scene.square_scene_with_wall()
 
 fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
-annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
+annotate_kwargs = {"color": "white", "fontsize": 12, "fontweight": "bold"}
 
 key = jax.random.PRNGKey(1234)
 X, Y = scene.grid(n=300)
@@ -53,12 +53,17 @@ X, Y = scene.grid(n=300)
 for ax, approx in zip(axes, [False, True]):
     scene.plot(
         ax,
-        transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+        transmitters_kwargs={"annotate_kwargs": annotate_kwargs},
         receivers=False,
     )
 
     P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
-        X, Y, fun=received_power, reduce_all=True, approx=approx, key=key
+        X,
+        Y,
+        fun=received_power,
+        reduce_all=True,
+        approx=approx,
+        key=key,
     )  # type: ignore
 
     PdB = 10.0 * jnp.log10(P / P0)

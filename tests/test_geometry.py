@@ -36,42 +36,42 @@ origin_dest = pytest.mark.parametrize(
 )
 
 point = pytest.mark.parametrize(
-    ("point",),
+    "point",
     [
-        ([0.0, 0.0],),
-        ([1.0, 0.0],),
-        ([0.0, 1.0],),
-        ([1.0, 1.0],),
-        ([0.61653844, 0.72739276],),
-        ([0.34096069, 0.62302206],),
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [0.0, 1.0],
+        [1.0, 1.0],
+        [0.61653844, 0.72739276],
+        [0.34096069, 0.62302206],
     ],
 )
 
 approx = pytest.mark.parametrize(
-    ("approx",),
+    "approx",
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 
 path_cls = pytest.mark.parametrize(
-    ("path_cls",),
+    "path_cls",
     [
-        (Path,),
-        (ImagePath,),
-        (FermatPath,),
-        (MinPath,),
+        Path,
+        ImagePath,
+        FermatPath,
+        MinPath,
     ],
 )
 
 
 @pytest.fixture
-def steps():
+def steps() -> int:
     return 100
 
 
-def test_stack_and_unstack_leaves(key: PRNGKeyArray):
+def test_stack_and_unstack_leaves(key: PRNGKeyArray) -> None:
     scene = Scene.random_uniform_scene(key=key, n_walls=10)
     walls = scene.objects
 
@@ -87,7 +87,7 @@ def test_stack_and_unstack_leaves(key: PRNGKeyArray):
         chex.assert_trees_all_equal(w1, w2)
 
 
-def test_stack_different_pytrees(key: PRNGKeyArray):
+def test_stack_different_pytrees(key: PRNGKeyArray) -> None:
     scene = Scene.random_uniform_scene(key=key, n_walls=2)
     walls = list(scene.objects)
     walls[0] = RIS(xys=walls[0].xys)
@@ -99,7 +99,7 @@ def test_stack_different_pytrees(key: PRNGKeyArray):
 
 
 @approx
-def test_segments_intersect(approx: bool):
+def test_segments_intersect(approx: bool) -> None:
     P1 = jnp.array([+0.0, +0.0])
     P2 = jnp.array([+1.0, +0.0])
     P3 = jnp.array([+0.5, -1.0])
@@ -110,7 +110,7 @@ def test_segments_intersect(approx: bool):
 
 
 @approx
-def test_segments_dont_intersect(approx: bool):
+def test_segments_dont_intersect(approx: bool) -> None:
     P1 = jnp.array([+0.0, +0.0])
     P2 = jnp.array([+1.0, +0.0])
     P3 = jnp.array([+0.0, +1.0])
@@ -120,7 +120,7 @@ def test_segments_dont_intersect(approx: bool):
     assert is_false(intersect, approx=approx)
 
 
-def test_path_length():
+def test_path_length() -> None:
     points = jnp.array(
         [
             [0.0, 0.0],
@@ -128,7 +128,7 @@ def test_path_length():
             [1.0, 1.0],
             [0.0, 1.0],
             [0.0, 0.0],
-        ]
+        ],
     )
     expected = jnp.array(4.0)
     got = path_length(points)
@@ -137,17 +137,17 @@ def test_path_length():
 
 class TestPoint:
     @point
-    def test_plot(self, ax, point: list):
+    def test_plot(self, ax, point: list) -> None:
         _ = Point(xy=jnp.array(point)).plot(ax)
 
     @point
-    def test_bounding_box(self, point: list):
+    def test_bounding_box(self, point: list) -> None:
         xy = jnp.array(point)
         expected = jnp.array(
             [
                 [xy[0], xy[1]],
                 [xy[0], xy[1]],
-            ]
+            ],
         )
         got = Point(xy=xy).bounding_box()
         chex.assert_trees_all_equal(expected, got)
@@ -156,56 +156,59 @@ class TestPoint:
 
 class TestVertex:
     @point
-    def test_parametric_to_cartesian(self, point: list):
+    def test_parametric_to_cartesian(self, point: list) -> None:
         vertex = Vertex(xy=jnp.array(point))
         chex.assert_trees_all_equal(
-            vertex.parametric_to_cartesian(jnp.empty(0)), vertex.xy
+            vertex.parametric_to_cartesian(jnp.empty(0)),
+            vertex.xy,
         )
 
     @point
-    def test_cartesian_to_parametric(self, point: list):
+    def test_cartesian_to_parametric(self, point: list) -> None:
         vertex = Vertex(xy=jnp.array(point))
         assert vertex.cartesian_to_parametric(jnp.empty(2)).size == 0
 
     @point
     @approx
-    def test_contains_parametric(self, point: list, approx: bool):
+    def test_contains_parametric(self, point: list, approx: bool) -> None:
         vertex = Vertex(xy=jnp.array(point))
         assert is_true(
-            vertex.contains_parametric(jnp.empty(0), approx=approx), approx=approx
+            vertex.contains_parametric(jnp.empty(0), approx=approx),
+            approx=approx,
         )
 
     @point
     @approx
-    def test_intersects_cartesian(self, point: list, approx: bool):
+    def test_intersects_cartesian(self, point: list, approx: bool) -> None:
         vertex = Vertex(xy=jnp.array(point))
         assert is_false(
-            vertex.intersects_cartesian(jnp.empty((2, 2)), approx=approx), approx=approx
+            vertex.intersects_cartesian(jnp.empty((2, 2)), approx=approx),
+            approx=approx,
         )
 
     @point
-    def test_evaluate_cartesian(self, point: list):
+    def test_evaluate_cartesian(self, point: list) -> None:
         vertex = Vertex(xy=jnp.array(point))
         chex.assert_trees_all_equal(vertex.evaluate_cartesian(jnp.empty((3, 2))), 0.0)
 
 
 class TestRay:
     @origin_dest
-    def test_origin(self, origin: list, dest: list):
+    def test_origin(self, origin: list, dest: list) -> None:
         expected = jnp.array(origin)
         got = Ray(xys=jnp.array([origin, dest])).origin()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2,))
 
     @origin_dest
-    def test_dest(self, origin: list, dest: list):
+    def test_dest(self, origin: list, dest: list) -> None:
         expected = jnp.array(dest)
         got = Ray(xys=jnp.array([origin, dest])).dest()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2,))
 
     @origin_dest
-    def test_t(self, origin: list, dest: list):
+    def test_t(self, origin: list, dest: list) -> None:
         expected = jnp.array(dest) - jnp.array(origin)
         got = Ray(xys=jnp.array([origin, dest])).t()
         chex.assert_trees_all_equal(expected, got)
@@ -231,17 +234,17 @@ class TestRay:
         chex.assert_trees_all_close(got, expected, atol=1e-7)
 
     @origin_dest
-    def test_plot(self, ax, origin: list, dest: list):
+    def test_plot(self, ax, origin: list, dest: list) -> None:
         _ = Ray(xys=jnp.array([origin, dest])).plot(ax)
 
     @origin_dest
-    def test_bounding_box(self, origin: list, dest: list):
+    def test_bounding_box(self, origin: list, dest: list) -> None:
         points = jnp.array([origin, dest])
         expected = jnp.array(
             [
                 [jnp.min(points[:, 0]), jnp.min(points[:, 1])],
                 [jnp.max(points[:, 0]), jnp.max(points[:, 1])],
-            ]
+            ],
         )
         got = Ray(xys=points).bounding_box()
         chex.assert_trees_all_equal(expected, got)
@@ -250,22 +253,22 @@ class TestRay:
 
 class TestWall:
     @origin_dest
-    def test_normal(self, origin: list, dest: list):
+    def test_normal(self, origin: list, dest: list) -> None:
         v = jnp.array(dest) - jnp.array(origin)
         w = Wall(xys=jnp.array([origin, dest]))
         normal = w.normal()
         chex.assert_trees_all_close(jnp.dot(v, normal), 0.0, atol=1e-7)
         chex.assert_trees_all_close(jnp.linalg.norm(normal), 1.0)
 
-    def test_parameters_count(self):
+    def test_parameters_count(self) -> None:
         got = Wall.parameters_count()
         chex.assert_trees_all_equal(got, 1)
         chex.assert_shape(got, ())
 
-    def test_parametric_to_cartesian(self):
+    def test_parametric_to_cartesian(self) -> None:
         expected = jnp.array([2.0, 1.0])
         got = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 2.0]])).parametric_to_cartesian(
-            jnp.array([0.5])
+            jnp.array([0.5]),
         )
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2,))
@@ -273,14 +276,18 @@ class TestWall:
     @origin_dest
     @approx
     def test_sample_roundtrip(
-        self, origin: list, dest: list, approx: bool, key: PRNGKeyArray
-    ):
+        self,
+        origin: list,
+        dest: list,
+        approx: bool,
+        key: PRNGKeyArray,
+    ) -> None:
         w = Wall(xys=jnp.array([origin, dest]))
         point = w.sample(key=key)
         param = w.cartesian_to_parametric(point)
         assert is_true(w.contains_parametric(param, approx=approx), approx=approx)
 
-    def test_cartesian_to_parametric(self):
+    def test_cartesian_to_parametric(self) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
         expected = jnp.array([0.5])
         got = wall.cartesian_to_parametric(jnp.array([2.0, 1.0]))
@@ -304,7 +311,7 @@ class TestWall:
         chex.assert_shape(got, (1,))
 
     @approx
-    def test_contains_parametric(self, approx: bool):
+    def test_contains_parametric(self, approx: bool) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
         with enable_approx(approx), disable_jit():
             got = wall.contains_parametric(jnp.array([0.5]))
@@ -315,7 +322,7 @@ class TestWall:
             chex.assert_shape(got, ())
 
     @approx
-    def test_intersects_cartesian(self, approx: bool):
+    def test_intersects_cartesian(self, approx: bool) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 2.0]]))
         with enable_approx(approx), disable_jit():
             got = wall.intersects_cartesian(jnp.array([[0.0, 2.0], [4.0, 0.0]]))
@@ -334,7 +341,7 @@ class TestWall:
                 assert is_true(got), "Should intersect even on the extremity"
             chex.assert_shape(got, ())
 
-    def test_evaluate_cartesian(self):
+    def test_evaluate_cartesian(self) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 0.0]]))
         expected = jnp.array(0.0)
         ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [4.0, 1.0]])
@@ -347,7 +354,7 @@ class TestWall:
             chex.assert_trees_all_close(expected, got)
         chex.assert_shape(got, ())
 
-    def test_get_vertices(self):
+    def test_get_vertices(self) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [4.0, 0.0]]))
         expected = (Vertex(xy=jnp.array([0.0, 0.0])), Vertex(xy=jnp.array([4.0, 0.0])))
         got = wall.get_vertices()
@@ -355,7 +362,7 @@ class TestWall:
 
 
 class TestRIS:
-    def test_evaluate_cartesian(self):
+    def test_evaluate_cartesian(self) -> None:
         wall = RIS(xys=jnp.array([[0.0, 0.0], [4.0, 0.0]]), phi=jnp.array(0.0))
         expected = jnp.array(0.0)
         ray_path = jnp.array([[0.0, 1.0], [2.0, 0.0], [2.0, 1.0]])
@@ -370,7 +377,7 @@ class TestRIS:
 
 
 class TestPath:
-    def test_from_tx_objects_rx(self):
+    def test_from_tx_objects_rx(self) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(xy=jnp.array([0.0, 1.0]))
         rx = Point(xy=jnp.array([2.0, 1.0]))
@@ -382,21 +389,23 @@ class TestPath:
 
     @path_cls
     def test_from_tx_objects_rx_no_object(
-        self, path_cls: type[Path], key: PRNGKeyArray
-    ):
+        self,
+        path_cls: type[Path],
+        key: PRNGKeyArray,
+    ) -> None:
         tx = Point(xy=jnp.array([0.0, 1.0]))
         rx = Point(xy=jnp.array([2.0, 1.0]))
         path = path_cls.from_tx_objects_rx(tx=tx, rx=rx, objects=[], key=key)
         chex.assert_trees_all_close(path.length(), jnp.array(2.0))
 
-    def test_path_length(self, key: PRNGKeyArray):
+    def test_path_length(self, key: PRNGKeyArray) -> None:
         points = jax.random.uniform(key, (200, 2))
         expected = path_length(points)
         got = Path(xys=points).length()
         chex.assert_trees_all_equal(expected, got)
 
     @approx
-    def test_on_objects(self, approx: bool, key: PRNGKeyArray):
+    def test_on_objects(self, approx: bool, key: PRNGKeyArray) -> None:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key=key, n_walls=5)
             path = Path.from_tx_objects_rx(
@@ -415,7 +424,7 @@ class TestPath:
             chex.assert_trees_all_close(expected, got, atol=1e-8)
 
     @approx
-    def test_intersects_with_objects(self, approx: bool, key: PRNGKeyArray):
+    def test_intersects_with_objects(self, approx: bool, key: PRNGKeyArray) -> None:
         with enable_approx(approx), disable_jit():
             scene = Scene.random_uniform_scene(key=key, n_walls=10)
             path = Path.from_tx_objects_rx(
@@ -443,30 +452,35 @@ class TestPath:
 
     @approx
     @path_cls
-    def test_is_valid(self, approx: bool, path_cls: type[Path], key: PRNGKeyArray):
+    def test_is_valid(
+        self, approx: bool, path_cls: type[Path], key: PRNGKeyArray
+    ) -> None:
         with enable_approx(approx), disable_jit():
             scene = Scene.square_scene()
             path = path_cls.from_tx_objects_rx(
-                scene.transmitters["tx"], scene.objects, scene.receivers["rx"], key=key
+                scene.transmitters["tx"],
+                scene.objects,
+                scene.receivers["rx"],
+                key=key,
             )
             path_candidate = jnp.arange(len(scene.objects), dtype=jnp.int32)
             interacting_objects = scene.get_interacting_objects(path_candidate)
             got = path.is_valid(scene.objects, path_candidate, interacting_objects)
             assert is_true(got)
 
-    def test_plot(self, ax):
+    def test_plot(self, ax) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(xy=jnp.array([0.0, 1.0]))
         rx = Point(xy=jnp.array([2.0, 1.0]))
         path = Path.from_tx_objects_rx(tx=tx, rx=rx, objects=[wall])
         _ = path.plot(ax)
 
-    def test_bounding_box(self):
+    def test_bounding_box(self) -> None:
         expected = jnp.array(
             [
                 [0.0, 0.0],
                 [2.0, 1.0],
-            ]
+            ],
         )
         wall = Wall(xys=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(xy=jnp.array([0.0, 1.0]))
@@ -478,7 +492,7 @@ class TestPath:
 
 
 class TestImagePath:
-    def test_path_loss_is_zero(self):
+    def test_path_loss_is_zero(self) -> None:
         scene = Scene.square_scene()
         got = ImagePath.from_tx_objects_rx(
             scene.transmitters["tx"],
@@ -489,7 +503,7 @@ class TestImagePath:
 
 
 class TestFermatPath:
-    def test_simple_reflection(self, steps: int, key: PRNGKeyArray):
+    def test_simple_reflection(self, steps: int, key: PRNGKeyArray) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(xy=jnp.array([0.0, 1.0]))
         rx = Point(xy=jnp.array([2.0, 1.0]))
@@ -500,7 +514,7 @@ class TestFermatPath:
 
 
 class TestMinPath:
-    def test_simple_reflection(self, steps: int, key: PRNGKeyArray):
+    def test_simple_reflection(self, steps: int, key: PRNGKeyArray) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [2.0, 0.0]]))
         tx = Point(xy=jnp.array([0.0, 1.0]))
         rx = Point(xy=jnp.array([2.0, 1.0]))
