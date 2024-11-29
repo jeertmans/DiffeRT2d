@@ -44,7 +44,7 @@ jobs:
     - name: Run CodSpeed benchmarks
       uses: CodSpeedHQ/action@v3
       with:
-        run: uv run --python ${{ matrix.pyversion }} --frozen --no-dev --extra tests pytest tests/benchmarks --codspeed
+        run: uv run --frozen --no-dev --extra tests pytest tests/benchmarks --codspeed
 
   markdown-link-check:
     runs-on: ubuntu-latest
