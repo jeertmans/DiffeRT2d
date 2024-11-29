@@ -1,6 +1,6 @@
 # Python artifacts
 __pycache__/
-.coverage
+.coverage*
 .ipynb_checkpoints/
 coverage.xml
 .benchmarks/
