@@ -179,7 +179,7 @@ env = [
 ]
 filterwarnings = [
   "error",
-  '''ignore:Signature.*for <class 'numpy.longdouble'> does not match any known type:UserWarning'''.
+  '''ignore:Signature.*for <class 'numpy.longdouble'> does not match any known type:UserWarning''',
 ]
 
 [tool.ruff]
