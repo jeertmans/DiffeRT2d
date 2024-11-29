@@ -36,15 +36,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - uses: actions/setup-python@v5
+      id: setup-python
+      with:
+        cache: pip
+        cache-dependency-path: uv.lock
+
     - name: Setup uv
       uses: astral-sh/setup-uv@v3
-      with:
-        enable-cache: true
+
+    - name: Install dependencies for benchmarking
+      run: uv pip install -r pyproject.toml --extra tests --python='${{ steps.setup-python.outputs.python-path }}'
 
     - name: Run CodSpeed benchmarks
       uses: CodSpeedHQ/action@v3
       with:
-        run: uv run --frozen --no-dev --extra tests pytest tests/benchmarks --codspeed
+        run: pytest tests/benchmarks --codspeed
 
   markdown-link-check:
     runs-on: ubuntu-latest
