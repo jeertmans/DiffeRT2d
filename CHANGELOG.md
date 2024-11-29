@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- start changelog -->
 
 (unreleased)=
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.4...HEAD)
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.5...HEAD)
 
-(unreleased-added)=
+(v0.3.5)=
+## [v0.3.5](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.4...v0.3.5)
+
+(v0.3.5-added)=
 ### Added
 
 + Added `Interactable.sample` method to randomly sample a point on an object.
@@ -20,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Added `Scene.{get_objet,stacked_objects,from_stacked_objects}` methods.
   [#85](https://github.com/jeertmans/DiffeRT2d/pull/85)
 
-(unreleased-chore)=
+(v0.3.5-chore)=
 ### Chore
 
 + Changed `pyperf` to `pytest-benchmark` for benchmarks.
@@ -32,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Use `typing.Self` instead of string annotation, to include subclasses.
   [#93](https://github.com/jeertmans/DiffeRT2d/pull/93)
 
-(unreleased-fixed)=
+(v0.3.5-fixed)=
 ### Fixed
 
 + Fixed issues with `jax>0.4.28`.
