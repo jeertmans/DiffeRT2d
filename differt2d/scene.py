@@ -24,7 +24,7 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 from beartype import beartype as typechecker
-from differt_core.rt.graph import CompleteGraph, DiGraph
+from differt_core.rt import CompleteGraph, DiGraph
 from jaxtyping import Array, Float, Int, PRNGKeyArray, jaxtyped
 from matplotlib.artist import Artist
 
