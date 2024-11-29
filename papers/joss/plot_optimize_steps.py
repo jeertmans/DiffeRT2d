@@ -28,7 +28,10 @@ def objective_function(
 
 
 def loss(
-    tx_coords: Float[Array, "2"], scene: Scene, *args: Any, **kwargs: Any
+    tx_coords: Float[Array, "2"],
+    scene: Scene,
+    *args: Any,
+    **kwargs: Any,
 ) -> Float[Array, " "]:
     scene = scene.with_transmitters(tx=Point(xy=tx_coords))
     return -objective_function(
@@ -48,13 +51,21 @@ fig, axes = plt.subplots(
 )
 
 
-annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
-point_kwargs = dict(
-    markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
-)
+annotate_kwargs = {
+    "color": "black",
+    "fontsize": 10,
+    "fontweight": "bold",
+    "ha": "center",
+}
+point_kwargs = {
+    "markersize": 3,
+    "annotate_offset": (0, 0.05),
+    "annotate_kwargs": annotate_kwargs,
+}
 
 scene = scene.with_receivers(
-    rx_0=Point(xy=jnp.array([0.3, 0.1])), rx_1=Point(xy=jnp.array([0.5, 0.1]))
+    rx_0=Point(xy=jnp.array([0.3, 0.1])),
+    rx_1=Point(xy=jnp.array([0.5, 0.1])),
 )
 
 X, Y = scene.grid(n=600)
@@ -103,7 +114,12 @@ for frame, alpha in enumerate(alphas):
         F = objective_function(
             power  # type: ignore
             for _, power in scene.accumulate_on_transmitters_grid_over_paths(
-                X, Y, fun=received_power, max_order=0, approx=True, alpha=alpha
+                X,
+                Y,
+                fun=received_power,
+                max_order=0,
+                approx=True,
+                alpha=alpha,
             )
         )
 

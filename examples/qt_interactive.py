@@ -50,12 +50,11 @@ if you hover over them.
 
 from argparse import ArgumentParser, FileType
 from functools import partial
-from typing import Literal, get_args
+from typing import TYPE_CHECKING, Literal, get_args
 
 import jax
 import jax.numpy as jnp
 from jaxtyping import Array, Float
-from matplotlib.artist import Artist
 from matplotlib.backend_bases import MouseEvent, PickEvent
 from matplotlib.backends.backend_qtagg import (
     FigureCanvas,  # type: ignore[reportAttributeAccessIssue]
@@ -82,6 +81,9 @@ from differt2d.logic import hard_sigmoid, sigmoid
 from differt2d.scene import Scene, SceneName
 from differt2d.utils import P0, received_power
 
+if TYPE_CHECKING:
+    from matplotlib.artist import Artist
+
 METHOD_TO_PATH_CLASS = {"image": ImagePath, "FPT": FermatPath, "MPT": MinPath}
 
 # %%
@@ -101,7 +103,7 @@ class CustomSlider(QSlider):
         base: float = 10.0,
         scale: Literal["linear", "log", "geom"] = "linear",
         orientation=Qt.Orientation.Horizontal,
-    ):
+    ) -> None:
         super().__init__()
         self.setMinimum(0)
         self.setMaximum(num - 1)
@@ -143,7 +145,7 @@ class PlotWidget(QWidget):
         resolution: int,
         seed: int,
         parent=None,
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self.scene = scene
@@ -170,7 +172,7 @@ class PlotWidget(QWidget):
             """
             QToolTip {
                 background-color: #ea5626;
-            }"""
+            }""",
         )
 
         # Approx. parameters
@@ -179,10 +181,10 @@ class PlotWidget(QWidget):
         approx_box.setChecked(False)
         approx_box.setToolTip(
             "Click to enable/disable approximation. "
-            "When enabled, you can specify further parameters below."
+            "When enabled, you can specify further parameters below.",
         )
 
-        def set_approx(approx):
+        def set_approx(approx) -> None:
             self.approx = approx
             self.on_scene_change()
 
@@ -193,7 +195,7 @@ class PlotWidget(QWidget):
         self.alpha_slider = LogSlider(0, 3)
         self.alpha_slider.setValue(self.alpha)
         self.alpha_slider.setToolTip(
-            "The alpha value, as used by the activation function"
+            "The alpha value, as used by the activation function",
         )
         self.alpha_label = QLabel("1.000e+00")
 
@@ -217,7 +219,7 @@ class PlotWidget(QWidget):
         grid.addWidget(QLabel("activation function:"), 2, 1)
         grid.addWidget(self.function_combo_box, 2, 3)
 
-        def set_function(function):
+        def set_function(function) -> None:
             self.function = {
                 "sigmoid": sigmoid,
                 "hard_sigmoid": hard_sigmoid,
@@ -235,7 +237,7 @@ class PlotWidget(QWidget):
         self.patch_slider.setValue(0.0)
         self.patch_slider.setToolTip(
             "The patch value used to virtually increase/decrease objects' "
-            "size when checking for intersection"
+            "size when checking for intersection",
         )
         self.patch_label = QLabel("+0.00")
 
@@ -254,7 +256,7 @@ class PlotWidget(QWidget):
         self.min_order_spin_box = QSpinBox()
         self.min_order_spin_box.setMinimum(0)
         self.min_order_spin_box.setToolTip(
-            "The minimum interaction order, 0 is line of sight."
+            "The minimum interaction order, 0 is line of sight.",
         )
         self.min_order_spin_box.setValue(self.min_order)
 
@@ -270,7 +272,7 @@ class PlotWidget(QWidget):
         self.max_order_spin_box = QSpinBox()
         self.max_order_spin_box.setMinimum(0)
         self.max_order_spin_box.setToolTip(
-            "The maximum interaction order, 1 is one reflection max."
+            "The maximum interaction order, 1 is one reflection max.",
         )
         self.max_order_spin_box.setValue(self.max_order)
 
@@ -286,7 +288,7 @@ class PlotWidget(QWidget):
         self.r_coef_slider = LinearSlider(0.0, 1.0)
         self.r_coef_slider.setValue(self.r_coef)
         self.r_coef_slider.setToolTip(
-            "The reflection coefficient, expressed as a real value between 0 and 1."
+            "The reflection coefficient, expressed as a real value between 0 and 1.",
         )
         self.r_coef_label = QLabel("0.50")
 
@@ -308,7 +310,7 @@ class PlotWidget(QWidget):
             "The path method that is used to determine each ray path. "
             "Note that each next method is much slower than the previous, "
             "but can simulate more complex interaction types, "
-            "like diffraction, not implemented at the moment."
+            "like diffraction, not implemented at the moment.",
         )
         self.path_cls_combo_box.setCurrentText("image")
 
@@ -357,8 +359,8 @@ class PlotWidget(QWidget):
         scene.plot(
             ax=self.ax,
             annotate=False,
-            transmitters_kwargs=dict(picker=True),
-            receivers_kwargs=dict(picker=True),
+            transmitters_kwargs={"picker": True},
+            receivers_kwargs={"picker": True},
         )
 
         self.view.mpl_connect("pick_event", self.on_pick_event)
@@ -373,7 +375,7 @@ class PlotWidget(QWidget):
 
             self.key, key = jax.random.split(self.key, 2)
 
-            total_power = scene.accumulate_over_paths(
+            return scene.accumulate_over_paths(
                 fun=partial(received_power, r_coef=self.r_coef),
                 reduce_all=True,
                 min_order=self.min_order,
@@ -381,8 +383,6 @@ class PlotWidget(QWidget):
                 path_cls=self.path_cls,
                 key=key,
             )
-
-            return total_power  # type: ignore
 
         self.f_and_df = jax.value_and_grad(f)
 
@@ -415,11 +415,11 @@ class PlotWidget(QWidget):
             artist, point_name = self.picked
             if self.picked_tx:
                 self.scene = self.scene.update_transmitters(
-                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))}
+                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))},
                 )
             else:
                 self.scene = self.scene.update_receivers(
-                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))}
+                    **{point_name: Point(xy=jnp.array([event.xdata, event.ydata]))},
                 )
             artist.set_xdata([event.xdata])  # type: ignore
             artist.set_ydata([event.ydata])  # type: ignore
@@ -464,12 +464,12 @@ class PlotWidget(QWidget):
         ):
             self.path_artists.extend(path.plot(self.ax, zorder=-1, alpha=float(valid)))
 
-        if self.picked and False:
+        if False:
             _, point = self.picked
 
             x, y = rx_coords = point.xy
 
-            p, dp = self.f_and_df(rx_coords)
+            _p, dp = self.f_and_df(rx_coords)
 
             ndp = jnp.linalg.norm(dp)
 
@@ -549,7 +549,9 @@ if __name__ == "__main__":
 
     if args.file:
         scene = Scene.from_geojson(
-            args.file.read(), tx_loc=args.tx_loc, rx_loc=args.rx_loc
+            args.file.read(),
+            tx_loc=args.tx_loc,
+            rx_loc=args.rx_loc,
         )
     else:
         scene = Scene.from_scene_name(args.scene_name)

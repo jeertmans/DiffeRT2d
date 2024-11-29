@@ -7,7 +7,7 @@ from differt2d.geometry import Wall
 
 
 class TestPlottable:
-    def test_grid(self):
+    def test_grid(self) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.0], [1.0, 2.0]]))
 
         X, Y = wall.grid(25)
@@ -28,7 +28,7 @@ class TestPlottable:
         assert float(Y.min()) == 0.0
         assert float(Y.max()) == 2.0
 
-    def test_center(self):
+    def test_center(self) -> None:
         wall = Wall(xys=jnp.array([[0.0, 1.0], [1.0, 2.0]]))
 
         got = wall.center()
@@ -36,7 +36,7 @@ class TestPlottable:
 
         chex.assert_trees_all_equal(got, expected)
 
-    def test_get_location(self):
+    def test_get_location(self) -> None:
         wall = Wall(xys=jnp.array([[0.0, 0.5], [1.0, 2.0]]))
 
         got = wall.get_location("N")

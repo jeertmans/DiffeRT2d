@@ -11,16 +11,27 @@ from utils import create_fig_for_paper  # type: ignore[reportMissingImports]
 scene = Scene.square_scene_with_wall()
 scene = scene.with_transmitters(Tx=scene.transmitters["tx"])
 
-annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
-point_kwargs = dict(
-    markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
-)
+annotate_kwargs = {
+    "color": "black",
+    "fontsize": 10,
+    "fontweight": "bold",
+    "ha": "center",
+}
+point_kwargs = {
+    "markersize": 3,
+    "annotate_offset": (0, 0.05),
+    "annotate_kwargs": annotate_kwargs,
+}
 
 X, Y = scene.grid(n=600)
 
 for grad in [False, True]:
     fig, axes = create_fig_for_paper(
-        2, 1, sharex=True, height_to_width_ratio=1.125, tight_layout=True
+        2,
+        1,
+        sharex=True,
+        height_to_width_ratio=1.125,
+        tight_layout=True,
     )
     for ax, approx in zip(axes, [False, True]):
         scene.plot(

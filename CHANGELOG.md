@@ -25,12 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 + Changed `pyperf` to `pytest-benchmark` for benchmarks.
   [#83](https://github.com/jeertmans/DiffeRT2d/pull/83)
++ Changed Rye to uv.
+  [#93](https://github.com/jeertmans/DiffeRT2d/pull/93)
++ Removed support for Python 3.9 (as a consequence of bumping JAX).
+  [#93](https://github.com/jeertmans/DiffeRT2d/pull/93)
++ Use `typing.Self` instead of string annotation, to include subclasses.
+  [#93](https://github.com/jeertmans/DiffeRT2d/pull/93)
 
 (unreleased-fixed)=
 ### Fixed
 
 + Fixed issues with `jax>0.4.28`.
   [#81](https://github.com/jeertmans/DiffeRT2d/pull/81)
++ Fixed layout issue [#92](https://github.com/jeertmans/DiffeRT2d/pull/92).
+  [#93](https://github.com/jeertmans/DiffeRT2d/pull/93)
++ Fixed `Scene.square_scene_will_wall` not using `ratio` argument.
+  [#93](https://github.com/jeertmans/DiffeRT2d/pull/93)
 
 (v0.3.4)=
 ## [v0.3.4](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.3...v0.3.4)

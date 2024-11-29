@@ -28,18 +28,18 @@ from differt2d.logic import (
     true_value,
 )
 
-approx = pytest.mark.parametrize(("approx",), [(True,), (False,), (None,)])
+approx = pytest.mark.parametrize("approx", [True, False, None])
 alpha = pytest.mark.parametrize(
-    ("alpha",), [(1e-3,), (1e-2,), (1e-1,), (1e-0,), (1e1,)]
+    "alpha",
+    [1e-3, 1e-2, 1e-1, 1e-0, 1e1],
 )
-function = pytest.mark.parametrize(("function",), [(sigmoid,), (hard_sigmoid,)])
-tol = pytest.mark.parametrize(("tol",), [(0.05,), (0.5,)])
+function = pytest.mark.parametrize("function", [sigmoid, hard_sigmoid])
+tol = pytest.mark.parametrize("tol", [0.05, 0.5])
 
 
 @pytest.fixture
 def x(key):
-    x = jax.random.uniform(key, (200,))
-    yield x
+    return jax.random.uniform(key, (200,))
 
 
 @pytest.fixture
@@ -47,10 +47,10 @@ def xy(key):
     key1, key2 = jax.random.split(key)
     x = jax.random.uniform(key1, (200,))
     y = jax.random.uniform(key2, (200,))
-    yield x, y
+    return x, y
 
 
-def test_set_approx():
+def test_set_approx() -> None:
     set_approx(True)
     assert differt2d.logic.ENABLE_APPROX is True
 
@@ -58,7 +58,7 @@ def test_set_approx():
     assert differt2d.logic.ENABLE_APPROX is False
 
 
-def test_enable_approx():
+def test_enable_approx() -> None:
     @jax.jit
     def approx_enabled():
         return differt2d.logic.ENABLE_APPROX
@@ -101,7 +101,7 @@ def test_enable_approx():
             chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
 
-def test_enable_approx_clear_cache():
+def test_enable_approx_clear_cache() -> None:
     is_true.clear_cache()  # type: ignore
     with enable_approx(True):
         expected = jnp.array(True)
@@ -124,7 +124,7 @@ def test_enable_approx_clear_cache():
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
 
-def test_disable_approx():
+def test_disable_approx() -> None:
     @jax.jit
     def approx_enabled():
         return differt2d.logic.ENABLE_APPROX
@@ -167,7 +167,7 @@ def test_disable_approx():
             chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
 
-def test_disable_approx_clear_cache():
+def test_disable_approx_clear_cache() -> None:
     is_true.clear_cache()  # type: ignore
     with disable_approx(False):
         expected = jnp.array(True)
@@ -190,7 +190,7 @@ def test_disable_approx_clear_cache():
         chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
 
 
-def test_enable_approx_with_keyword():
+def test_enable_approx_with_keyword() -> None:
     expected = jnp.array(True)
     got = is_true(1.0, approx=True)
     chex.assert_trees_all_equal(expected, got)
@@ -210,7 +210,7 @@ def test_enable_approx_with_keyword():
     [(sigmoid, jax.nn.sigmoid), (hard_sigmoid, jax.nn.hard_sigmoid)],
 )
 @alpha
-def test_activation(function, jax_fun, alpha):
+def test_activation(function, jax_fun, alpha) -> None:
     x = jnp.linspace(-5, +5, 200)
     expected = jax_fun(alpha * x)
     got = activation(x, alpha=alpha, function=function)
@@ -219,7 +219,7 @@ def test_activation(function, jax_fun, alpha):
 
 
 @approx
-def test_logical_or(xy, approx):
+def test_logical_or(xy, approx) -> None:
     x, y = xy
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.maximum(x, y)
@@ -232,7 +232,7 @@ def test_logical_or(xy, approx):
 
 
 @approx
-def test_logical_and(xy, approx):
+def test_logical_and(xy, approx) -> None:
     x, y = xy
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.minimum(x, y)
@@ -245,7 +245,7 @@ def test_logical_and(xy, approx):
 
 
 @approx
-def test_logical_not(x, approx):
+def test_logical_not(x, approx) -> None:
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.subtract(1.0, x)
     else:
@@ -257,7 +257,7 @@ def test_logical_not(x, approx):
 
 
 @approx
-def test_logical_all(x, approx):
+def test_logical_all(x, approx) -> None:
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         x = jnp.array([0.8, 0.2, 0.3])
         expected = jnp.min(x)
@@ -271,7 +271,7 @@ def test_logical_all(x, approx):
 
 
 @approx
-def test_logical_any(x, approx):
+def test_logical_any(x, approx) -> None:
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         x = jnp.array([0.8, 0.2, 0.3])
         expected = jnp.max(x)
@@ -287,7 +287,7 @@ def test_logical_any(x, approx):
 @approx
 @alpha
 @function
-def test_greater(xy, approx, alpha, function):
+def test_greater(xy, approx, alpha, function) -> None:
     x, y = xy
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(x - y, alpha=alpha, function=function)
@@ -302,7 +302,7 @@ def test_greater(xy, approx, alpha, function):
 @approx
 @alpha
 @function
-def test_greater_equal(xy, approx, alpha, function):
+def test_greater_equal(xy, approx, alpha, function) -> None:
     x, y = xy
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(x - y, alpha=alpha, function=function)
@@ -317,7 +317,7 @@ def test_greater_equal(xy, approx, alpha, function):
 @approx
 @alpha
 @function
-def test_less(xy, approx, alpha, function):
+def test_less(xy, approx, alpha, function) -> None:
     x, y = xy
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(y - x, alpha=alpha, function=function)
@@ -332,7 +332,7 @@ def test_less(xy, approx, alpha, function):
 @approx
 @alpha
 @function
-def test_less_equal(xy, approx, alpha, function):
+def test_less_equal(xy, approx, alpha, function) -> None:
     x, y = xy
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = activation(y - x, alpha=alpha, function=function)
@@ -346,7 +346,7 @@ def test_less_equal(xy, approx, alpha, function):
 
 @approx
 @tol
-def test_is_true(x, approx, tol):
+def test_is_true(x, approx, tol) -> None:
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.greater(x, 1.0 - tol)
     else:
@@ -360,7 +360,7 @@ def test_is_true(x, approx, tol):
 
 @approx
 @tol
-def test_is_false(x, approx, tol):
+def test_is_false(x, approx, tol) -> None:
     if approx or (approx is None and differt2d.logic.ENABLE_APPROX):
         expected = jnp.less(x, tol)
     else:
@@ -374,13 +374,13 @@ def test_is_false(x, approx, tol):
 
 @approx
 @tol
-def test_true_value(approx, tol):
+def test_true_value(approx, tol) -> None:
     x = true_value(approx=approx)
     assert is_true(x, tol=tol, approx=approx)
 
 
 @approx
 @tol
-def test_false_value(approx, tol):
+def test_false_value(approx, tol) -> None:
     x = false_value(approx=approx)
     assert is_false(x, tol=tol, approx=approx)

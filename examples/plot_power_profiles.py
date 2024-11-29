@@ -48,7 +48,7 @@ scene = Scene.square_scene_with_wall()
 
 fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 
-annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
+annotate_kwargs = {"color": "red", "fontsize": 12, "fontweight": "bold"}
 
 # sphinx_gallery_defer_figures
 
@@ -63,8 +63,8 @@ annotate_kwargs = dict(color="red", fontsize=12, fontweight="bold")
 
 scene.plot(
     axes[0],
-    transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
-    receivers_kwargs=dict(annotate_kwargs=annotate_kwargs),
+    transmitters_kwargs={"annotate_kwargs": annotate_kwargs},
+    receivers_kwargs={"annotate_kwargs": annotate_kwargs},
 )
 
 X, Y = scene.grid(n=300)
@@ -102,7 +102,13 @@ y = jnp.array([0.5])
 X, Y = jnp.meshgrid(x, y)
 
 P: Float[Array, "200 1"] = scene.accumulate_on_receivers_grid_over_paths(
-    X, Y, fun=received_power, reduce_all=True, approx=False, min_order=0, max_order=0
+    X,
+    Y,
+    fun=received_power,
+    reduce_all=True,
+    approx=False,
+    min_order=0,
+    max_order=0,
 )  # type: ignore
 
 PdB = 10.0 * jnp.log10(P.reshape(-1) / P0)

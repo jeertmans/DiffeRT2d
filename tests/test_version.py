@@ -9,7 +9,7 @@ else:
 from differt2d.__version__ import __version__
 
 
-def test_version():
+def test_version() -> None:
     got = __version__
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
 

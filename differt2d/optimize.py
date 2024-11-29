@@ -80,7 +80,7 @@ def minimize(
     >>> chex.assert_trees_all_close(x, 2.0 * jnp.ones(10), rtol=1e-2)
     >>> chex.assert_trees_all_close(y, 0.0, atol=1e-3)
     """
-    optimizer = optimizer if optimizer else optax.adam(learning_rate=0.1)
+    optimizer = optimizer or optax.adam(learning_rate=0.1)
 
     f_and_df = jax.value_and_grad(fun)
     opt_state = optimizer.init(x0)

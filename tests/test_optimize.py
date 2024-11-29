@@ -24,12 +24,12 @@ jitted_convex_fun = jit(convex_fun)
 jitted_non_convex_fun = jit(non_convex_fun)
 
 
-@pytest.mark.parametrize(("fun",), [(convex_fun,), (jitted_convex_fun,)])
+@pytest.mark.parametrize("fun", [convex_fun, jitted_convex_fun])
 @pytest.mark.parametrize(
     ("x0", "expected_x", "expected_loss"),
     [(0.0, 0.5, 2.0), (0.5, 0.5, 2.0), ([1.0, 2.0, 3.0], [0.5, 0.5, 0.5], 2.0)],
 )
-def test_minimize(fun, x0, expected_x, expected_loss):
+def test_minimize(fun, x0, expected_x, expected_loss) -> None:
     x0 = jnp.atleast_1d(jnp.asarray(x0))
     expected_x = jnp.atleast_1d(jnp.asarray(expected_x))
     expected_loss = jnp.asarray(expected_loss)
@@ -40,12 +40,12 @@ def test_minimize(fun, x0, expected_x, expected_loss):
     chex.assert_shape(got_loss, expected_loss.shape)
 
 
-@pytest.mark.parametrize(("fun",), [(convex_fun,), (jitted_convex_fun,)])
+@pytest.mark.parametrize("fun", [convex_fun, jitted_convex_fun])
 @pytest.mark.parametrize(
     ("expected_x", "expected_loss"),
     [(0.5, 2.0), ([0.5, 0.5, 0.5], 2.0)],
 )
-def test_minimize_random_uniform(fun, seed, expected_x, expected_loss):
+def test_minimize_random_uniform(fun, seed, expected_x, expected_loss) -> None:
     expected_x = jnp.atleast_1d(jnp.asarray(expected_x))
     expected_loss = jnp.asarray(expected_loss)
     n = len(expected_x)
@@ -57,12 +57,12 @@ def test_minimize_random_uniform(fun, seed, expected_x, expected_loss):
     chex.assert_shape(got_loss, expected_loss.shape)
 
 
-@pytest.mark.parametrize(("fun",), [(convex_fun,), (jitted_convex_fun,)])
+@pytest.mark.parametrize("fun", [convex_fun, jitted_convex_fun])
 @pytest.mark.parametrize(
     ("expected_x", "expected_loss"),
     [(0.5, 2.0), ([0.5, 0.5, 0.5], 2.0)],
 )
-def test_minimize_many_random_uniform(fun, seed, expected_x, expected_loss):
+def test_minimize_many_random_uniform(fun, seed, expected_x, expected_loss) -> None:
     expected_x = jnp.atleast_1d(jnp.asarray(expected_x))
     expected_loss = jnp.asarray(expected_loss)
     n = len(expected_x)

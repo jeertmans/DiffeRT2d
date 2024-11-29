@@ -51,14 +51,14 @@ scene = scene.add_objects(ris)
 
 fig, ax = plt.subplots()
 
-annotate_kwargs = dict(color="white", fontsize=12, fontweight="bold")
+annotate_kwargs = {"color": "white", "fontsize": 12, "fontweight": "bold"}
 
 key = jax.random.PRNGKey(1234)
 X, Y = scene.grid(n=300)
 
 scene.plot(
     ax,
-    transmitters_kwargs=dict(annotate_kwargs=annotate_kwargs),
+    transmitters_kwargs={"annotate_kwargs": annotate_kwargs},
     receivers=False,
 )
 

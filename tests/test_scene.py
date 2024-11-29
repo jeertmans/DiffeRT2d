@@ -16,24 +16,25 @@ from differt2d.scene import PyTreeDict, Scene, SceneName
 def geojson_file():
     file = Path(__file__).parent / "example.geojson"
     assert file.exists()
-    yield file
+    return file
 
 
 class TestPyTreeDict:
-    def test_check_init(self):
+    def test_check_init(self) -> None:
         with pytest.raises(
-            ValueError, match="Number of keys must match number of values"
+            ValueError,
+            match="Number of keys must match number of values",
         ):
             _ = PyTreeDict(_keys=("a", "b"), _values=("key_a",))
 
-    def test_from_mapping(self):
+    def test_from_mapping(self) -> None:
         m = {"a": 1, "b": 2}
         d = PyTreeDict.from_mapping(m)
 
         for a, b in zip(m, d):
             assert a == b
 
-    def test_get_items(self):
+    def test_get_items(self) -> None:
         m = {"a": 1, "b": 2}
         d = PyTreeDict.from_mapping(m)
 
@@ -43,7 +44,7 @@ class TestPyTreeDict:
         with pytest.raises(KeyError):
             _ = d["c"]
 
-    def test_contains(self):
+    def test_contains(self) -> None:
         m = {"a": 1, "b": 2}
         d = PyTreeDict.from_mapping(m)
 
@@ -53,14 +54,14 @@ class TestPyTreeDict:
 
 
 class TestScene:
-    def test_empty_scene(self):
+    def test_empty_scene(self) -> None:
         scene = Scene()
 
         assert len(scene.transmitters) == 0
         assert len(scene.receivers) == 0
         assert len(scene.objects) == 0
 
-    def test_with_transmitters(self):
+    def test_with_transmitters(self) -> None:
         scene = Scene(transmitters={"a": Point(), "b": Point()})
 
         assert len(scene.transmitters) == 2
@@ -69,7 +70,7 @@ class TestScene:
 
         assert len(scene.transmitters) == 1
 
-    def test_with_receivers(self):
+    def test_with_receivers(self) -> None:
         scene = Scene(receivers={"a": Point(), "b": Point()})
 
         assert len(scene.receivers) == 2
@@ -78,7 +79,7 @@ class TestScene:
 
         assert len(scene.receivers) == 1
 
-    def test_with_objects(self):
+    def test_with_objects(self) -> None:
         scene = Scene(objects=[Wall(), Wall()])
 
         assert len(scene.objects) == 2
@@ -87,7 +88,7 @@ class TestScene:
 
         assert len(scene.objects) == 1
 
-    def test_filter_objects(self):
+    def test_filter_objects(self) -> None:
         scene = Scene(objects=[Wall(), Wall()])
         ris = RIS()
         scene = scene.add_objects(ris)
@@ -99,7 +100,7 @@ class TestScene:
         assert len(scene.objects) == 1
         assert isinstance(scene.objects[0], RIS)
 
-    def test_update_transmitters(self):
+    def test_update_transmitters(self) -> None:
         scene = Scene(transmitters={"a": Point(), "b": Point()})
 
         assert len(scene.transmitters) == 2
@@ -108,7 +109,7 @@ class TestScene:
 
         assert len(scene.transmitters) == 3
 
-    def test_update_receivers(self):
+    def test_update_receivers(self) -> None:
         scene = Scene(receivers={"a": Point(), "b": Point()})
 
         assert len(scene.receivers) == 2
@@ -117,7 +118,7 @@ class TestScene:
 
         assert len(scene.receivers) == 3
 
-    def test_add_objects(self):
+    def test_add_objects(self) -> None:
         scene = Scene(objects=[Wall(), Wall()])
 
         assert len(scene.objects) == 2
@@ -126,7 +127,7 @@ class TestScene:
 
         assert len(scene.objects) == 3
 
-    def test_get_object(self, key):
+    def test_get_object(self, key) -> None:
         scene = Scene(objects=[Wall(), Wall()])
 
         @jax.jit
@@ -147,7 +148,7 @@ class TestScene:
         with pytest.raises(TypeError):
             _ = scene.get_object(0)
 
-    def test_stacked_objects(self):
+    def test_stacked_objects(self) -> None:
         scene = Scene(objects=[Wall(), Wall()])
         objects = scene.stacked_objects()
         got = Scene.from_stacked_objects(objects)
@@ -160,7 +161,7 @@ class TestScene:
         with pytest.raises(ValueError):
             _ = scene.stacked_objects()
 
-    def test_rename_transmitters(self):
+    def test_rename_transmitters(self) -> None:
         scene = Scene(transmitters={"a": Point(), "b": Point()})
 
         assert "a" in scene.transmitters
@@ -177,7 +178,7 @@ class TestScene:
         assert "C" not in scene.transmitters
         assert len(scene.transmitters) == 2
 
-    def test_rename_receivers(self):
+    def test_rename_receivers(self) -> None:
         scene = Scene(receivers={"a": Point(), "b": Point()})
 
         assert "a" in scene.receivers
@@ -194,9 +195,12 @@ class TestScene:
         assert "C" not in scene.receivers
         assert len(scene.receivers) == 2
 
-    def test_from_walls_array(self, key):
+    def test_from_walls_array(self, key) -> None:
         scene = Scene.random_uniform_scene(
-            n_transmitters=0, n_receivers=0, n_walls=30, key=key
+            n_transmitters=0,
+            n_receivers=0,
+            n_walls=30,
+            key=key,
         )
 
         walls = scene.objects
@@ -211,15 +215,15 @@ class TestScene:
         chex.assert_trees_all_equal(scene, new_scene)
 
     @pytest.mark.parametrize(
-        ("transform",),
+        "transform",
         [
-            (lambda p: p.read_text(),),
-            (lambda p: p.read_bytes(),),
-            (lambda p: bytearray(p.read_bytes()),),
-            (lambda p: p.open(),),
+            lambda p: p.read_text(),
+            lambda p: p.read_bytes(),
+            lambda p: bytearray(p.read_bytes()),
+            lambda p: p.open(),
         ],
     )
-    def test_from_geojson(self, geojson_file, transform):
+    def test_from_geojson(self, geojson_file, transform) -> None:
         s_or_fp = transform(geojson_file)
         scene = Scene.from_geojson(s_or_fp, tx_loc="SW", rx_loc="NE")
 
@@ -233,38 +237,38 @@ class TestScene:
         chex.assert_trees_all_equal(scene.transmitters["tx"].xy, bounding_box[0, :])
         chex.assert_trees_all_equal(scene.receivers["rx"].xy, bounding_box[1, :])
 
-    def test_from_empty_geojson(self):
+    def test_from_empty_geojson(self) -> None:
         scene = Scene.from_geojson('{"features": []}')
 
         assert len(scene.transmitters) == 1
         assert len(scene.receivers) == 1
         assert len(scene.objects) == 0
 
-    def test_from_geojson_unimplemented(self, geojson_file):
+    def test_from_geojson_unimplemented(self, geojson_file) -> None:
         with pytest.raises(NotImplementedError):
             _ = Scene.from_geojson(geojson_file)
 
-    def test_from_geojson_decode_error(self, geojson_file):
+    def test_from_geojson_decode_error(self, geojson_file) -> None:
         with pytest.raises(JSONDecodeError):
             _ = Scene.from_geojson(geojson_file.as_posix())
 
     @pytest.mark.parametrize(
-        ("scene_name",),
-        [(scene_name,) for scene_name in get_args(SceneName)],
+        "scene_name",
+        [scene_name for scene_name in get_args(SceneName)],
     )
-    def test_from_scene_name(self, scene_name):
+    def test_from_scene_name(self, scene_name) -> None:
         _ = Scene.from_scene_name(scene_name)
 
     @pytest.mark.parametrize(
-        ("n",),
+        "n",
         [
-            (1,),
-            (2,),
-            (3,),
-            (4,),
+            1,
+            2,
+            3,
+            4,
         ],
     )
-    def test_random_uniform_scene(self, key, n):
+    def test_random_uniform_scene(self, key, n) -> None:
         scene = Scene.random_uniform_scene(key=key, n_transmitters=n)
 
         assert isinstance(scene, Scene)
@@ -286,32 +290,35 @@ class TestScene:
         assert len(scene.objects) == 1
         assert len(scene.receivers) == n
 
-    def test_basic_scene(self):
+    def test_basic_scene(self) -> None:
         scene = Scene.basic_scene()
 
         assert isinstance(scene, Scene)
 
-    def test_square_scene(self):
+    def test_square_scene(self) -> None:
         scene = Scene.square_scene()
 
         assert isinstance(scene, Scene)
         assert len(scene.objects) == 4
 
-    def test_square_scene_with_obstacle(self):
+    def test_square_scene_with_obstacle(self) -> None:
         scene = Scene.square_scene_with_obstacle()
 
         assert isinstance(scene, Scene)
         assert len(scene.objects) == 8
 
-    def test_square_scene_with_wall(self):
+    def test_square_scene_with_wall(self) -> None:
         scene = Scene.square_scene_with_obstacle()
 
         assert isinstance(scene, Scene)
         assert len(scene.objects) == 8
 
-    def test_plot(self, ax, key):
+    def test_plot(self, ax, key) -> None:
         scene = Scene.random_uniform_scene(
-            key=key, n_transmitters=3, n_walls=5, n_receivers=2
+            key=key,
+            n_transmitters=3,
+            n_walls=5,
+            n_receivers=2,
         )
         _ = scene.plot(ax)
 
@@ -324,25 +331,25 @@ class TestScene:
         scene = Scene.square_scene_with_obstacle()
         _ = scene.plot(ax)
 
-    def test_bounding_box(self, key):
+    def test_bounding_box(self, key) -> None:
         scene = Scene.random_uniform_scene(key=key, n_walls=10)
 
         points = jnp.vstack(
             [scene.transmitters["tx_0"].xy, scene.receivers["rx_0"].xy]
-            + [obj.xys for obj in scene.objects]
+            + [obj.xys for obj in scene.objects],
         )
 
         expected = jnp.array(
             [
                 [jnp.min(points[:, 0]), jnp.min(points[:, 1])],
                 [jnp.max(points[:, 0]), jnp.max(points[:, 1])],
-            ]
+            ],
         )
         got = scene.bounding_box()
         chex.assert_trees_all_equal(expected, got)
         chex.assert_shape(got, (2, 2))
 
-    def test_get_closest_transmitter(self, key):
+    def test_get_closest_transmitter(self, key) -> None:
         scene = Scene.random_uniform_scene(key=key, n_transmitters=10)
         expected_point = Point(xy=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
@@ -352,7 +359,7 @@ class TestScene:
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
-    def test_get_closest_receiver(self, key):
+    def test_get_closest_receiver(self, key) -> None:
         scene = Scene.random_uniform_scene(key=key, n_receivers=10)
         expected_point = Point(xy=jnp.array([0.5, 0.5]))
         expected_distance = jnp.array(0.0)
@@ -362,7 +369,7 @@ class TestScene:
         chex.assert_trees_all_equal(got_point, expected_point)
         chex.assert_trees_all_equal(got_distance, expected_distance)
 
-    def test_all_path_candidates(self, key):
+    def test_all_path_candidates(self, key) -> None:
         scene = Scene.random_uniform_scene(key=key, n_receivers=10)
         got = scene.all_path_candidates(min_order=0, max_order=0)
         assert len(got) == 1
@@ -371,7 +378,7 @@ class TestScene:
         assert len(got) == 1
         assert len(got[0]) == 0
 
-    def test_all_path_candidates_filter_objects(self):
+    def test_all_path_candidates_filter_objects(self) -> None:
         scene = Scene(objects=[Wall(), Wall(), Wall()])
         ris = RIS()
         scene = scene.add_objects(ris, Wall(), Wall())
@@ -384,15 +391,18 @@ class TestScene:
             jnp.array([3], dtype=jnp.int32),
         ]
         got = scene.all_path_candidates(
-            filter_objects=lambda o: isinstance(o, RIS), min_order=0, max_order=2
+            filter_objects=lambda o: isinstance(o, RIS),
+            min_order=0,
+            max_order=2,
         )
 
         chex.assert_trees_all_equal(got, expected)
 
     @pytest.mark.parametrize(
-        ("min_order", "max_order"), [(0, 0), (1, 1), (2, 2), (0, 2)]
+        ("min_order", "max_order"),
+        [(0, 0), (1, 1), (2, 2), (0, 2)],
     )
-    def test_all_paths_and_valid_paths(self, min_order, max_order, key):
+    def test_all_paths_and_valid_paths(self, min_order, max_order, key) -> None:
         scene = Scene.square_scene()
 
         valid_paths = scene.all_valid_paths(
@@ -415,7 +425,10 @@ class TestScene:
 
             interacting_objects = scene.get_interacting_objects(path_candidate)
             expected_valid = expected_path.is_valid(
-                scene.objects, path_candidate, interacting_objects, approx=False
+                scene.objects,
+                path_candidate,
+                interacting_objects,
+                approx=False,
             )
 
             chex.assert_trees_all_equal(got_valid, expected_valid)
@@ -427,7 +440,7 @@ class TestScene:
         with pytest.raises(StopIteration):
             _ = next(valid_paths)
 
-    def test_accumulate_over_paths(self):
+    def test_accumulate_over_paths(self) -> None:
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
@@ -436,9 +449,9 @@ class TestScene:
         rx0 = Point(xy=jnp.array([1.0, 1.0]))
         rx1 = Point(xy=jnp.array([0.0, 1.0]))
         scene = Scene(
-            transmitters=dict(tx0=tx0, tx1=tx1),
+            transmitters={"tx0": tx0, "tx1": tx1},
             objects=[],
-            receivers=dict(rx0=rx0, rx1=rx1),
+            receivers={"rx0": rx0, "rx1": rx1},
         )
 
         got = scene.accumulate_over_paths(fun=fun, max_order=1, approx=False)
@@ -464,22 +477,30 @@ class TestScene:
         chex.assert_trees_all_close(acc, jnp.array(2.0))
 
         got = scene.accumulate_over_paths(
-            fun=fun, reduce_all=True, max_order=1, approx=False
+            fun=fun,
+            reduce_all=True,
+            max_order=1,
+            approx=False,
         )
         chex.assert_trees_all_close(got, jnp.array(6.0))
 
-    def test_accumulate_on_transmitters_grid_over_paths(self, key):
+    def test_accumulate_on_transmitters_grid_over_paths(self, key) -> None:
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
         rx0 = Point(xy=jnp.array([0.0, 0.0]))
         rx1 = Point(xy=jnp.array([0.0, 1.0]))
-        scene = Scene(transmitters={}, objects=[], receivers=dict(rx0=rx0, rx1=rx1))
+        scene = Scene(transmitters={}, objects=[], receivers={"rx0": rx0, "rx1": rx1})
 
         x = y = jnp.linspace(-3, 3, 10)
         X, Y = jnp.meshgrid(x, y)
         got_Z = scene.accumulate_on_transmitters_grid_over_paths(
-            X, Y, fun=fun, max_order=1, approx=False, key=key
+            X,
+            Y,
+            fun=fun,
+            max_order=1,
+            approx=False,
+            key=key,
         )
 
         rx_key, got_Z0 = next(got_Z)  # type: ignore
@@ -498,13 +519,24 @@ class TestScene:
         chex.assert_trees_all_close(got_Z1, expected_Z1)
 
         got_Z = scene.accumulate_on_transmitters_grid_over_paths(
-            X, Y, fun=fun, reduce_all=True, max_order=1, approx=False
+            X,
+            Y,
+            fun=fun,
+            reduce_all=True,
+            max_order=1,
+            approx=False,
         )
         expected_Z = expected_Z0 + expected_Z1
         chex.assert_trees_all_close(got_Z, expected_Z)
 
         got_dZ = scene.accumulate_on_transmitters_grid_over_paths(
-            X, Y, fun=fun, reduce_all=True, grad=True, max_order=1, approx=False
+            X,
+            Y,
+            fun=fun,
+            reduce_all=True,
+            grad=True,
+            max_order=1,
+            approx=False,
         )
         expected_dZ0 = jnp.stack([2 * X, 2 * Y], axis=-1)
         expected_dZ1 = jnp.stack([2 * X, 2 * (Y - 1.0)], axis=-1)
@@ -523,18 +555,23 @@ class TestScene:
         chex.assert_trees_all_close(got_Z, expected_Z)
         chex.assert_trees_all_close(got_dZ, expected_dZ)
 
-    def test_accumulate_on_receivers_grid_over_paths(self, key):
+    def test_accumulate_on_receivers_grid_over_paths(self, key) -> None:
         def fun(transmitter, receiver, path, interacting_objects):
             return path.length() ** 2  # = x^2 + y^2 in LOS
 
         tx0 = Point(xy=jnp.array([0.0, 0.0]))
         tx1 = Point(xy=jnp.array([1.0, 0.0]))
-        scene = Scene(transmitters=dict(tx0=tx0, tx1=tx1), objects=[], receivers={})
+        scene = Scene(transmitters={"tx0": tx0, "tx1": tx1}, objects=[], receivers={})
 
         x = y = jnp.linspace(-3, 3, 10)
         X, Y = jnp.meshgrid(x, y)
         got_Z = scene.accumulate_on_receivers_grid_over_paths(
-            X, Y, fun=fun, max_order=1, approx=False, key=key
+            X,
+            Y,
+            fun=fun,
+            max_order=1,
+            approx=False,
+            key=key,
         )
 
         tx_key, got_Z0 = next(got_Z)  # type: ignore
@@ -553,13 +590,24 @@ class TestScene:
         chex.assert_trees_all_close(got_Z1, expected_Z1)
 
         got_Z = scene.accumulate_on_receivers_grid_over_paths(
-            X, Y, fun=fun, reduce_all=True, max_order=1, approx=False
+            X,
+            Y,
+            fun=fun,
+            reduce_all=True,
+            max_order=1,
+            approx=False,
         )
         expected_Z = expected_Z0 + expected_Z1
         chex.assert_trees_all_close(got_Z, expected_Z)
 
         got_dZ = scene.accumulate_on_receivers_grid_over_paths(
-            X, Y, fun=fun, reduce_all=True, grad=True, max_order=1, approx=False
+            X,
+            Y,
+            fun=fun,
+            reduce_all=True,
+            grad=True,
+            max_order=1,
+            approx=False,
         )
         expected_dZ0 = jnp.stack([2 * X, 2 * Y], axis=-1)
         expected_dZ1 = jnp.stack([2 * (X - 1.0), 2 * Y], axis=-1)

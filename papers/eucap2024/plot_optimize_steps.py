@@ -29,7 +29,10 @@ def objective_function(
 
 
 def loss(
-    tx_coords: Float[Array, "2"], scene: Scene, *args: Any, **kwargs: Any
+    tx_coords: Float[Array, "2"],
+    scene: Scene,
+    *args: Any,
+    **kwargs: Any,
 ) -> Float[Array, " "]:
     scene = scene.with_transmitters(tx=Point(xy=tx_coords))
     return -objective_function(
@@ -40,7 +43,11 @@ def loss(
 f_and_df = jax.value_and_grad(loss)
 
 fig1, axes1 = create_fig_for_paper(
-    2, 1, sharex=True, height_to_width_ratio=1.125, tight_layout=True
+    2,
+    1,
+    sharex=True,
+    height_to_width_ratio=1.125,
+    tight_layout=True,
 )
 fig2, axes2 = create_fig_for_paper(
     1,
@@ -53,17 +60,24 @@ fig2, axes2 = create_fig_for_paper(
 )
 
 
-annotate_kwargs = dict(color="black", fontsize=10, fontweight="bold", ha="center")
-point_kwargs = dict(
-    markersize=3, annotate_offset=(0, 0.05), annotate_kwargs=annotate_kwargs
-)
+annotate_kwargs = {
+    "color": "black",
+    "fontsize": 10,
+    "fontweight": "bold",
+    "ha": "center",
+}
+point_kwargs = {
+    "markersize": 3,
+    "annotate_offset": (0, 0.05),
+    "annotate_kwargs": annotate_kwargs,
+}
 
 scene = scene.with_transmitters(Tx=Point(xy=jnp.array([0.5, 0.7])))
 scene = scene.with_receivers(
     **{
         r"Rx$_0$": Point(xy=jnp.array([0.3, 0.1])),
         r"Rx$_1$": Point(xy=jnp.array([0.5, 0.1])),
-    }
+    },
 )
 
 X, Y = scene.grid(n=600)
@@ -130,7 +144,12 @@ for frame, alpha in enumerate(alphas):
             F = objective_function(
                 power  # type: ignore
                 for _, power in scenes[i].accumulate_on_transmitters_grid_over_paths(
-                    X, Y, fun=received_power, max_order=0, approx=approx, alpha=alpha
+                    X,
+                    Y,
+                    fun=received_power,
+                    max_order=0,
+                    approx=approx,
+                    alpha=alpha,
                 )
             )
 
@@ -147,7 +166,7 @@ for frame, alpha in enumerate(alphas):
                 cbar = fig1.colorbar(im, ax=ax)
                 cbar.ax.set_ylabel("Objective function")
                 ax.set_title(
-                    "With approximation" if approx else "Without approximation"
+                    "With approximation" if approx else "Without approximation",
                 )
 
         loss, grads = f_and_df(

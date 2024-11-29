@@ -5,7 +5,7 @@ from differt2d.geometry import Path, Point
 from differt2d.utils import received_power
 
 
-def test_received_power():
+def test_received_power() -> None:
     tx = rx = Point(xy=jnp.array([0.0, 0.0]))
     path = Path(
         xys=jnp.array(
@@ -13,8 +13,8 @@ def test_received_power():
                 [0.0, 0.0],
                 [1.0, 0.0],
                 [1.0, 1.0],
-            ]
-        )
+            ],
+        ),
     )
 
     expected = 0.3 / (2.0 * 2.0)
