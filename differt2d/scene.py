@@ -7,7 +7,7 @@ import operator
 import sys
 from abc import abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from functools import cache, singledispatchmethod
+from functools import singledispatchmethod
 from itertools import groupby, product
 from typing import (
     Any,
@@ -118,7 +118,7 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
         return len(self._keys)
 
 
-@cache
+@eqx.filter_jit
 def all_path_candidates(
     num_nodes: int,
     min_order: int = 0,
