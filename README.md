@@ -151,8 +151,8 @@ you can do so at: [jeertmans@icloud.com](mailto:jeertmans@icloud.com).
 [pypi-python-version-badge]: https://img.shields.io/pypi/pyversions/DiffeRT2d
 [documentation-badge]: https://img.shields.io/website?down_color=lightgrey&down_message=offline&label=documentation&up_color=green&up_message=online&url=https%3A%2F%2Feertmans.be%2FDiffeRT2d%2F
 [documentation-url]: https://eertmans.be/DiffeRT2d/
-[doi-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.12600658.svg
-[doi-url]: https://doi.org/10.5281/zenodo.12600658
+[doi-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.11386516.svg
+[doi-url]: https://doi.org/10.5281/zenodo.11386516
 [joss-badge]: https://joss.theoj.org/papers/10.21105/joss.06915/status.svg
 [joss-url]: https://doi.org/10.21105/joss.06915
 [codecov-badge]: https://codecov.io/gh/jeertmans/DiffeRT2d/branch/main/graph/badge.svg?token=1dJ1AKWMR5

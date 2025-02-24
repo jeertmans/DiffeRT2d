@@ -9,7 +9,7 @@ authors:
 - family-names: Jacques
   given-names: Laurent
   orcid: "https://orcid.org/0000-0002-6261-0328"
-doi: 10.5281/zenodo.12600658
+doi: 10.5281/zenodo.11386516
 message: If you use this software, please cite our article in the
   Journal of Open Source Software.
 repository-code: 'https://github.com/jeertmans/DiffeRT2d'
