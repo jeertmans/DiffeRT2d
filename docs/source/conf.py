@@ -9,6 +9,7 @@
 
 import functools
 import inspect
+import os
 from datetime import date
 from textwrap import dedent
 
@@ -106,6 +107,7 @@ sphinx_gallery_conf = {
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "/")
 html_theme = "furo"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
