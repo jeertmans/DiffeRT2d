@@ -85,7 +85,7 @@ def minimize(
     f_and_df = jax.value_and_grad(fun)
     opt_state = optimizer.init(x0)
 
-    def f(carry, x):
+    def f(carry, _):
         x, opt_state = carry
         loss, grads = f_and_df(x, *args)
         updates, opt_state = optimizer.update(grads, opt_state)
