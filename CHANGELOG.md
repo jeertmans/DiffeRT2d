@@ -8,9 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- changes -->
 
 (unreleased)=
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.5...HEAD)
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.4.0...HEAD)
 
-(unreleased-changed)=
+<!-- start changelog -->
+
+(v0.4.0)=
+## [v0.4.0](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.5...v0.4.0)
+
+(v0.4.0-changed)=
 ### Changed
 
 + Scene instantiation class methods now return `Scene[Wall]`
@@ -25,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + `Scene.get_object` supports traced arrays if all scene
   objects are of the same type.
 
-(unreleased-chore)=
+(v0.4.0-chore)=
 ### Chore
 
 + Remove extras in favor to dependency groups.
@@ -35,13 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 + Removed unnecessary `@jax.jit` and `@jaxtyped` decorators.
   [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
 
-(unreleased-fixed)=
+(v0.4.0-fixed)=
 ### Fixed
 
 + Fixed documentation issue with self-reference inside Array type hints.
   [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
-
-<!-- start changelog -->
 
 (v0.3.5)=
 ## [v0.3.5](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.4...v0.3.5)
