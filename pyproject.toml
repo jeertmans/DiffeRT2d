@@ -3,6 +3,9 @@ build-backend = "hatchling.build"
 requires = ["hatchling", "hatch-fancy-pypi-readme"]
 
 [dependency-groups]
+codspeed = [
+  "pytest-codspeed>=2.2.0",
+]
 dev = [
   {include-group = "docs"},
   {include-group = "examples"},
@@ -32,7 +35,6 @@ examples = [
 tests = [
   "chex>=0.1.84",
   "pytest>=7.4.0",
-  "pytest-codspeed>=2.2.0",
   "pytest-benchmark>=4.0.0",
   "pytest-cov>=4.1.0",
   "pytest-env>=0.8.2",
