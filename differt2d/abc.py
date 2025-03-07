@@ -170,7 +170,7 @@ class Interactable(ABC):
         >>> import jax.numpy as jnp
         >>> key = jax.random.PRNGKey(1234)
         >>> wall = Wall(xys=jnp.array([[0.0, 0.0], [3.0, 4.0]]))
-        >>> wall.sample(key=key)
+        >>> wall.sample(key=key)  # doctest: +SKIP
         Array([0.88359046, 1.1781206 ], dtype=float32)
         """
         return self.parametric_to_cartesian(

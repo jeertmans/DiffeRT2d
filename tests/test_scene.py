@@ -346,7 +346,7 @@ class TestScene:
             ],
         )
         got = scene.bounding_box()
-        chex.assert_trees_all_equal(expected, got)
+        chex.assert_trees_all_equal(got, expected)
         chex.assert_shape(got, (2, 2))
 
     def test_get_closest_transmitter(self, key) -> None:
