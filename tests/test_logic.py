@@ -74,16 +74,16 @@ def test_enable_approx() -> None:
     with enable_approx(True), disable_jit():
         expected = jnp.array(True)
         got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
         expected = jnp.array(False)
         got = is_true(0.5)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
         expected = jnp.array(False)
         got = is_true(0.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
     for value in [0.0, 0.5, 1.0]:
         with (
@@ -97,8 +97,8 @@ def test_enable_approx() -> None:
         with enable_approx(False), disable_jit():
             expected = jnp.array(value)
             got = is_true(value)
-            chex.assert_trees_all_equal(expected, got)
-            chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+            chex.assert_trees_all_equal(got, expected)
+            chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 def test_enable_approx_clear_cache() -> None:
@@ -106,8 +106,8 @@ def test_enable_approx_clear_cache() -> None:
     with enable_approx(True):
         expected = jnp.array(True)
         got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
     is_true.clear_cache()  # type: ignore
     with (
@@ -120,8 +120,8 @@ def test_enable_approx_clear_cache() -> None:
     with enable_approx(False):
         expected = jnp.array(True)
         got = is_true(True)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 def test_disable_approx() -> None:
@@ -140,16 +140,16 @@ def test_disable_approx() -> None:
     with disable_approx(False), disable_jit():
         expected = jnp.array(True)
         got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
         expected = jnp.array(False)
         got = is_true(0.5)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
         expected = jnp.array(False)
         got = is_true(0.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
     for value in [0.0, 0.5, 1.0]:
         with (
@@ -163,8 +163,8 @@ def test_disable_approx() -> None:
         with disable_approx(True), disable_jit():
             expected = jnp.array(value)
             got = is_true(value)
-            chex.assert_trees_all_equal(expected, got)
-            chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+            chex.assert_trees_all_equal(got, expected)
+            chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 def test_disable_approx_clear_cache() -> None:
@@ -172,8 +172,8 @@ def test_disable_approx_clear_cache() -> None:
     with disable_approx(False):
         expected = jnp.array(True)
         got = is_true(1.0)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
     is_true.clear_cache()  # type: ignore
     with (
@@ -186,23 +186,23 @@ def test_disable_approx_clear_cache() -> None:
     with disable_approx(True):
         expected = jnp.array(True)
         got = is_true(True)
-        chex.assert_trees_all_equal(expected, got)
-        chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+        chex.assert_trees_all_equal(got, expected)
+        chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 def test_enable_approx_with_keyword() -> None:
     expected = jnp.array(True)
     got = is_true(1.0, approx=True)
-    chex.assert_trees_all_equal(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_equal(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
     with pytest.raises(TypeCheckError, match="Expected type: Bool"):
         got = is_true(1.0, approx=False)
 
     expected = jnp.array(True)
     got = is_true(True, approx=False)
-    chex.assert_trees_all_equal(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_equal(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @pytest.mark.parametrize(
@@ -214,8 +214,8 @@ def test_activation(function, jax_fun, alpha) -> None:
     x = jnp.linspace(-5, +5, 200)
     expected = jax_fun(alpha * x)
     got = activation(x, alpha=alpha, function=function)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -227,8 +227,8 @@ def test_logical_or(xy, approx) -> None:
         expected = jnp.logical_or(x, y)
 
     got = logical_or(x, y, approx=approx)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -240,8 +240,8 @@ def test_logical_and(xy, approx) -> None:
         expected = jnp.logical_and(x, y)
 
     got = logical_and(x, y, approx=approx)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -252,8 +252,8 @@ def test_logical_not(x, approx) -> None:
         expected = jnp.logical_not(x)
 
     got = logical_not(x, approx=approx)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -266,8 +266,8 @@ def test_logical_all(x, approx) -> None:
         expected = jnp.all(x)
 
     got = logical_all(*x, axis=0, approx=approx)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -280,8 +280,8 @@ def test_logical_any(x, approx) -> None:
         expected = jnp.any(x)
 
     got = logical_any(*x, axis=0, approx=approx)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -295,8 +295,8 @@ def test_greater(xy, approx, alpha, function) -> None:
         expected = jnp.greater(x, y)
 
     got = greater(x, y, approx=approx, alpha=alpha, function=function)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -310,8 +310,8 @@ def test_greater_equal(xy, approx, alpha, function) -> None:
         expected = jnp.greater_equal(x, y)
 
     got = greater_equal(x, y, approx=approx, alpha=alpha, function=function)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -325,8 +325,8 @@ def test_less(xy, approx, alpha, function) -> None:
         expected = jnp.less(x, y)
 
     got = less(x, y, approx=approx, alpha=alpha, function=function)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -340,8 +340,8 @@ def test_less_equal(xy, approx, alpha, function) -> None:
         expected = jnp.less_equal(x, y)
 
     got = less_equal(x, y, approx=approx, alpha=alpha, function=function)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -354,8 +354,8 @@ def test_is_true(x, approx, tol) -> None:
         expected = x
 
     got = is_true(x, tol=tol, approx=approx)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx
@@ -368,8 +368,8 @@ def test_is_false(x, approx, tol) -> None:
         expected = jnp.logical_not(x)
 
     got = is_false(x, tol=tol, approx=approx)
-    chex.assert_trees_all_close(expected, got)
-    chex.assert_trees_all_equal_shapes_and_dtypes(expected, got)
+    chex.assert_trees_all_close(got, expected)
+    chex.assert_trees_all_equal_shapes_and_dtypes(got, expected)
 
 
 @approx

@@ -173,11 +173,9 @@ def minimize_many_random_uniform(
 
     keys = jax.random.split(key, num=many)
 
-    @jax.jit
-    def _minimize(_key):
-        return minimize_random_uniform(fun, _key, n, **kwargs)
-
-    xs, losses = jax.vmap(_minimize, in_axes=0)(keys)
+    xs, losses = jax.vmap(lambda key: minimize_random_uniform(fun, key, n, **kwargs))(
+        keys
+    )
 
     i_min = jnp.argmin(losses)
 

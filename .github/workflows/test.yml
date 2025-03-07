@@ -22,7 +22,7 @@ jobs:
         enable-cache: true
 
     - name: Run Pytest
-      run: uv run --python ${{ matrix.pyversion }} --frozen --no-dev --extra tests pytest
+      run: uv run --python ${{ matrix.pyversion }} --frozen --no-dev --group tests pytest
 
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v4
@@ -46,12 +46,12 @@ jobs:
       uses: astral-sh/setup-uv@v3
 
     - name: Install dependencies for benchmarking
-      run: uv pip install -r pyproject.toml --extra tests --python='${{ steps.setup-python.outputs.python-path }}'
+      run: uv sync --group tests
 
     - name: Run CodSpeed benchmarks
       uses: CodSpeedHQ/action@v3
       with:
-        run: pytest tests/benchmarks --codspeed
+        run: uv run --group=codspeed pytest tests/benchmarks --codspeed
 
   markdown-link-check:
     runs-on: ubuntu-latest

@@ -17,6 +17,7 @@ from typing import (
     Protocol,
     TypeVar,
     Union,
+    overload,
     runtime_checkable,
 )
 
@@ -57,9 +58,9 @@ SceneName = Literal[
     "square_scene_with_wall",
 ]
 """Literal type for all valid scene names."""
-_K = TypeVar("_K")
-_V = TypeVar("_V")
-_O = TypeVar("_O", bound=Object, covariant=True)
+K = TypeVar("K")
+V = TypeVar("V")
+Obj = TypeVar("Obj", bound=Object, covariant=True)
 
 
 @runtime_checkable
@@ -68,7 +69,7 @@ class Readable(Protocol):
     def read(self) -> S: ...
 
 
-class PyTreeDict(eqx.Module, Mapping[_K, _V]):
+class PyTreeDict(eqx.Module, Mapping[K, V]):
     """
     An immutable mapping that is also a PyTree.
 
@@ -76,9 +77,9 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
     time is linear with the size of the mapping.
     """
 
-    _keys: tuple[_K, ...] = eqx.field(converter=tuple, static=True)
+    _keys: tuple[K, ...] = eqx.field(converter=tuple, static=True)
     """The sequence of keys."""
-    _values: tuple[_V, ...] = eqx.field(converter=tuple)
+    _values: tuple[V, ...] = eqx.field(converter=tuple)
     """The sequence of values."""
 
     def __check_init__(self):
@@ -92,7 +93,7 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
             )
 
     @classmethod
-    def from_mapping(cls, mapping: Mapping[_K, _V]) -> Self:
+    def from_mapping(cls, mapping: Mapping[K, V]) -> Self:
         """
         Constructs an immutable mapping from another mapping.
 
@@ -104,14 +105,14 @@ class PyTreeDict(eqx.Module, Mapping[_K, _V]):
             _values=mapping.values(),  # type: ignore[reportArgumentType]
         )
 
-    def __getitem__(self, key: _K) -> _V:
+    def __getitem__(self, key: K) -> V:
         try:
             index = self._keys.index(key)
             return self._values[index]
         except ValueError as e:
             raise KeyError from e
 
-    def __iter__(self) -> Iterator[_K]:
+    def __iter__(self) -> Iterator[K]:
         return iter(self._keys)
 
     def __len__(self) -> int:
@@ -174,7 +175,7 @@ def all_path_candidates(
     ]
 
 
-class Scene(eqx.Module, Plottable, Generic[_O]):
+class Scene(eqx.Module, Plottable, Generic[Obj]):
     """2D Scene made of objects, one or more transmitting node(s), and one or more receiving node(s)."""
 
     transmitters: Mapping[str, Point] = eqx.field(
@@ -187,7 +188,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         default_factory=lambda: PyTreeDict.from_mapping({}),
     )
     """The receiving nodes."""
-    objects: Sequence[_O] = ()
+    objects: Sequence[Obj] = ()
     """The sequence of objects in the scene."""
 
     @jaxtyped(typechecker=None)
@@ -328,7 +329,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
-    def get_object(self, index: ScalarInt) -> Object:
+    def get_object(self, index: ScalarInt) -> Obj:
         """
         Returns the object at a corresponding index.
 
@@ -345,7 +346,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
-    def stacked_objects(self) -> Object:
+    def stacked_objects(self) -> Obj:
         """
         Returns an object that is the result of stacking all objects in the scene.
 
@@ -411,14 +412,14 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
 
     @classmethod
     @jaxtyped(typechecker=None)
-    def from_walls_array(cls, walls: Float[Array, "num_walls 2 2"]) -> Self:
+    def from_walls_array(cls, walls: Float[Array, "num_walls 2 2"]) -> "Scene[Wall]":
         """
         Creates an empty scene from an array of walls.
 
         :param walls: An array of wall coordinates.
         :return: The new scene.
         """
-        return cls(
+        return Scene(
             transmitters={},  # type: ignore[reportArgumentType]
             receivers={},  # type: ignore[reportArgumentType]
             objects=[Wall(xys=xys) for xys in walls],
@@ -628,7 +629,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
     @from_geojson.register(bytes)
     @from_geojson.register(bytearray)
     @classmethod
-    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> Self:
+    def _(cls, s: S, tx_loc: Loc = "NW", rx_loc: Loc = "SE") -> "Scene[Wall]":
         dictionary = json.loads(s)
 
         features = dictionary.get("features", [])
@@ -688,7 +689,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         n_receivers: int = 1,
         *,
         key: PRNGKeyArray,
-    ) -> Self:
+    ) -> "Scene[Wall]":
         """
         Generates a random scene, drawing coordinates from a random distribution.
 
@@ -729,14 +730,14 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
             Wall(xys=points[2 * i + n_transmitters : 2 * i + 2 + n_transmitters, :])
             for i in range(n_walls)
         ]
-        return cls(transmitters=transmitters, receivers=receivers, objects=walls)
+        return Scene(transmitters=transmitters, receivers=receivers, objects=walls)
 
     @classmethod
     def basic_scene(
         cls,
         tx_coords: Float[Array, "2"] = jnp.array([0.1, 0.1]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.302, 0.2147]),  # noqa: B008
-    ) -> Self:
+    ) -> "Scene[Wall]":
         """
         Instantiates a basic scene with a main room, and a second inner room in the lower left corner, with a small entrance.
 
@@ -783,14 +784,14 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
             Wall(xys=jnp.array([[0.1, 0.4], [0.0, 0.4]])),
         ]
 
-        return cls(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
+        return Scene(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
 
     @classmethod
     def square_scene(
         cls,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.2]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.5, 0.6]),  # noqa: B008
-    ) -> Self:
+    ) -> "Scene[Wall]":
         """
         Instantiates a square scene with one main room.
 
@@ -832,7 +833,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
             Wall(xys=jnp.array([[0.0, 1.0], [0.0, 0.0]])),
         ]
 
-        return cls(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
+        return Scene(transmitters={"tx": tx}, receivers={"rx": rx}, objects=walls)
 
     @classmethod
     def square_scene_with_wall(
@@ -840,7 +841,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         ratio: float = 0.6,
         tx_coords: Float[Array, "2"] = jnp.array([0.2, 0.5]),  # noqa: B008
         rx_coords: Float[Array, "2"] = jnp.array([0.8, 0.5]),  # noqa: B008
-    ) -> Self:
+    ) -> "Scene[Wall]":
         """
         Instantiates a square scene with one main room, and vertical wall in the middle.
 
@@ -885,7 +886,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         cls,
         ratio: ScalarFloat = 0.1,
         **kwargs: Any,
-    ) -> Self:
+    ) -> "Scene[Wall]":
         """
         Instantiates a square scene with one main room, and one square obstacle in the center.
 
@@ -1146,6 +1147,10 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
             as returned by :meth:`all_path_candidates`.
         :return: The list of interacting objects.
         """
+        if len(self.objects) < 2 or all(
+            type(obj) == type(self.objects[0]) for obj in self.objects
+        ):
+            return [self.get_object(i) for i in path_candidate]
         return [self.objects[i] for i in path_candidate]
 
     def all_paths(
@@ -1242,11 +1247,34 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
             if is_true(valid, approx=approx):
                 yield (tx_key, rx_key, path, path_candidate)
 
+    @overload
     def accumulate_over_paths(
         self,
         fun: PathFun,
         fun_args: tuple = (),
         fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[True],
+        **kwargs: Any,
+    ) -> Float[Array, " "]: ...
+
+    @overload
+    def accumulate_over_paths(
+        self,
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Iterator[tuple[str, str, Float[Array, " "]]]: ...
+
+    def accumulate_over_paths(
+        self,
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
         reduce_all: bool = False,
         **kwargs: Any,
     ) -> Union[Iterator[tuple[str, str, Float[Array, " "]]], Float[Array, " "]]:
@@ -1305,6 +1333,159 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
             return Z
         return results()
 
+    @overload
+    def accumulate_on_transmitters_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[False] = False,
+        grad: Literal[False] = False,
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        transmitter_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Iterator[
+        tuple[
+            str,
+            Float[Array, "m n"],
+        ]
+    ]: ...
+
+    @overload
+    def accumulate_on_transmitters_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[False] = False,
+        grad: Literal[True],
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        transmitter_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Iterator[
+        tuple[
+            str,
+            Float[Array, "m n 2"],
+        ]
+    ]: ...
+
+    @overload
+    def accumulate_on_transmitters_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[False] = False,
+        grad: bool = False,
+        value_and_grad: Literal[True],
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        transmitter_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Iterator[
+        tuple[
+            str,
+            tuple[Float[Array, "m n"], Float[Array, "m n 2"]],
+        ]
+    ]: ...
+
+    @overload
+    def accumulate_on_transmitters_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[True],
+        grad: Literal[False] = False,
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        transmitter_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Float[Array, "m n"]: ...
+
+    @overload
+    def accumulate_on_transmitters_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[True],
+        grad: Literal[True],
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        transmitter_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Float[Array, "m n 2"]: ...
+
+    @overload
+    def accumulate_on_transmitters_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[True],
+        grad: bool = False,
+        value_and_grad: Literal[True],
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        transmitter_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> tuple[Float[Array, "m n"], Float[Array, "m n 2"]]: ...
+
     def accumulate_on_transmitters_grid_over_paths(  # noqa: C901
         self,
         X: Float[Array, "m n"],
@@ -1312,6 +1493,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         fun: PathFun,
         fun_args: tuple = (),
         fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
@@ -1322,7 +1504,6 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         max_order: int = 1,
         order: Optional[int] = None,
         filter_objects: Optional[Callable[[Object], bool]] = None,
-        *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs,
     ) -> Union[
@@ -1466,6 +1647,159 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
             return Z
         return results()
 
+    @overload
+    def accumulate_on_receivers_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[False] = False,
+        grad: Literal[False] = False,
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        receiver_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Iterator[
+        tuple[
+            str,
+            Float[Array, "m n"],
+        ]
+    ]: ...
+
+    @overload
+    def accumulate_on_receivers_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[False] = False,
+        grad: Literal[True],
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        receiver_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Iterator[
+        tuple[
+            str,
+            Float[Array, "m n 2"],
+        ]
+    ]: ...
+
+    @overload
+    def accumulate_on_receivers_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[False] = False,
+        grad: bool = False,
+        value_and_grad: Literal[True],
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        receiver_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Iterator[
+        tuple[
+            str,
+            tuple[Float[Array, "m n"], Float[Array, "m n 2"]],
+        ]
+    ]: ...
+
+    @overload
+    def accumulate_on_receivers_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[True],
+        grad: Literal[False] = False,
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        receiver_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Float[Array, "m n"]: ...
+
+    @overload
+    def accumulate_on_receivers_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[True],
+        grad: Literal[True],
+        value_and_grad: Literal[False] = False,
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        receiver_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> Float[Array, "m n 2"]: ...
+
+    @overload
+    def accumulate_on_receivers_grid_over_paths(
+        self,
+        X: Float[Array, "m n"],
+        Y: Float[Array, "m n"],
+        fun: PathFun,
+        fun_args: tuple = (),
+        fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
+        reduce_all: Literal[True],
+        grad: bool = False,
+        value_and_grad: Literal[True],
+        path_cls: type[Path] = ImagePath,
+        path_cls_kwargs: Optional[Mapping[str, Any]] = None,
+        receiver_cls: type[Point] = Point,
+        min_order: int = 0,
+        max_order: int = 1,
+        order: Optional[int] = None,
+        filter_objects: Optional[Callable[[Object], bool]] = None,
+        key: Optional[PRNGKeyArray] = None,
+        **kwargs,
+    ) -> tuple[Float[Array, "m n"], Float[Array, "m n 2"]]: ...
+
     def accumulate_on_receivers_grid_over_paths(  # noqa: C901
         self,
         X: Float[Array, "m n"],
@@ -1473,6 +1807,7 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         fun: PathFun,
         fun_args: tuple = (),
         fun_kwargs: Optional[Mapping[str, Any]] = None,
+        *,
         reduce_all: bool = False,
         grad: bool = False,
         value_and_grad: bool = False,
@@ -1483,7 +1818,6 @@ class Scene(eqx.Module, Plottable, Generic[_O]):
         max_order: int = 1,
         order: Optional[int] = None,
         filter_objects: Optional[Callable[[Object], bool]] = None,
-        *,
         key: Optional[PRNGKeyArray] = None,
         **kwargs,
     ) -> Union[

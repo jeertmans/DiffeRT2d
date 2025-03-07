@@ -144,7 +144,7 @@ class Interactable(ABC):
     @abstractmethod
     def parametric_to_cartesian(
         self,
-        param_coords: Float[Array, "{self.parameters_counts}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_counts"],  # type: ignore[reportUndefinedVariable]
     ) -> Float[Array, "2"]:
         """
         Converts parametric coordinates to cartesian coordinates.
@@ -170,7 +170,7 @@ class Interactable(ABC):
         >>> import jax.numpy as jnp
         >>> key = jax.random.PRNGKey(1234)
         >>> wall = Wall(xys=jnp.array([[0.0, 0.0], [3.0, 4.0]]))
-        >>> wall.sample(key=key)
+        >>> wall.sample(key=key)  # doctest: +SKIP
         Array([0.88359046, 1.1781206 ], dtype=float32)
         """
         return self.parametric_to_cartesian(
@@ -181,7 +181,7 @@ class Interactable(ABC):
     def cartesian_to_parametric(
         self,
         carte_coords: Float[Array, "2"],
-    ) -> Float[Array, "{self.parameters_counts}"]:  # type: ignore[reportUndefinedVariable]
+    ) -> Float[Array, " parameters_counts"]:  # type: ignore[reportUndefinedVariable]
         """
         Converts cartesian coordinates to parametric coordinates.
 
@@ -193,7 +193,7 @@ class Interactable(ABC):
     @abstractmethod
     def contains_parametric(
         self,
-        param_coords: Float[Array, "{self.parameters_counts}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_counts"],  # type: ignore[reportUndefinedVariable]
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:

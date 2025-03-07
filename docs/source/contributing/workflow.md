@@ -39,12 +39,7 @@ uv sync
 ## Running commands
 
 The following commands assume that you installed
-the project locally with:
-
-```bash
-uv sync --all-extras
-```
-
+the project locally (see above)
 and that you activated the corresponding Python virtual environment:
 
 ```bash
