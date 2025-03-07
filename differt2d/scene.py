@@ -1147,7 +1147,11 @@ class Scene(eqx.Module, Plottable, Generic[Obj]):
             as returned by :meth:`all_path_candidates`.
         :return: The list of interacting objects.
         """
-        return [self.get_object(i) for i in path_candidate]
+        if len(self.objects) < 2 or all(
+            type(obj) == type(self.objects[0]) for obj in self.objects
+        ):
+            return [self.get_object(i) for i in path_candidate]
+        return [self.objects[i] for i in path_candidate]
 
     def all_paths(
         self,
