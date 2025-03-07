@@ -5,10 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- start changelog -->
+<!-- changes -->
 
 (unreleased)=
 ## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.5...HEAD)
+
+(unreleased-changed)=
+### Changed
+
++ **Breaking**: Scene instantiation class methods now return `Scene[Wall]`
+  instead of `Self`. This could break code that created subclasses of
+  `Scene`.
+  [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
++ **Breaking**: Scene `accumulate_*` methods now have almost
+  all arguments as **keyword-only** arguments.
+  [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
+
+(unreleased-chore)=
+### Chore
+
++ Remove extras in favor to dependency groups.
+  [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
++ Fixed some issues with type hints.
+  [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
++ Removed unnecessary `@jax.jit` and `@jaxtyped` decorators.
+  [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
+
+(unreleased-fixed)=
+### Fixed
+
++ Fixed documentation issue with self-reference inside Array type hints.
+  [#98](https://github.com/jeertmans/DiffeRT2d/pull/98)
+
+<!-- start changelog -->
 
 (v0.3.5)=
 ## [v0.3.5](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.4...v0.3.5)

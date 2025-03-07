@@ -380,7 +380,7 @@ class Vertex(Point, Object):
     @jaxtyped(typechecker=typechecker)
     def parametric_to_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
-        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_count"],  # type: ignore[reportUndefinedVariable]
     ) -> Float[Array, "2"]:
         return self.xy
 
@@ -389,14 +389,14 @@ class Vertex(Point, Object):
     def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
         carte_coords: Float[Array, "2"],
-    ) -> Float[Array, " {self.parameters_count()}"]:  # type: ignore[reportUndefinedVariable]
+    ) -> Float[Array, " parameters_count"]:  # type: ignore[reportUndefinedVariable]
         return jnp.empty_like(carte_coords, shape=0)
 
     @eqx.filter_jit
     @jaxtyped(typechecker=typechecker)
     def contains_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
-        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_count"],  # type: ignore[reportUndefinedVariable]
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
@@ -582,7 +582,7 @@ class Wall(Ray, Object):
     @jaxtyped(typechecker=typechecker)
     def parametric_to_cartesian(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
-        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_count"],  # type: ignore[reportUndefinedVariable]
     ) -> Float[Array, "2"]:
         return self.origin() + param_coords * self.t()
 
@@ -591,7 +591,7 @@ class Wall(Ray, Object):
     def cartesian_to_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
         carte_coords: Float[Array, "2"],
-    ) -> Float[Array, " {self.parameters_count()}"]:  # type: ignore[reportUndefinedVariable]
+    ) -> Float[Array, " parameters_count"]:  # type: ignore[reportUndefinedVariable]
         other = carte_coords - self.origin()
         squared_length = jnp.dot(self.t(), self.t())
         squared_length = jnp.where(squared_length == 0.0, 1.0, squared_length)
@@ -601,7 +601,7 @@ class Wall(Ray, Object):
     @jaxtyped(typechecker=typechecker)
     def contains_parametric(  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         self,
-        param_coords: Float[Array, " {self.parameters_count()}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_count"],  # type: ignore[reportUndefinedVariable]
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
@@ -1074,7 +1074,6 @@ class ImagePath(Path):
 
         walls = stack_leaves(objects)
 
-        @jaxtyped(typechecker=typechecker)
         def path_loss(
             cartesian_coords: Float[Array, "path_length 2"],
         ) -> Float[Array, " "]:
@@ -1084,7 +1083,6 @@ class ImagePath(Path):
 
             return _loss
 
-        @jaxtyped(typechecker=typechecker)
         def forward(
             image: Float[Array, "2"],
             wall: Wall,
@@ -1092,7 +1090,6 @@ class ImagePath(Path):
             image = wall.image_of(image)
             return image, image
 
-        @jaxtyped(typechecker=typechecker)
         def backward(
             point: Float[Array, "2"],
             x: tuple[Wall, Float[Array, "2"]],
@@ -1184,15 +1181,11 @@ class FermatPath(Path):
 
         n_unknowns = sum(obj.parameters_count() for obj in objects)
 
-        @jax.jit
-        @jaxtyped(typechecker=typechecker)
         def loss_fun(theta: Float[Array, " n_unknowns"]) -> Float[Array, " "]:
             cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)
 
             return path_length(cartesian_coords)
 
-        @jax.jit
-        @jaxtyped(typechecker=typechecker)
         def path_loss(
             cartesian_coords: Float[Array, " n_cartesian_unknowns 2"],
         ) -> Float[Array, " "]:
@@ -1278,8 +1271,6 @@ class MinPath(Path):
 
         n_unknowns = sum(obj.parameters_count() for obj in objects)
 
-        @jax.jit
-        @jaxtyped(typechecker=typechecker)
         def loss_fun(theta: Float[Array, " n_unknowns"]) -> Float[Array, " "]:
             cartesian_coords = parametric_to_cartesian(objects, theta, n, tx, rx)
             _loss = jnp.array(0.0)

@@ -144,7 +144,7 @@ class Interactable(ABC):
     @abstractmethod
     def parametric_to_cartesian(
         self,
-        param_coords: Float[Array, "{self.parameters_counts}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_counts"],  # type: ignore[reportUndefinedVariable]
     ) -> Float[Array, "2"]:
         """
         Converts parametric coordinates to cartesian coordinates.
@@ -181,7 +181,7 @@ class Interactable(ABC):
     def cartesian_to_parametric(
         self,
         carte_coords: Float[Array, "2"],
-    ) -> Float[Array, "{self.parameters_counts}"]:  # type: ignore[reportUndefinedVariable]
+    ) -> Float[Array, " parameters_counts"]:  # type: ignore[reportUndefinedVariable]
         """
         Converts cartesian coordinates to parametric coordinates.
 
@@ -193,7 +193,7 @@ class Interactable(ABC):
     @abstractmethod
     def contains_parametric(
         self,
-        param_coords: Float[Array, "{self.parameters_counts}"],  # type: ignore[reportUndefinedVariable]
+        param_coords: Float[Array, " parameters_counts"],  # type: ignore[reportUndefinedVariable]
         approx: Optional[bool] = None,
         **kwargs: Any,
     ) -> Truthy:
