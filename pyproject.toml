@@ -122,7 +122,7 @@ search = "v{current_version}...HEAD"
 [[tool.bumpversion.files]]
 filename = "CHANGELOG.md"
 replace = ""
-search = '''"<!-- start changelog -->"
+search = '''<!-- start changelog -->
 
 '''
 
@@ -131,7 +131,9 @@ filename = "CHANGELOG.md"
 replace = '''<!-- changes -->
 
 (unreleased)=
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v{new_version}...HEAD)'''
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v{new_version}...HEAD)
+
+<!-- start changelog -->'''
 search = '''<!-- changes -->'''
 
 [tool.codespell]
