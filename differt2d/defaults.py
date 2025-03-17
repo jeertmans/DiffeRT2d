@@ -16,7 +16,7 @@ DEFAULT_HEIGHT: float = 0.1
 """Default TX antenna height, used to avoid division by zero when computing
 :func:`received_power<differt2d.utils.received_power>`.
 
-.. warning:: 
+.. warning::
 
     This parameter is only used as a numerical artefact to avoid
     division by zero, and should be set to a small value in practice."""
