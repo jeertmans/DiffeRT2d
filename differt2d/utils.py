@@ -38,6 +38,15 @@ def received_power(
         <= 1`.
     :param height: The TX antenna height to avoid division by zero when
         transmitter and receiver are located at the same coordinates.
+
+        .. warning::
+
+            This parameter is not physically correct, as it is only
+            valid for a line-of-sight path. For a more accurate
+            simulation, a third dimension should be considered when computing the path.
+
+            In practice, this parameter should be set to a small value.
+
     :return: The received power.
     """
     r = path.length()
