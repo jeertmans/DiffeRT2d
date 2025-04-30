@@ -58,7 +58,7 @@ annotate_kwargs = {
     "ha": "center",
 }
 point_kwargs = {
-    "markersize": 3,
+    "s": 3,
     "annotate_offset": (0, 0.05),
     "annotate_kwargs": annotate_kwargs,
 }
