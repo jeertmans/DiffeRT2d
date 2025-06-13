@@ -39,6 +39,7 @@ can take in a given environment.
   * [Pip install](#pip-install)
   * [Install From Repository](#install-from-repository)
 - [Usage](#usage)
+- [Citing](#citing)
 - [Contributing](#contributing)
   * [Reporting an Issue](#reporting-an-issue)
   * [Seeking for Help](#seeking-for-help)
@@ -93,6 +94,27 @@ You may find a multitude of usage examples across the documentation
 or the [examples](https://github.com/jeertmans/DiffeRT2d/tree/main/examples)
 folder, or directly in the
 [examples gallery](https://eertmans.be/DiffeRT2d/latest/examples_gallery/index.html).
+
+## Citing
+
+If you use this software, please cite it as:
+
+```bibtex
+@article{Eertmans_DiffeRT2d_A_Differentiable_2024,
+  title   = {{DiffeRT2d: A Differentiable Ray Tracing Python Framework for Radio Propagation}},
+  author  = {Eertmans, Jérome and Oestges, Claude and Jacques, Laurent},
+  year    = 2024,
+  month   = jun,
+  journal = {Journal of Open Source Software},
+  volume  = 9,
+  number  = 98,
+  pages   = 6915,
+  doi     = {10.21105/joss.06915},
+  url     = {https://joss.theoj.org/papers/10.21105/joss.06915}
+}
+```
+
+or use the *Cite this repository* button on this page to get other citation formats.
 
 ## Contributing
 
