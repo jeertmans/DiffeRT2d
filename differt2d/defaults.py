@@ -18,5 +18,5 @@ DEFAULT_HEIGHT: float = 0.1
 
 .. warning::
 
-    This parameter is only used as a numerical artefact to avoid
+    This parameter is only used as a numerical artifact to avoid
     division by zero, and should be set to a small value in practice."""
