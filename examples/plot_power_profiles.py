@@ -67,7 +67,7 @@ scene.plot(
     receivers_kwargs={"annotate_kwargs": annotate_kwargs},
 )
 
-X, Y = scene.grid(n=300)
+X, Y = scene.grid(300)
 P: Float[Array, "300 300"] = scene.accumulate_on_receivers_grid_over_paths(
     X,
     Y,

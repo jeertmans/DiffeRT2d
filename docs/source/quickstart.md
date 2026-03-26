@@ -132,7 +132,7 @@ like the received power, on a grid and plot it:
     scene = scene.add_objects(wall)
     scene.plot(ax, receivers=True)
 
-    X, Y = scene.grid(n=300)
+    X, Y = scene.grid(300)
     Z = scene.accumulate_on_receivers_grid_over_paths(
         X,
         Y,
@@ -164,7 +164,7 @@ if we were to simulate a higher order of interaction, e.g.:
     scene = scene.add_objects(wall)
     scene.plot(ax, receivers=True)
 
-    X, Y = scene.grid(n=300)
+    X, Y = scene.grid(300)
     Z = scene.accumulate_on_receivers_grid_over_paths(
         X,
         Y,
@@ -205,7 +205,7 @@ both
     scene = scene.add_objects(wall)
     scene.plot(ax, receivers=True)
 
-    X, Y = scene.grid(n=300)
+    X, Y = scene.grid(300)
     dZ = scene.accumulate_on_receivers_grid_over_paths(
         X,
         Y,

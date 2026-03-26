@@ -116,7 +116,7 @@ scene = scene.with_receivers(
     rx_1=Point(xy=jnp.array([0.5, 0.1])),
 )
 
-X, Y = scene.grid(n=300)
+X, Y = scene.grid(300)
 
 im_artists = []
 transmitter_artists = []
