@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- changes -->
 
 (unreleased)=
-## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.4.0...HEAD)
+## [Unreleased](https://github.com/jeertmans/DiffeRT2d/compare/v0.4.1...HEAD)
 
 <!-- start changelog -->
+
+(v0.4.1)=
+## [v0.4.1](https://github.com/jeertmans/DiffeRT2d/compare/v0.4.0...v0.4.1)
 
 (v0.4.0)=
 ## [v0.4.0](https://github.com/jeertmans/DiffeRT2d/compare/v0.3.5...v0.4.0)
