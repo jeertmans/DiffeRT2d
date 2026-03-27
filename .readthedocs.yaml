@@ -8,11 +8,14 @@ build:
   - libxcb-cursor0
   - xvfb
   jobs:
-    post_create_environment:
+    pre_create_environment:
     - asdf plugin add uv
     - asdf install uv latest
     - asdf global uv latest
-    - UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --group docs --no-cache
+    create_environment:
+    - uv venv "${READTHEDOCS_VIRTUALENV_PATH}"
+    install:
+    - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --frozen --group docs
 sphinx:
   builder: html
   configuration: docs/source/conf.py

@@ -1642,7 +1642,7 @@ class Scene(eqx.Module, Plottable, Generic[Obj]):
                 return Z, dZ
             Z = jnp.array(0.0)
             for _, p in results():
-                Z = Z + p
+                Z = Z + p  # type: ignore[reportOperatorIssue]
 
             return Z
         return results()
@@ -1947,7 +1947,7 @@ class Scene(eqx.Module, Plottable, Generic[Obj]):
                 return Z, dZ
             Z = jnp.array(0.0)
             for _, p in results():
-                Z = Z + p
+                Z = Z + p  # type: ignore[reportOperatorIssue]
 
             return Z
         return results()

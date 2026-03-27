@@ -48,7 +48,7 @@ fig, axes = plt.subplots(2, 1, sharex=True, tight_layout=True)
 annotate_kwargs = {"color": "white", "fontsize": 12, "fontweight": "bold"}
 
 key = jax.random.PRNGKey(1234)
-X, Y = scene.grid(n=300)
+X, Y = scene.grid(300)
 
 for ax, approx in zip(axes, [False, True]):
     scene.plot(
@@ -76,4 +76,4 @@ for ax, approx in zip(axes, [False, True]):
     ax.set_title("With approximation" if approx else "Without approximation")
 
 axes[-1].set_xlabel("x coordinate")
-plt.show()  # doctest: +SKIP
+plt.savefig("power_map.png")  # doctest: +SKIP

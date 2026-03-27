@@ -65,7 +65,7 @@ fig, ax = plt.subplots()
 annotate_kwargs = {"color": "white", "fontsize": 12, "fontweight": "bold"}
 
 key = jax.random.PRNGKey(1234)
-X, Y = scene.grid(n=300)
+X, Y = scene.grid(300)
 
 scene = scene.filter_objects(
     lambda obj: not eqx.tree_equal(obj, wall),  # We remove the 'wall' from the scene

@@ -116,7 +116,7 @@ scene = scene.with_receivers(
     rx_1=Point(xy=jnp.array([0.5, 0.1])),
 )
 
-X, Y = scene.grid(n=300)
+X, Y = scene.grid(300)
 
 im_artists = []
 transmitter_artists = []
@@ -227,7 +227,7 @@ def func(alpha: float) -> list:
         im_artists[i].set_array(F)
 
         updates, opt_state = optimizers[i].update(grads, opt_state)
-        tx_coords = tx_coords + updates
+        tx_coords = tx_coords + updates  # type: ignore[reportOperatorIssue]
 
         carries[i] = tx_coords, opt_state
 

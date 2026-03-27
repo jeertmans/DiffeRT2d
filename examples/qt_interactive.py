@@ -343,7 +343,7 @@ class PlotWidget(QWidget):
 
         self.setLayout(main_layout)
 
-        self.X, self.Y = self.scene.grid(n=resolution)
+        self.X, self.Y = self.scene.grid(m=resolution, n=resolution)
 
         cm = self.coverage_map = self.ax.pcolormesh(
             self.X,

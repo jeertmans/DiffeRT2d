@@ -23,7 +23,7 @@ to another (receiver), i.e., Point-to-Point Ray Tracing.
 
     ax = plt.gca()
     scene = Scene.basic_scene()
-    X, Y = scene.grid(n=300)
+    X, Y = scene.grid(300)
 
     Z = scene.accumulate_on_receivers_grid_over_paths(
         X,
