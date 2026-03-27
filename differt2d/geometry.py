@@ -371,7 +371,6 @@ class Vertex(Point, Object):
     """
 
     @staticmethod
-    @partial(jax.jit, inline=True)
     @jaxtyped(typechecker=typechecker)
     def parameters_count() -> int:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         return 0
@@ -573,7 +572,6 @@ class Wall(Ray, Object):
         return n
 
     @staticmethod
-    @partial(jax.jit, inline=True)
     @jaxtyped(typechecker=typechecker)
     def parameters_count() -> int:  # type: ignore[reportIncompatibleMethodOverride] # noqa: D102
         return 1

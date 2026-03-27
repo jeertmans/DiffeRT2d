@@ -142,7 +142,7 @@ for frame, alpha in enumerate(alphas):
         alpha=alpha,
     )
     updates, opt_state = optim.update(grads, opt_state)
-    tx_coords = tx_coords + updates
+    tx_coords = tx_coords + updates  # type: ignore[reportOperatorIssue]
 
 folder = Path(__file__).parent
 static = folder / "static"

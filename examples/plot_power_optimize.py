@@ -227,7 +227,7 @@ def func(alpha: float) -> list:
         im_artists[i].set_array(F)
 
         updates, opt_state = optimizers[i].update(grads, opt_state)
-        tx_coords = tx_coords + updates
+        tx_coords = tx_coords + updates  # type: ignore[reportOperatorIssue]
 
         carries[i] = tx_coords, opt_state
 
